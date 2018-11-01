@@ -1,1 +1,2 @@
 language: java
+script: ant -buildfile code/OpenDiabetesVault-Engine/build.xml 
