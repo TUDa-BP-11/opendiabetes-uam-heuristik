@@ -17,7 +17,10 @@ public class NSApi {
     }
 
     public String getStatus() {
-        return new GetBuilder(client, target, "status").token(token).get();
+        return client.target(target).path("status")
+                .queryParam("token", token)
+                .request(MediaType.APPLICATION_JSON)
+                .get(String.class);
     }
 
     public GetBuilder getEntries() {
@@ -28,8 +31,37 @@ public class NSApi {
         return new GetBuilder(client, target, "slice/" + storage + "/" + field + "/" + type + "/" + prefix + "/" + regex).token(token);
     }
 
-    public String postEntries(String entries) {
-        return client.target(target).path("entries").queryParam("token", token).request(MediaType.APPLICATION_JSON).post(Entity.json(entries), String.class);
+    public GetBuilder getEcho(String storage, String spec) {
+        return new GetBuilder(client, target, "echo/" + storage + "/" + spec).token(token);
     }
 
+    public GetBuilder getTimesEcho(String prefix, String regex) {
+        return new GetBuilder(client, target, "times/echo/" + prefix + "/" + regex).token(token);
+    }
+
+    public GetBuilder getTimes(String prefix, String regex) {
+        return new GetBuilder(client, target, "times/" + prefix + "/" + regex).token(token);
+    }
+
+    public String postEntries(String entries) {
+        return client.target(target).path("entries")
+                .queryParam("token", token)
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(entries), String.class);
+    }
+
+    public GetBuilder getTreatments() {
+        return new GetBuilder(client, target, "treatments").token(token);
+    }
+
+    public String postTreatments(String treatments) {
+        return client.target(target).path("treatments")
+                .queryParam("token", token)
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(treatments), String.class);
+    }
+
+    public void close() {
+        this.client.close();
+    }
 }
