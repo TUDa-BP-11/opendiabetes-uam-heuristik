@@ -41,11 +41,8 @@ public class GetBuilder {
         }
 
         public GetBuilder eq(Object value) {
-            return op("eq", value);
-        }
-
-        public GetBuilder ne(Object value) {
-            return op("ne", value);
+            GetBuilder.this.target = GetBuilder.this.target.queryParam(findPath.toString(), value);
+            return builder;
         }
 
         public GetBuilder gt(Object value) {

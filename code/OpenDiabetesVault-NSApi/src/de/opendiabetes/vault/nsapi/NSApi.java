@@ -47,6 +47,7 @@ public class NSApi {
         return client.target(target).path("entries")
                 .queryParam("token", token)
                 .request(MediaType.APPLICATION_JSON)
+                .header("content-type", MediaType.APPLICATION_JSON)
                 .post(Entity.json(entries), String.class);
     }
 
