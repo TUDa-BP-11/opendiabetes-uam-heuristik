@@ -7,28 +7,43 @@ import com.google.gson.JsonElement;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
+import java.util.TimeZone;
+import java.util.stream.Stream;
 
 
 public class VaultEntryParser {
 
     //GMT +/-
     long timezone;
+    long localeTimezone;
+
     private static final long ONE_HOUR = 3600000;
 
     public VaultEntryParser(){
         timezone = 1;
+        localeTimezone = TimeZone.getDefault().getRawOffset()/ONE_HOUR;
 
     }
 
     public VaultEntryParser(long timezone){
         this.timezone = timezone;
+        localeTimezone = TimeZone.getDefault().getRawOffset()/ONE_HOUR;
+
+    }
+
+    public VaultEntryParser(long timezone, long localeTimezone){
+        this.timezone = timezone;
+        this.localeTimezone = localeTimezone;
 
     }
 
@@ -55,19 +70,19 @@ public class VaultEntryParser {
             field = o.get("insulin");
             if(field!=null&& !field.isJsonNull()){
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
-                date = makeDateWithTimeZone(o.get("timestamp").getAsString());
+                date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
                 result.add(new VaultEntry(entryType,date,field.getAsDouble()));
             }
             field = o.get("carbs");
             if(field!=null&& !field.isJsonNull()){
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
-                date = makeDateWithTimeZone(o.get("timestamp").getAsString());
+                date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
                 result.add(new VaultEntry(entryType,date,field.getAsDouble()));
             }
             field = o.get("eventType");
             if(field!=null&&field.getAsString().equals("Temp Basal")){
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
-                date = makeDateWithTimeZone(o.get("timestamp").getAsString());
+                date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
                 result.add(new VaultEntry(entryType,date,o.get("absolute").getAsDouble(),o.get("duration").getAsDouble()));
             }
 
@@ -77,9 +92,18 @@ public class VaultEntryParser {
 
     }
 
-    private void analyseTimezone(long epoch, long time){
+    public List<VaultEntry> parseFile(String path){
+        StringBuilder builder = new StringBuilder();
 
-        timezone = ((epoch - 3600000 - time)/3600000);
+        try (Stream<String> stream = Files.lines( Paths.get(path), StandardCharsets.UTF_8)) {
+            stream.forEach(line -> builder.append(line));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return this.parse(builder.toString());
+
+
 
     }
 
@@ -94,11 +118,11 @@ public class VaultEntryParser {
             System.out.println(e.getMessage());
 
         }
-        timezone = ((date.getTime() - ONE_HOUR - tmp.getTime())/ONE_HOUR);
+        timezone = ((date.getTime() - (ONE_HOUR * localeTimezone) - tmp.getTime())/ONE_HOUR);
         return date;
     }
 
-    private Date makeDateWithTimeZone(String dateString){
+    private Date makeDateInLocalTimeZone(String dateString){
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Date tmp = new Date(0);
         try{
@@ -108,7 +132,7 @@ public class VaultEntryParser {
             System.out.println(e.getMessage());
 
         }
-        Date date = new Date(tmp.getTime()+((1-timezone)*ONE_HOUR));
+        Date date = new Date(tmp.getTime()+((localeTimezone-timezone)*ONE_HOUR));
         return date;
     }
 
