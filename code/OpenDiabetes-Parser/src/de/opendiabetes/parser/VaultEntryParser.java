@@ -29,19 +29,19 @@ public class VaultEntryParser {
 
     private static final long ONE_HOUR = 3600000;
 
-    public VaultEntryParser(){
+    public VaultEntryParser() {
         timezone = 1;
-        localeTimezone = TimeZone.getDefault().getRawOffset()/ONE_HOUR;
+        localeTimezone = TimeZone.getDefault().getRawOffset() / ONE_HOUR;
 
     }
 
-    public VaultEntryParser(long timezone){
+    public VaultEntryParser(long timezone) {
         this.timezone = timezone;
-        localeTimezone = TimeZone.getDefault().getRawOffset()/ONE_HOUR;
+        localeTimezone = TimeZone.getDefault().getRawOffset() / ONE_HOUR;
 
     }
 
-    public VaultEntryParser(long timezone, long localeTimezone){
+    public VaultEntryParser(long timezone, long localeTimezone) {
         this.timezone = timezone;
         this.localeTimezone = localeTimezone;
 
@@ -51,7 +51,7 @@ public class VaultEntryParser {
         return timezone;
     }
 
-    public List<VaultEntry> parse(String vaultEntries){
+    public List<VaultEntry> parse(String vaultEntries) {
 
         ArrayList<VaultEntry> result = new ArrayList<>();
         JsonParser parser = new JsonParser();
@@ -61,29 +61,29 @@ public class VaultEntryParser {
 
             Date date;
             JsonElement field = o.get("type");
-            if(field!=null&&field.getAsString().equals("sgv")){
+            if (field != null && field.getAsString().equals("sgv")) {
                 VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
-                date = makeDate(o.get("date").getAsLong(),o.get("dateString").getAsString());
-                result.add(new VaultEntry(entryType,date,o.get("sgv").getAsDouble()));
-                
+                date = makeDate(o.get("date").getAsLong(), o.get("dateString").getAsString());
+                result.add(new VaultEntry(entryType, date, o.get("sgv").getAsDouble()));
+
             }
             field = o.get("insulin");
-            if(field!=null&& !field.isJsonNull()){
+            if (field != null && !field.isJsonNull()) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
                 date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType,date,field.getAsDouble()));
+                result.add(new VaultEntry(entryType, date, field.getAsDouble()));
             }
             field = o.get("carbs");
-            if(field!=null&& !field.isJsonNull()){
+            if (field != null && !field.isJsonNull()) {
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
                 date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType,date,field.getAsDouble()));
+                result.add(new VaultEntry(entryType, date, field.getAsDouble()));
             }
             field = o.get("eventType");
-            if(field!=null&&field.getAsString().equals("Temp Basal")){
+            if (field != null && field.getAsString().equals("Temp Basal")) {
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
                 date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType,date,o.get("absolute").getAsDouble(),o.get("duration").getAsDouble()));
+                result.add(new VaultEntry(entryType, date, o.get("absolute").getAsDouble(), o.get("duration").getAsDouble()));
             }
 
         }
@@ -92,10 +92,10 @@ public class VaultEntryParser {
 
     }
 
-    public List<VaultEntry> parseFile(String path){
+    public List<VaultEntry> parseFile(String path) {
         StringBuilder builder = new StringBuilder();
 
-        try (Stream<String> stream = Files.lines( Paths.get(path), StandardCharsets.UTF_8)) {
+        try (Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)) {
             stream.forEach(line -> builder.append(line));
         } catch (IOException e) {
             e.printStackTrace();
@@ -104,37 +104,37 @@ public class VaultEntryParser {
         return this.parse(builder.toString());
 
 
-
     }
 
-    private Date makeDate(long epoch, String dateString){
+    private Date makeDate(long epoch, String dateString) {
         Date date = new Date(epoch);
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         Date tmp = new Date(0);
-        try{
+        try {
             tmp = formatter.parse(dateString);
 
-        }catch (ParseException e){
+        } catch (ParseException e) {
             System.out.println(e.getMessage());
 
         }
-        timezone = ((date.getTime() - (ONE_HOUR * localeTimezone) - tmp.getTime())/ONE_HOUR);
+        timezone = localeTimezone + (tmp.getTime() - date.getTime()) / ONE_HOUR;
+
         return date;
     }
 
-    private Date makeDateInLocalTimeZone(String dateString){
+    private Date makeDateInLocalTimeZone(String dateString) {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Date tmp = new Date(0);
-        try{
+        try {
             tmp = formatter.parse(dateString);
 
-        }catch (ParseException e){
+        } catch (ParseException e) {
             System.out.println(e.getMessage());
 
         }
-        Date date = new Date(tmp.getTime()+((localeTimezone-timezone)*ONE_HOUR));
+        Date date = new Date(tmp.getTime() + ((localeTimezone - timezone) * ONE_HOUR));
         return date;
     }
 
 
- }
+}
