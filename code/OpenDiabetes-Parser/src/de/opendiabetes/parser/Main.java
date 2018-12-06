@@ -14,7 +14,7 @@ public class Main {
         VaultEntryParser parser = new VaultEntryParser();
         StringBuilder jsonFile = new StringBuilder();
         List<VaultEntry> entries;
-        String path = "";
+        String path = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
         try (Stream<String> stream = Files.lines( Paths.get(path), StandardCharsets.UTF_8)) {
             stream.forEach(line -> jsonFile.append(line));
         } catch (IOException e) {

@@ -11,8 +11,12 @@ package opendiabetes.algo;
  */
 public class OpenDiabetesAlgo {
 
+    
     /**
      * @param args the command line arguments
+     * @param IOB Insulin on board
+     * @param I_G Insulin need to correct for posoitve deviation
+     * @param I_CHO amount  of  insulin  needed to  compensate  for  a  given  meal
      */
     public static void main(String[] args) {
         // TODO code application logic here
@@ -20,19 +24,45 @@ public class OpenDiabetesAlgo {
 
     public double getUmax(double I_CHO) {
         double IOB = this.getIOB();
+        double I_G = this.getIG();
+        
+        if(I_CHO + I_G> IOB)
+            return I_CHO + I_G - IOB;
+        else
+            return I_CHO;
     }
 
     public double getIOB(Date now, Time time) {
         double IOB = 0;
         double dt = 0;
 
-        recent = this.vault.get(insulin + time).(now, time)
+        recent = this.vault.get(insulin + time).(now, time);
         for (int i = 0; i < length(recent); i++) {
             dt = now - recent(i).time;
             IOB += recent(i).insulin * getIOBWeight(dt, time);
         }
+        return IOB;
     }
 
+    //sum IOB 
+    //Idea without integration
+    public double sumIOB(double x1, double x2, int iDuration, double timeFromEvent) {
+        double integral;
+        double dx;
+
+        //initialize with first and last terms of simpson series
+        dx = (x2 - x1) / nn;
+        integral = getIOBWeight((timeFromEvent - x1), iDuration) + getIOBWeight(timeFromEvent - (x1 + nn * dx), iDuration);
+
+        for (int ii = 0; ii < nn - 2; ii++) {
+            integral = integral + 4 * getIOBWeight(timeFromEvent - (x1 + ii * dx), iDuration) + 2 * getIOBWeight(timeFromEvent - (x1 + (ii + 1) * dx), iDuration);
+            ii = ii + 2;
+        }
+
+        integral = integral * dx / 3.0;
+        return integral;
+
+    }
 //simpsons rule to integrate IOB 
     public double intIOB(double x1, double x2, int iDuration, double timeFromEvent) {
         double integral;
@@ -58,7 +88,7 @@ public class OpenDiabetesAlgo {
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
      * @param timeFromEvent
-     * @param iDuration
+     * @param iDuration //Insulin decomposition rate
      * @return
      */
     public static double getIOBWeight(double timeFromEvent, int iDuration) {
