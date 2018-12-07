@@ -47,6 +47,7 @@ public class VaultEntryParser {
 
     }
 
+
     public long getTimezone() {
         return timezone;
     }
@@ -111,6 +112,7 @@ public class VaultEntryParser {
         Date date = new Date(epoch);
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         Date tmp = new Date(0);
+        System.out.println(localeTimezone);
         try{
             tmp = formatter.parse(dateString);
 
@@ -118,7 +120,7 @@ public class VaultEntryParser {
             System.out.println(e.getMessage());
 
         }
-        timezone = ((date.getTime() - (ONE_HOUR * localeTimezone) - tmp.getTime())/ONE_HOUR);
+        timezone = localeTimezone - (date.getTime()  - tmp.getTime())/ONE_HOUR;
         return date;
     }
 
@@ -132,8 +134,8 @@ public class VaultEntryParser {
             System.out.println(e.getMessage());
 
         }
-        Date date = new Date(tmp.getTime()+((localeTimezone-timezone)*ONE_HOUR));
-        return date;
+        
+        return new Date(tmp.getTime()+((localeTimezone-timezone)*ONE_HOUR));
     }
 
 
