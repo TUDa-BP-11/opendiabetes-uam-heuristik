@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
-
 public class VaultEntryParser {
 
     //GMT +/-
@@ -29,36 +28,40 @@ public class VaultEntryParser {
 
     private static final long ONE_HOUR = 3600000;
 
-    public VaultEntryParser(){
-        timezone = 1;
-        localeTimezone = TimeZone.getDefault();
-    }
+    public VaultEntryParser() {
 
-	/**
-	* long to timezone
-	**/
-    public VaultEntryParser(long timezone){
-		String[] ids = TimeZone.getAvailableIDs((int)timezone);
+        String[] ids = TimeZone.getAvailableIDs(0);
+        System.out.println(ids[0]);
         this.timezone = TimeZone.getTimeZone(ids[0]);
         localeTimezone = TimeZone.getDefault();
     }
 
-	/**
-	* long to timezone
-	**/
-    public VaultEntryParser(long timezone, long localeTimezone){
-		String[] ids = TimeZone.getAvailableIDs((int)timezone);
+    /**
+     * long to timezone
+	*
+     */
+    public VaultEntryParser(long timezone) {
+        String[] ids = TimeZone.getAvailableIDs((int) timezone);
         this.timezone = TimeZone.getTimeZone(ids[0]);
-        ids = TimeZone.getAvailableIDs((int)localeTimezone);
+        localeTimezone = TimeZone.getDefault();
+    }
+
+    /**
+     * long to timezone
+	*
+     */
+    public VaultEntryParser(long timezone, long localeTimezone) {
+        String[] ids = TimeZone.getAvailableIDs((int) timezone);
+        this.timezone = TimeZone.getTimeZone(ids[0]);
+        ids = TimeZone.getAvailableIDs((int) localeTimezone);
         this.localeTimezone = TimeZone.getTimeZone(ids[0]);
     }
 
-
     public long getTimezone() {
-        return timezone;
+        return timezone.getRawOffset();
     }
 
-    public List<VaultEntry> parse(String vaultEntries){
+    public List<VaultEntry> parse(String vaultEntries) {
 
         ArrayList<VaultEntry> result = new ArrayList<>();
         JsonParser parser = new JsonParser();
@@ -68,29 +71,29 @@ public class VaultEntryParser {
 
             Date date;
             JsonElement field = o.get("type");
-            if(field!=null&&field.getAsString().equals("sgv")){
+            if (field != null && field.getAsString().equals("sgv")) {
                 VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
-                date = makeDate(o.get("date").getAsLong(),o.get("dateString").getAsString());
-                result.add(new VaultEntry(entryType,date,o.get("sgv").getAsDouble()));
-                
+                date = makeDate(o.get("date").getAsLong());
+                result.add(new VaultEntry(entryType, date, o.get("sgv").getAsDouble()));
+
             }
             field = o.get("insulin");
-            if(field!=null&& !field.isJsonNull()){
+            if (field != null && !field.isJsonNull()) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
                 date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType,date,field.getAsDouble()));
+                result.add(new VaultEntry(entryType, date, field.getAsDouble()));
             }
             field = o.get("carbs");
-            if(field!=null&& !field.isJsonNull()){
+            if (field != null && !field.isJsonNull()) {
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
                 date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType,date,field.getAsDouble()));
+                result.add(new VaultEntry(entryType, date, field.getAsDouble()));
             }
             field = o.get("eventType");
-            if(field!=null&&field.getAsString().equals("Temp Basal")){
+            if (field != null && field.getAsString().equals("Temp Basal")) {
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
                 date = makeDateInLocalTimeZone(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType,date,o.get("absolute").getAsDouble(),o.get("duration").getAsDouble()));
+                result.add(new VaultEntry(entryType, date, o.get("absolute").getAsDouble(), o.get("duration").getAsDouble()));
             }
 
         }
@@ -99,10 +102,10 @@ public class VaultEntryParser {
 
     }
 
-    public List<VaultEntry> parseFile(String path){
+    public List<VaultEntry> parseFile(String path) {
         StringBuilder builder = new StringBuilder();
 
-        try (Stream<String> stream = Files.lines( Paths.get(path), StandardCharsets.UTF_8)) {
+        try (Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)) {
             stream.forEach(line -> builder.append(line));
         } catch (IOException e) {
             e.printStackTrace();
@@ -111,66 +114,65 @@ public class VaultEntryParser {
         return this.parse(builder.toString());
     }
 
-	
-	/**
-	* compare epoch in date object with epoch extracted from string.
-	* Java interprets dateString as in locale time zone, correction required
-	**/
-	private void getJSONTimeZone(Date date, String dateString){
-		
+    /**
+     * compare epoch in date object with epoch extracted from string. Java
+     * interprets dateString as in locale time zone, correction required
+	*
+     */
+    private void getJSONTimeZone(Date date, String dateString) {
+
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         Date tmp = new Date(0);
-        try{
+        try {
             tmp = formatter.parse(dateString);
-        }catch (ParseException e){
+        } catch (ParseException e) {
             System.out.println(e.getMessage());
         }
-		
-		long offset = 0;
-        if (localeTimezone.inDaylightTime(tmp))
-                offset = ONE_HOUR;
-        long timezoneOffset = (localeTimezone.getRawOffset() + offset - date.getTime()  + tmp.getTime());
-		String[] ids = TimeZone.getAvailableIDs((int)timezoneOffset);
+
+        long offset = 0;
+        if (localeTimezone.inDaylightTime(tmp)) {
+            offset = ONE_HOUR;
+        }
+        long timezoneOffset = (localeTimezone.getRawOffset() + offset - date.getTime() + tmp.getTime());
+        String[] ids = TimeZone.getAvailableIDs((int) timezoneOffset);
         timezone = TimeZone.getTimeZone(ids[0]);
 
-	    // DEBUG stuff  
-		
-        System.out.println("Local Timezone: "+localeTimezone.getRawOffset()/ONE_HOUR);
-        System.out.println("DST: "+offset/ONE_HOUR);
-        System.out.println("Timezone: "+timezone.getRawOffset()/ONE_HOUR);
-        
+        // DEBUG stuff  
+        System.out.println("Local Timezone: " + localeTimezone.getRawOffset() / ONE_HOUR);
+        System.out.println("DST: " + offset / ONE_HOUR);
+        System.out.println("Timezone: " + timezone.getRawOffset() / ONE_HOUR);
+
         DateFormat formatter2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
 
         System.out.println(formatter2.format(date) + " " + formatter2.getTimeZone().getDisplayName());
         System.out.println(formatter2.format(tmp) + " " + formatter2.getTimeZone().getDisplayName());
         formatter2.setTimeZone(timezone);
-        
+
         System.out.println(formatter2.format(date) + " " + formatter2.getTimeZone().getDisplayName());
         System.out.println(formatter2.format(tmp) + " " + formatter2.getTimeZone().getDisplayName());
 
     }
-	
-	
-	/**
-	* get a date object from epoch number
-	**/
-    private Date makeDate(long epoch){
+
+    /**
+     * get a date object from epoch number
+	*
+     */
+    private Date makeDate(long epoch) {
         return new Date(epoch);
     }
 
-    private Date makeDateInLocalTimeZone(String dateString){
+    private Date makeDateInLocalTimeZone(String dateString) {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Date tmp = new Date(0);
-        try{
+        try {
             tmp = formatter.parse(dateString);
 
-        }catch (ParseException e){
+        } catch (ParseException e) {
             System.out.println(e.getMessage());
 
         }
-        
-        return new Date(tmp.getTime()+((localeTimezone-timezone)*ONE_HOUR));
+
+        return new Date(tmp.getTime() + localeTimezone.getRawOffset() - timezone.getRawOffset());
     }
 
-
- }
+}
