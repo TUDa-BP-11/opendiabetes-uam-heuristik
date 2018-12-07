@@ -1,8 +1,12 @@
 package de.opendiabetes.vault.nsapi;
 
+import de.opendiabetes.parser.VaultEntryParser;
+import de.opendiabetes.vault.engine.container.VaultEntry;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 public class GetBuilder {
     private WebTarget target;
@@ -17,18 +21,41 @@ public class GetBuilder {
         return new Operator(this, findQuery);
     }
 
-    public GetBuilder token(String token) {
+    /**
+     * Sets the token parameter to use for this request
+     *
+     * @param token token String
+     * @return this
+     */
+    GetBuilder token(String token) {
         this.target = target.queryParam("token", token);
         return this;
     }
 
+    /**
+     * Sets the count parameter for this request
+     *
+     * @param count Number of entries to return
+     * @return this
+     */
     public GetBuilder count(int count) {
         this.target = target.queryParam("count", count);
         return this;
     }
 
-    public String get() {
+    private String get() {
         return target.request(MediaType.APPLICATION_JSON).get(String.class);
+    }
+
+    /**
+     * Completes the request and parses the results to {@link VaultEntry} with the {@link VaultEntryParser}.
+     *
+     * @return a list of entries as the result of the generated query.
+     */
+    public List<VaultEntry> getVaultEnries() {
+        String json = get();
+        VaultEntryParser parser = new VaultEntryParser();
+        return parser.parse(json);
     }
 
     public class Operator {

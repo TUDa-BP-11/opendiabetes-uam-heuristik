@@ -1,6 +1,7 @@
 package de.opendiabetes.vault.nsapi;
 
 import com.google.gson.*;
+import de.opendiabetes.vault.engine.container.VaultEntry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
@@ -80,13 +82,11 @@ class NSApiTest {
                 "}]");
         assertNotNull(result);
 
-        String getResult = api.getEntries().find("dateString").eq(entryDateString).get();
-        JsonArray json = parser.parse(getResult).getAsJsonArray();
-        assertEquals(1, json.size());
-        JsonObject jsonObject = json.get(0).getAsJsonObject();
-        assertEquals(entryId, jsonObject.get("_id").getAsString());
-        assertEquals(entrySgv, jsonObject.get("sgv").getAsInt());
-        assertEquals(entryDate, jsonObject.get("date").getAsLong());
+        List<VaultEntry> entries = api.getEntries().find("dateString").eq(entryDateString).getVaultEnries();
+        assertEquals(1, entries.size());
+        VaultEntry entry = entries.get(0);
+        assertEquals(entrySgv, entry.getValue());
+        assertEquals(entryDate, entry.getTimestamp().getTime());
     }
 
     private static void printJson(String jsonString) {
