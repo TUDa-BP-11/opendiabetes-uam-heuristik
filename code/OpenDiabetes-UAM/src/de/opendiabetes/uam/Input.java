@@ -19,6 +19,9 @@ public class Input extends Thread {
                     case "stop":
                         Main.getMainControl().stop();
                         break loop;
+                    case "abort":
+                        Main.getMainControl().abort();
+                        break loop;
                     default:
                         Log.logError("Unknown command: ");
                 }

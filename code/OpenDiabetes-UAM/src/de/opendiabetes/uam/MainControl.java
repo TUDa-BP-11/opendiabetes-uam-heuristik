@@ -53,7 +53,20 @@ public class MainControl {
      */
     public void stop() {
         Log.logInfo("Stopping MainControl...");
+        mainTask.cancel(false);
+        scheduler.shutdown();
+        entriesApi.close();
+        treatmentsApi.close();
+        Log.logInfo("Goodbye!");
+    }
+
+    /**
+     * Stops the scheduler. Aborts all currently running tasks.
+     */
+    public void abort() {
+        Log.logInfo("Aborting execution, stopping MainControl...");
         mainTask.cancel(true);
+        scheduler.shutdownNow();
         entriesApi.close();
         treatmentsApi.close();
         Log.logInfo("Goodbye!");
