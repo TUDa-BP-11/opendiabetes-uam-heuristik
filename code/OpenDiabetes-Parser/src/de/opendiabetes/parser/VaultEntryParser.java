@@ -38,7 +38,8 @@ public class VaultEntryParser {
 
     /**
      * long to timezone
-	*
+     *
+     * @param timezone
      */
     public VaultEntryParser(long timezone) {
         String[] ids = TimeZone.getAvailableIDs((int) timezone);
@@ -48,7 +49,9 @@ public class VaultEntryParser {
 
     /**
      * long to timezone
-	*
+     *
+     * @param timezone
+     * @param localeTimezone
      */
     public VaultEntryParser(long timezone, long localeTimezone) {
         String[] ids = TimeZone.getAvailableIDs((int) timezone);
@@ -117,7 +120,7 @@ public class VaultEntryParser {
     /**
      * compare epoch in date object with epoch extracted from string. Java
      * interprets dateString as in locale time zone, correction required
-	*
+     *
      */
     private void getJSONTimeZone(Date date, String dateString) {
 
@@ -138,41 +141,41 @@ public class VaultEntryParser {
         timezone = TimeZone.getTimeZone(ids[0]);
 
         // DEBUG stuff  
-        System.out.println("Local Timezone: " + localeTimezone.getRawOffset() / ONE_HOUR);
-        System.out.println("DST: " + offset / ONE_HOUR);
-        System.out.println("Timezone: " + timezone.getRawOffset() / ONE_HOUR);
-
-        DateFormat formatter2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
-
-        System.out.println(formatter2.format(date) + " " + formatter2.getTimeZone().getDisplayName());
-        System.out.println(formatter2.format(tmp) + " " + formatter2.getTimeZone().getDisplayName());
-        formatter2.setTimeZone(timezone);
-
-        System.out.println(formatter2.format(date) + " " + formatter2.getTimeZone().getDisplayName());
-        System.out.println(formatter2.format(tmp) + " " + formatter2.getTimeZone().getDisplayName());
-
+//        System.out.println("Local Timezone: " + localeTimezone.getRawOffset() / ONE_HOUR);
+//        System.out.println("DST: " + offset / ONE_HOUR);
+//        System.out.println("Timezone: " + timezone.getRawOffset() / ONE_HOUR);
+//
+//        DateFormat formatter2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ");
+//
+//        System.out.println(formatter2.format(date) + " " + formatter2.getTimeZone().getDisplayName());
+//        System.out.println(formatter2.format(tmp) + " " + formatter2.getTimeZone().getDisplayName());
+//        formatter2.setTimeZone(timezone);
+//
+//        System.out.println(formatter2.format(date) + " " + formatter2.getTimeZone().getDisplayName());
+//        System.out.println(formatter2.format(tmp) + " " + formatter2.getTimeZone().getDisplayName());
     }
 
     /**
      * get a date object from epoch number
-	*
      */
     private Date makeDate(long epoch) {
         return new Date(epoch);
     }
 
+    /**
+     * get a date object from string with time zone information
+     */
     private Date makeDateInLocalTimeZone(String dateString) {
-        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
         Date tmp = new Date(0);
         try {
             tmp = formatter.parse(dateString);
 
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-
         }
 
-        return new Date(tmp.getTime() + localeTimezone.getRawOffset() - timezone.getRawOffset());
+        return tmp;
     }
 
 }
