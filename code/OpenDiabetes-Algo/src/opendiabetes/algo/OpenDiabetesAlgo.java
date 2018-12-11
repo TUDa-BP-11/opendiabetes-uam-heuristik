@@ -5,33 +5,34 @@
  */
 package opendiabetes.algo;
 
+
+import java.util.Date;
+
 /**
  *
  * @author anna
  */
 public class OpenDiabetesAlgo {
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        // TODO code application logic here
-    }
+    OpenDiabetesAlgo(){
+
+    }/*
 
     public double getUmax(double I_CHO) {
         double IOB = this.getIOB();
+        return IOB;
     }
 
-    public double getIOB(Date now, Time time) {
+    public double getIOB(Date now, long time) {
         double IOB = 0;
         double dt = 0;
 
-        recent = this.vault.get(insulin + time).(now, time)
+        recent = this.vault.get(insulin + time).(now, time);
         for (int i = 0; i < length(recent); i++) {
             dt = now - recent(i).time;
             IOB += recent(i).insulin * getIOBWeight(dt, time);
         }
-    }
+    }*/
 
 //simpsons rule to integrate IOB 
     public double intIOB(double x1, double x2, int iDuration, double timeFromEvent) {
@@ -87,6 +88,24 @@ public class OpenDiabetesAlgo {
             }
         }
         return (IOBWeight);
+    }
+
+    //scheiner gi curves fig 7-8 from Think Like a Pancreas, fit with a triangle shaped absorbtion rate curve
+    //see basic math pdf on repo for details
+    //g is time in minutes,gt is carb type
+
+    public double cob(double g, double ct) {
+        double total;
+
+        if(g<=0) {
+            total=0.0;
+        } else if (g>=ct) {
+            total=1.0;
+        } else if ((g>0)&&(g<=ct/2.0)) {
+            total=2.0/Math.pow(ct,2)*Math.pow(g,2);
+        } else
+            total=-1.0+4.0/ct*(g-Math.pow(g,2)/(2.0*ct));
+        return total;
     }
 
 }
