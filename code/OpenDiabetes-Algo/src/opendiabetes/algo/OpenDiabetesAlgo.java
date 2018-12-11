@@ -71,6 +71,7 @@ public class OpenDiabetesAlgo {
         int ii = 1;
 
         //initialize with first and last terms of simpson series
+        //x1 & x2 Grenzen des Intervalls das betrachtet wird
         dx = (x2 - x1) / nn;
         integral = getIOBWeight((timeFromEvent - x1), iDuration) + getIOBWeight(timeFromEvent - (x1 + nn * dx), iDuration);
 
