@@ -28,10 +28,13 @@ public class OpenDiabetesAlgo {
     private List<VaultEntry> mealTreatments;
     private List<VaultEntry> output;
     private VaultEntry current;
-    
+    double startValue;
 
-
-
+    /*
+    startWert -> Zeitdiff zwischen current und next -> predict next GlucoseValue (tmp)
+    -> diff zwischen next und tmp -> Ins oder Mealtreatment bruteforcen -> current = next
+    -> von vorne bis liste leer
+     */
 
     OpenDiabetesAlgo() {
         absorptionTime = 180;
@@ -45,7 +48,11 @@ public class OpenDiabetesAlgo {
     }
 
     public void setGlucose(List<VaultEntry> glucose) {
-        current = glucose.get(0);
+        current = glucose.remove(0);
+        startValue = current.getValue();
+        bolusTreatments = new ArrayList<VaultEntry>();
+        mealTreatments  = new ArrayList<VaultEntry>();
+        output  = new ArrayList<VaultEntry>();
         this.glucose = glucose;
     }
 
