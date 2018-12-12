@@ -6,15 +6,57 @@
 package opendiabetes.algo;
 
 
+
+import de.opendiabetes.vault.engine.container.VaultEntry;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author anna
  */
 public class OpenDiabetesAlgo {
 
-    OpenDiabetesAlgo() {
 
+    private double absorptionTime;
+    private int insDuration;
+    private double carbRatio;
+    private double insSensivityFactor;
+    private List<VaultEntry> glucose;
+    private List<VaultEntry> bolusTreatments;
+    private List<VaultEntry> mealTreatments;
+    private List<VaultEntry> output;
+    private VaultEntry current;
+    
+
+
+
+
+    OpenDiabetesAlgo() {
+        absorptionTime = 180;
+        insDuration = 6 ;
+        carbRatio = 5;
+        insSensivityFactor = 10;
+        glucose = new ArrayList<VaultEntry>();
+        bolusTreatments = new ArrayList<VaultEntry>();
+        mealTreatments = new ArrayList<VaultEntry>();
+        output = new ArrayList<VaultEntry>();
+    }
+
+    public void setGlucose(List<VaultEntry> glucose) {
+        current = glucose.get(0);
+        this.glucose = glucose;
+    }
+
+    public void addGlucose(List<VaultEntry> glucose) {
+        this.glucose.addAll(glucose);
+    }
+
+    public List<VaultEntry> getOutput() {
+        List<VaultEntry> tmp = output;
+        output = new ArrayList<VaultEntry>();
+        return tmp;
     }
 
     /**
@@ -78,6 +120,9 @@ public class OpenDiabetesAlgo {
     }
 
 
+    //scheiner gi curves fig 7-8 from Think Like a Pancreas, fit with a triangle shaped absorbtion rate curve
+    //see basic math pdf on repo for details
+    //g is time in minutes,gt is carb type
     //function cob(g,ct)
     public double cob(double timeFromEvent, double absorptionTime) {
         double total;
@@ -152,7 +197,7 @@ public class OpenDiabetesAlgo {
         }
     }
         return IOB;
-    }*/
+    }
 
     //sum IOB 
     //Idea without integration
@@ -173,11 +218,7 @@ public class OpenDiabetesAlgo {
         integral = integral * dx / 3.0;
         return integral;
 
-    }
-
-    //scheiner gi curves fig 7-8 from Think Like a Pancreas, fit with a triangle shaped absorbtion rate curve
-    //see basic math pdf on repo for details
-    //g is time in minutes,gt is carb type
+    }*/
 
 
 }
