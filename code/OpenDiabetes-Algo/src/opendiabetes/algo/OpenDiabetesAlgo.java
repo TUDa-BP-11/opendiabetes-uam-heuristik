@@ -9,14 +9,111 @@ package opendiabetes.algo;
 import java.util.Date;
 
 /**
- *
  * @author anna
  */
 public class OpenDiabetesAlgo {
 
-    OpenDiabetesAlgo(){
+    OpenDiabetesAlgo() {
 
-    }/*
+    }
+
+    /**
+     * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
+     *
+     * @param timeFromEvent
+     * @param iDuration     //Insulin decomposition rate
+     * @return
+     */
+    //iob()
+    public double getIOBWeight(double timeFromEvent, int iDuration) {
+        double IOBWeight = 0;
+        if (timeFromEvent <= 0) {
+            IOBWeight = 100;
+        } else if (timeFromEvent >= iDuration * 60) {
+            IOBWeight = 0;
+        } else {
+            switch (iDuration) {
+                case 3:
+                    IOBWeight = -3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951;
+                    break;
+                case 4:
+                    IOBWeight = -3.31e-8 * Math.pow(timeFromEvent, 4) + 2.53e-5 * Math.pow(timeFromEvent, 3) - 5.51e-3 * Math.pow(timeFromEvent, 2) - 9.086e-2 * timeFromEvent + 99.95;
+                    break;
+                case 5:
+                    IOBWeight = -2.95e-8 * Math.pow(timeFromEvent, 4) + 2.32e-5 * Math.pow(timeFromEvent, 3) - 5.55e-3 * Math.pow(timeFromEvent, 2) + 4.49e-2 * timeFromEvent + 99.3;
+                    break;
+                case 6:
+                    IOBWeight = -1.493e-8 * Math.pow(timeFromEvent, 4) + 1.413e-5 * Math.pow(timeFromEvent, 3) - 4.095e-3 * Math.pow(timeFromEvent, 2) + 6.365e-2 * timeFromEvent + 99.7;
+                    break;
+                case 8: // TODO Jens fragen
+                default:
+                    break;
+            }
+        }
+        return (IOBWeight);
+    }
+
+
+    //simpsons rule to integrate IOB
+    //intIOB()
+    public double integrateIOB(double x1, double x2, int iDuration, double timeFromEvent) {
+        double integral;
+        double dx;
+        int nn = 50; //nn needs to be even
+        int ii = 1;
+
+        //initialize with first and last terms of simpson series
+        //x1 & x2 Grenzen des Intervalls das betrachtet wird
+        dx = (x2 - x1) / nn;
+        integral = getIOBWeight((timeFromEvent - x1), iDuration) + getIOBWeight(timeFromEvent - (x1 + nn * dx), iDuration);
+
+        while (ii < nn - 2) {
+            integral = integral + 4 * getIOBWeight(timeFromEvent - (x1 + ii * dx), iDuration) + 2 * getIOBWeight(timeFromEvent - (x1 + (ii + 1) * dx), iDuration);
+            ii = ii + 2;
+        }
+
+        integral = integral * dx / 3.0;
+        return integral;
+
+    }
+
+
+    public double cob(double g, double ct) {
+        double total;
+
+        if (g <= 0) {
+            total = 0.0;
+        } else if (g >= ct) {
+            total = 1.0;
+        } else if ((g > 0) && (g <= ct / 2.0)) {
+            total = 2.0 / Math.pow(ct, 2) * Math.pow(g, 2);
+        } else
+            total = -1.0 + 4.0 / ct * (g - Math.pow(g, 2) / (2.0 * ct));
+        return total;
+    }
+
+    public double deltatempBGI(double g, double dbdt, double sensf, int idur, double t1, double t2) {
+        return -dbdt * sensf * ((t2 - t1) - 1 / 100 * integrateIOB(t1, t2, idur, g));
+    }
+
+    public double deltaBGC(double g, double sensf, double cratio, double camount, double ct) {
+        return sensf / cratio * camount * cob(g, ct);
+    }
+
+    public double deltaBGI(double g, double bolus, double sensf, int idur) {
+        return -bolus * sensf * (1 - getIOBWeight(g, idur) / 100.0);
+    }
+
+    public double deltaBG(double g, double sensf, double cratio, double camount, double ct, double bolus, int idur) {
+        return deltaBGI(g, bolus, sensf, idur) + deltaBGC(g, sensf, cratio, camount, ct);
+    }
+
+
+
+
+
+
+    /*
 
     /**
      * @param args the command line arguments
@@ -71,79 +168,10 @@ public class OpenDiabetesAlgo {
         return integral;
 
     }
-//simpsons rule to integrate IOB 
-    public double intIOB(double x1, double x2, int iDuration, double timeFromEvent) {
-        double integral;
-        double dx;
-        int nn = 50; //nn needs to be even
-        int ii = 1;
-
-        //initialize with first and last terms of simpson series
-        //x1 & x2 Grenzen des Intervalls das betrachtet wird
-        dx = (x2 - x1) / nn;
-        integral = getIOBWeight((timeFromEvent - x1), iDuration) + getIOBWeight(timeFromEvent - (x1 + nn * dx), iDuration);
-
-        while (ii < nn - 2) {
-            integral = integral + 4 * getIOBWeight(timeFromEvent - (x1 + ii * dx), iDuration) + 2 * getIOBWeight(timeFromEvent - (x1 + (ii + 1) * dx), iDuration);
-            ii = ii + 2;
-        }
-
-        integral = integral * dx / 3.0;
-        return integral;
-
-    }
-
-    /**
-     * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
-     *
-     * @param timeFromEvent
-     * @param iDuration //Insulin decomposition rate
-     * @return
-     */
-    public static double getIOBWeight(double timeFromEvent, int iDuration) {
-        double IOBWeight = 0;
-        if (timeFromEvent <= 0) {
-            IOBWeight = 100;
-        } else if (timeFromEvent >= iDuration * 60) {
-            IOBWeight = 0;
-        } else {
-            switch (iDuration) {
-                case 3:
-                    IOBWeight = -3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951;
-                    break;
-                case 4:
-                    IOBWeight = -3.31e-8 * Math.pow(timeFromEvent, 4) + 2.53e-5 * Math.pow(timeFromEvent, 3) - 5.51e-3 * Math.pow(timeFromEvent, 2) - 9.086e-2 * timeFromEvent + 99.95;
-                    break;
-                case 5:
-                    IOBWeight = -2.95e-8 * Math.pow(timeFromEvent, 4) + 2.32e-5 * Math.pow(timeFromEvent, 3) - 5.55e-3 * Math.pow(timeFromEvent, 2) + 4.49e-2 * timeFromEvent + 99.3;
-                    break;
-                case 6:
-                    IOBWeight = -1.493e-8 * Math.pow(timeFromEvent, 4) + 1.413e-5 * Math.pow(timeFromEvent, 3) - 4.095e-3 * Math.pow(timeFromEvent, 2) + 6.365e-2 * timeFromEvent + 99.7;
-                    break;
-                case 8: // TODO Jens fragen
-                default:
-                    break;
-            }
-        }
-        return (IOBWeight);
-    }
 
     //scheiner gi curves fig 7-8 from Think Like a Pancreas, fit with a triangle shaped absorbtion rate curve
     //see basic math pdf on repo for details
     //g is time in minutes,gt is carb type
 
-    public double cob(double g, double ct) {
-        double total;
-
-        if(g<=0) {
-            total=0.0;
-        } else if (g>=ct) {
-            total=1.0;
-        } else if ((g>0)&&(g<=ct/2.0)) {
-            total=2.0/Math.pow(ct,2)*Math.pow(g,2);
-        } else
-            total=-1.0+4.0/ct*(g-Math.pow(g,2)/(2.0*ct));
-        return total;
-    }
 
 }
