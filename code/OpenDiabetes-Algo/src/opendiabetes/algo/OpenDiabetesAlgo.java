@@ -21,18 +21,18 @@ public class OpenDiabetesAlgo {
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
      * @param timeFromEvent
-     * @param iDuration     //Insulin decomposition rate
+     * @param insDuration   //Insulin decomposition rate
      * @return
      */
-    //iob()
-    public double getIOBWeight(double timeFromEvent, int iDuration) {
+    //function iob(g,idur)
+    public double getIOBWeight(double timeFromEvent, int insDuration) {
         double IOBWeight = 0;
         if (timeFromEvent <= 0) {
             IOBWeight = 100;
-        } else if (timeFromEvent >= iDuration * 60) {
+        } else if (timeFromEvent >= insDuration * 60) {
             IOBWeight = 0;
         } else {
-            switch (iDuration) {
+            switch (insDuration) {
                 case 3:
                     IOBWeight = -3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951;
                     break;
@@ -55,20 +55,20 @@ public class OpenDiabetesAlgo {
 
 
     //simpsons rule to integrate IOB
-    //intIOB()
-    public double integrateIOB(double x1, double x2, int iDuration, double timeFromEvent) {
+    //function intIOB(x1,x2,idur,g)
+    public double integrateIOB(double t1, double t2, int insDuration, double timeFromEvent) {
         double integral;
         double dx;
         int nn = 50; //nn needs to be even
         int ii = 1;
 
         //initialize with first and last terms of simpson series
-        //x1 & x2 Grenzen des Intervalls das betrachtet wird
-        dx = (x2 - x1) / nn;
-        integral = getIOBWeight((timeFromEvent - x1), iDuration) + getIOBWeight(timeFromEvent - (x1 + nn * dx), iDuration);
+        //t1 & t2 Grenzen des Intervalls das betrachtet wird
+        dx = (t2 - t1) / nn;
+        integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
 
         while (ii < nn - 2) {
-            integral = integral + 4 * getIOBWeight(timeFromEvent - (x1 + ii * dx), iDuration) + 2 * getIOBWeight(timeFromEvent - (x1 + (ii + 1) * dx), iDuration);
+            integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
             ii = ii + 2;
         }
 
@@ -78,34 +78,40 @@ public class OpenDiabetesAlgo {
     }
 
 
-    public double cob(double g, double ct) {
+    //function cob(g,ct)
+    public double cob(double timeFromEvent, double absorptionTime) {
         double total;
 
-        if (g <= 0) {
+        if (timeFromEvent <= 0) {
             total = 0.0;
-        } else if (g >= ct) {
+        } else if (timeFromEvent >= absorptionTime) {
             total = 1.0;
-        } else if ((g > 0) && (g <= ct / 2.0)) {
-            total = 2.0 / Math.pow(ct, 2) * Math.pow(g, 2);
+        } else if ((timeFromEvent > 0) && (timeFromEvent <= absorptionTime / 2.0)) {
+            total = 2.0 / Math.pow(absorptionTime, 2) * Math.pow(timeFromEvent, 2);
         } else
-            total = -1.0 + 4.0 / ct * (g - Math.pow(g, 2) / (2.0 * ct));
+            total = -1.0 + 4.0 / absorptionTime * (timeFromEvent - Math.pow(timeFromEvent, 2) / (2.0 * absorptionTime));
         return total;
     }
 
-    public double deltatempBGI(double g, double dbdt, double sensf, int idur, double t1, double t2) {
-        return -dbdt * sensf * ((t2 - t1) - 1 / 100 * integrateIOB(t1, t2, idur, g));
+    //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
+    public double deltatempBGI(double timeFromEvent, double dbdt, double insSensivityFactor, int insDuration, double t1, double t2) {
+        return -dbdt * insSensivityFactor * ((t2 - t1) - 1 / 100 * integrateIOB(t1, t2, insDuration, timeFromEvent));
     }
 
-    public double deltaBGC(double g, double sensf, double cratio, double camount, double ct) {
-        return sensf / cratio * camount * cob(g, ct);
+    //function deltaBGC(g,sensf,cratio,camount,ct)
+    public double deltaBGC(double timeFromEvent, double insSensivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
+        return insSensivityFactor / carbRatio * carbsAmount * cob(timeFromEvent, absorptionTime);
     }
 
-    public double deltaBGI(double g, double bolus, double sensf, int idur) {
-        return -bolus * sensf * (1 - getIOBWeight(g, idur) / 100.0);
+    //function deltaBGI(g,bolus,sensf,idur)
+    public double deltaBGI(double timeFromEvent, double insBolus, double insSensivityFactor, int insDuration) {
+        return -insBolus * insSensivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
 
-    public double deltaBG(double g, double sensf, double cratio, double camount, double ct, double bolus, int idur) {
-        return deltaBGI(g, bolus, sensf, idur) + deltaBGC(g, sensf, cratio, camount, ct);
+    //deltaBG(g,sensf,cratio,camount,ct,bolus,idur)
+    public double deltaBG(double timeFromEvent, double insSensivityFactor, double carbRatio, double carbsAmount, double absorptionTime, double insBolus, int insDuration) {
+        return deltaBGI(timeFromEvent, insBolus, insSensivityFactor, insDuration) +
+                deltaBGC(timeFromEvent, insSensivityFactor, carbRatio, carbsAmount, absorptionTime);
     }
 
 
