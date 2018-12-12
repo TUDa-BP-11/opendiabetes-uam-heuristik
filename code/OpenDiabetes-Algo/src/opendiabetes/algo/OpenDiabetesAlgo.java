@@ -94,8 +94,8 @@ public class OpenDiabetesAlgo {
     }
 
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
-    public double deltatempBGI(double timeFromEvent, double dbdt, double insSensivityFactor, int insDuration, double t1, double t2) {
-        return -dbdt * insSensivityFactor * ((t2 - t1) - 1 / 100 * integrateIOB(t1, t2, insDuration, timeFromEvent));
+    public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensivityFactor, int insDuration, double t1, double t2) {
+        return -tempInsAmount * insSensivityFactor * ((t2 - t1) - 1 / 100 * integrateIOB(t1, t2, insDuration, timeFromEvent));
     }
 
     //function deltaBGC(g,sensf,cratio,camount,ct)
