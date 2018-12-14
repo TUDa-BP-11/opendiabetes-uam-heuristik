@@ -48,4 +48,7 @@ public class Main {
         return mainControl;
     }
 
+    public static Input getInput() {
+        return input;
+    }
 }
