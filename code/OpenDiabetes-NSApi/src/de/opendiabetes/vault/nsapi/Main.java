@@ -39,7 +39,7 @@ public class Main {
 
         System.out.println("POST entries:");
         LocalDateTime time = LocalDateTime.now();
-                
+
         String entry = "[{" +
                 "\"direction\": \"Flat\"," +
                 "\"_id\": \"" + getRandomId(24) + "\"," +
@@ -50,7 +50,7 @@ public class Main {
                 "\"type\": \"sgv\"," +
                 "\"device\": \"share2\"" +
                 "}]";
-        
+
         System.out.println(entry);
 //        printJson(api.postEntries(entry));
 //

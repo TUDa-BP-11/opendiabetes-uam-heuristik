@@ -43,7 +43,12 @@ public class GetBuilder {
         return this;
     }
 
-    private String get() {
+    /**
+     * Completes the request
+     *
+     * @return the result as a JSON formatted String
+     */
+    public String get() {
         return target.request(MediaType.APPLICATION_JSON).get(String.class);
     }
 
