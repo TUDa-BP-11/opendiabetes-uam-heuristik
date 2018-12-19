@@ -1,6 +1,6 @@
 package de.opendiabetes.synchronizer;
 
-import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.nsapi.NSApi;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
