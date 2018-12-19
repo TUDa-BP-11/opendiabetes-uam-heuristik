@@ -1,7 +1,9 @@
 package de.opendiabetes.vault.nsapi;
 
-import com.google.gson.*;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -12,17 +14,13 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NSApiTest {
     private static NSApi api;
-    private static Gson gson;
-    private static JsonParser parser;
 
 
     @BeforeAll
@@ -43,8 +41,6 @@ class NSApiTest {
         }
 
         api = new NSApi(host, port, token);
-        gson = new GsonBuilder().setPrettyPrinting().create();
-        parser = new JsonParser();
     }
 
     @AfterAll
@@ -55,12 +51,15 @@ class NSApiTest {
 
     @Test
     void testStatus() {
-        String status = api.getStatus();
+        JSONObject status = null;
+        try {
+            status = api.getStatus();
+        } catch (UnirestException e) {
+            fail(e);
+        }
         assertNotNull(status);
-        JsonElement jsonStatus = parser.parse(status);
-        assertTrue(jsonStatus.isJsonObject());
-        JsonObject statusObject = jsonStatus.getAsJsonObject();
-        assumeTrue(statusObject.get("status").getAsString().equals("ok"));
+        assertEquals("ok", status.getString("status"));        // tests should break if status is not ok
+        assertTrue(status.getBoolean("apiEnabled"));    // test should break if api is not enabled
     }
 
     @Test
@@ -72,25 +71,32 @@ class NSApiTest {
         long entryDate = Timestamp.valueOf(time).getTime();
         String entryDateString = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(time);
 
-        String result = api.postEntries("[{" +
-                "\"direction\": \"Flat\"," +
-                "\"_id\": \"" + entryId + "\"," +
-                "\"sgv\": " + entrySgv + "," +
-                "\"dateString\": \"" + entryDateString + "\"," +
-                "\"date\": " + entryDate + "," +
-                "\"type\": \"sgv\"" +
-                "}]");
+        JsonNode result = null;
+        try {
+            result = api.postEntries("[{" +
+                    "\"direction\": \"Flat\"," +
+                    "\"_id\": \"" + entryId + "\"," +
+                    "\"sgv\": " + entrySgv + "," +
+                    "\"dateString\": \"" + entryDateString + "\"," +
+                    "\"date\": " + entryDate + "," +
+                    "\"type\": \"sgv\"" +
+                    "}]");
+        } catch (UnirestException e) {
+            fail(e);
+        }
         assertNotNull(result);
 
-        List<VaultEntry> entries = api.getEntries().find("dateString").eq(entryDateString).getVaultEnries();
-        assertEquals(1, entries.size());
-        VaultEntry entry = entries.get(0);
-        assertEquals(entrySgv, entry.getValue());
-        assertEquals(entryDate, entry.getTimestamp().getTime());
-    }
-
-    private static void printJson(String jsonString) {
-        System.out.println(gson.toJson(parser.parse(jsonString)));
+        JsonNode entries = null;
+        try {
+            entries = api.getEntries().find("dateString").eq(entryDateString).get();
+        } catch (UnirestException e) {
+            fail(e);
+        }
+        assertTrue(entries.isArray());
+        JSONArray entryArray = entries.getArray();
+        assertEquals(1, entryArray.length());
+        JSONObject entry = entryArray.getJSONObject(0);
+        assertEquals(entrySgv, entry.getInt("sgv"));
     }
 
     private final static String ID_RANGE = "0123456789abcdef";
