@@ -1,8 +1,10 @@
 package de.opendiabetes.synchronizer;
 
-import com.google.gson.*;
-import de.opendiabetes.vault.nsapi.GetBuilder;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import de.opendiabetes.nsapi.GetBuilder;
 import de.opendiabetes.nsapi.NSApi;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -89,40 +91,51 @@ public class Main {
         NSApi write = new NSApi(writeHost, writePort, writeToken);
 
         GetBuilder getBuilder;
-        JsonParser parser = new JsonParser();
-        JsonArray found = new JsonArray();
-        JsonArray missing = new JsonArray();
+        JSONArray found = new JSONArray();
+        JSONArray missing = new JSONArray();
         int fc = 0;
-        do {
-            getBuilder = read.getEntries().count(count);
+        try {
+            do {
+                getBuilder = read.getEntries().count(count);
 
-            if (found.size() == 0) {  // first search
-                getBuilder.find("dateString").gte(start);
-            } else {    // next search, start at last found entry
-                String last = found.get(found.size() - 1).getAsJsonObject().get("dateString").getAsString();
-                getBuilder.find("dateString").gt(last);
-            }
+                if (found.length() == 0) {  // first search
+                    getBuilder.find("dateString").gte(start);
+                } else {    // next search, start at last found entry
+                    String last = found.getJSONObject(found.length() - 1).getString("dateString");
+                    getBuilder.find("dateString").gt(last);
+                }
 
-            if (end != null)
-                getBuilder.find("dateString").lt(end);
+                if (end != null)
+                    getBuilder.find("dateString").lt(end);
 
-            found = parser.parse(getBuilder.get()).getAsJsonArray();
-            fc += found.size();
+                found = getBuilder.get().getArray();
+                fc += found.length();
 
-            for (JsonElement e : found) {
-                JsonObject entry = e.getAsJsonObject();
-                String date = entry.get("dateString").getAsString();
-                String target = write.getEntries().find("dateString").eq(date).get();
-                if (target.equals("[]"))    //no result found
-                    missing.add(entry);
-            }
-        } while (found.size() != 0);
+                for (int i = 0; i < found.length(); i++) {
+                    JSONObject entry = found.getJSONObject(i);
+                    String date = entry.getString("dateString");
+                    JSONArray target = write.getEntries().find("dateString").eq(date).get().getArray();
+                    if (target.length() == 0)    //no result found
+                        missing.put(entry);
+                }
+            } while (found.length() != 0);
+        } catch (UnirestException e) {
+            System.out.println("Exception while trying to compile list of missing entries");
+            e.printStackTrace();
+            read.close();
+            write.close();
+            return;
+        }
 
-        System.out.println("Found " + fc + " entries of which " + missing.size() + " are missing in the target instance.");
-        if (missing.size() > 0) {
+        System.out.println("Found " + fc + " entries of which " + missing.length() + " are missing in the target instance.");
+        if (missing.length() > 0) {
             System.out.println("Uploading missing entries...");
-            Gson gson = new Gson();
-            write.postEntries(gson.toJson(missing));
+            try {
+                write.postEntries(missing.toString());
+            } catch (UnirestException e) {
+                System.out.println("Exception while trying to POST missing entries");
+                e.printStackTrace();
+            }
         }
 
         read.close();
