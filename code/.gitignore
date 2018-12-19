@@ -8,6 +8,8 @@ nbdist/
 
 # IntelliJ IDEA
 *.iml
+out/
+bin/
 
 # Compiled class file
 *.class
