@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="OpenDiabetes-NSApi" default="main" basedir=".">
+    <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
+    <import file="nbproject/build-impl.xml"/>
+    <property file="build.properties"/>
+
+    <path id="classpath">
+        <fileset dir="../../lib" erroronmissingdir="false"/>
+    </path>
+
+    <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
+    <target name="main" depends="compile, compress" description="Build jar with existing librarys"/>
+
+    <target name="clean">
+        <delete dir="bin" failonerror="false"/>
+        <delete dir="out" failonerror="false"/>
+        <mkdir dir="bin"/>
+        <mkdir dir="out"/>
+    </target>
+
+    <target name="unjar">
+        <unjar dest="bin">
+            <filelist dir="../../lib">
+                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
+            </filelist>
+        </unjar>
+    </target>
+
+    <target name="getversion">
+        <tstamp>
+            <format property="TODAY_MY" pattern="dd.MM.yyyy HH.mm" locale="en,UK"/>
+        </tstamp>
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="UNKNOWN">
+            <arg value="rev-parse"/>
+            <arg value="--short"/>
+            <arg value="HEAD"/>
+        </exec>
+        <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
+    </target>
+
+    <target name="compile" depends="getversion">
+        <javac srcdir="src" destdir="bin" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
+               includeantruntime="false">
+            <compilerarg line="-encoding utf-8"/>
+        </javac>
+        <copy todir="bin">
+            <fileset dir="resources" erroronmissingdir="false"/>
+        </copy>
+    </target>
+
+    <target name="compress" depends="getversion">
+        <tstamp/>
+        <jar destfile="out/${jarname}" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class" value="${mainclass}"/>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Built-Date" value="${TODAY_MY}"/>
+                <attribute name="Version" value="${build.number}"/>
+                <attribute name="Revision" value="${build.number}"/>
+            </manifest>
+        </jar>
+    </target>
+</project>
