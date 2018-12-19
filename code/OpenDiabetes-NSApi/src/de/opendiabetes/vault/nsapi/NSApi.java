@@ -1,13 +1,17 @@
 package de.opendiabetes.vault.nsapi;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import com.mashape.unirest.request.HttpRequest;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
 
 public class NSApi {
-    private Client client;
-    private String target;
+    private String host;
     private String token;
 
     /**
@@ -18,9 +22,14 @@ public class NSApi {
      * @param token Token to use for all queries
      */
     public NSApi(String host, String port, String token) {
-        this.client = ClientBuilder.newClient();
-        this.target = "https://" + host + ":" + port + "/api/v1";
+        this.host = "https://" + host + ":" + port + "/api/v1/";
         this.token = token;
+        Unirest.setDefaultHeader("accept", "application/json");
+        Unirest.setDefaultHeader("content-type", "application/json");
+    }
+
+    private HttpRequest get(String path) {
+        return Unirest.get(host + path).queryString("token", token);
     }
 
     /**
@@ -28,11 +37,9 @@ public class NSApi {
      *
      * @return the status as a JSON formatted String
      */
-    public String getStatus() {
-        return client.target(target).path("status")
-                .queryParam("token", token)
-                .request(MediaType.APPLICATION_JSON)
-                .get(String.class);
+    public JSONObject getStatus() throws UnirestException {
+        HttpResponse<JsonNode> response = get("status").asJson();
+        return response.getBody().getObject();
     }
 
     /**
@@ -41,7 +48,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with "entries" as its path
      */
     public GetBuilder getEntries() {
-        return new GetBuilder(client, target, "entries").token(token);
+        return new GetBuilder(get("entries"));
     }
 
 
@@ -59,7 +66,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getSlice(String storage, String field, String type, String prefix, String regex) {
-        return new GetBuilder(client, target, "slice/" + storage + "/" + field + "/" + type + "/" + prefix + "/" + regex).token(token);
+        return new GetBuilder(get("slice/" + storage + "/" + field + "/" + type + "/" + prefix + "/" + regex));
     }
 
     /**
@@ -71,7 +78,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getEcho(String storage, String spec) {
-        return new GetBuilder(client, target, "echo/" + storage + "/" + spec).token(token);
+        return new GetBuilder(get("echo/" + storage + "/" + spec));
     }
 
     /**
@@ -85,7 +92,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getTimesEcho(String prefix, String regex) {
-        return new GetBuilder(client, target, "times/echo/" + prefix + "/" + regex).token(token);
+        return new GetBuilder(get("times/echo/" + prefix + "/" + regex));
     }
 
     /**
@@ -100,7 +107,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getTimes(String prefix, String regex) {
-        return new GetBuilder(client, target, "times/" + prefix + "/" + regex).token(token);
+        return new GetBuilder(get("times/" + prefix + "/" + regex));
     }
 
     /**
@@ -109,12 +116,11 @@ public class NSApi {
      * @param entries entries as JSON String.
      * @return whatever the NightScout API returns, as JSON String
      */
-    public String postEntries(String entries) {
-        return client.target(target).path("entries")
-                .queryParam("token", token)
-                .request(MediaType.APPLICATION_JSON)
-                .header("content-type", MediaType.APPLICATION_JSON)
-                .post(Entity.json(entries), String.class);
+    public JsonNode postEntries(String entries) throws UnirestException {
+        return Unirest.post(host + "entries")
+                .queryString("token", token)
+                .body(entries)
+                .asJson().getBody();
     }
 
     /**
@@ -123,7 +129,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with treatments as its path
      */
     public GetBuilder getTreatments() {
-        return new GetBuilder(client, target, "treatments").token(token);
+        return new GetBuilder(get("treatments"));
     }
 
     /**
@@ -132,17 +138,22 @@ public class NSApi {
      * @param treatments treatments as JSON String.
      * @return whatever the NightScout API returns, as JSON String
      */
-    public String postTreatments(String treatments) {
-        return client.target(target).path("treatments")
-                .queryParam("token", token)
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(treatments), String.class);
+    public JsonNode postTreatments(String treatments) throws UnirestException {
+        return Unirest.post(host + "treatments")
+                .queryString("token", token)
+                .body(treatments)
+                .asJson().getBody();
     }
+
 
     /**
      * Closes the connection to the NightScout API
      */
     public void close() {
-        this.client.close();
+        try {
+            Unirest.shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

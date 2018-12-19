@@ -1,35 +1,26 @@
 package de.opendiabetes.vault.nsapi;
 
-import de.opendiabetes.parser.VaultEntryParser;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import java.util.List;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import com.mashape.unirest.request.HttpRequest;
 
 public class GetBuilder {
-    private WebTarget target;
+    private HttpRequest request;
 
-    public GetBuilder(Client client, String target, String path) {
-        this.target = client.target(target).path(path);
+    public GetBuilder(HttpRequest request) {
+        this.request = request;
     }
 
+    /**
+     * Creates a find parameter for this request
+     *
+     * @param field the field to find
+     * @return Operator to pass actual operation
+     */
     public GetBuilder.Operator find(String field) {
         StringBuilder findQuery = new StringBuilder();
         findQuery.append("find[").append(field).append("]");
         return new Operator(this, findQuery);
-    }
-
-    /**
-     * Sets the token parameter to use for this request
-     *
-     * @param token token String
-     * @return this
-     */
-    GetBuilder token(String token) {
-        this.target = target.queryParam("token", token);
-        return this;
     }
 
     /**
@@ -39,28 +30,12 @@ public class GetBuilder {
      * @return this
      */
     public GetBuilder count(int count) {
-        this.target = target.queryParam("count", count);
+        this.request = this.request.queryString("count", count);
         return this;
     }
 
-    /**
-     * Completes the request
-     *
-     * @return the result as a JSON formatted String
-     */
-    public String get() {
-        return target.request(MediaType.APPLICATION_JSON).get(String.class);
-    }
-
-    /**
-     * Completes the request and parses the results to {@link VaultEntry} with the {@link VaultEntryParser}.
-     *
-     * @return a list of entries as the result of the generated query.
-     */
-    public List<VaultEntry> getVaultEnries() {
-        String json = get();
-        VaultEntryParser parser = new VaultEntryParser();
-        return parser.parse(json);
+    public JsonNode get() throws UnirestException {
+        return request.asJson().getBody();
     }
 
     public class Operator {
@@ -73,7 +48,7 @@ public class GetBuilder {
         }
 
         public GetBuilder eq(Object value) {
-            GetBuilder.this.target = GetBuilder.this.target.queryParam(findPath.toString(), value);
+            GetBuilder.this.request = GetBuilder.this.request.queryString(findPath.toString(), value);
             return builder;
         }
 
@@ -95,7 +70,7 @@ public class GetBuilder {
 
         private GetBuilder op(String op, Object value) {
             findPath.append("[$").append(op).append("]");
-            GetBuilder.this.target = GetBuilder.this.target.queryParam(findPath.toString(), value);
+            GetBuilder.this.request = GetBuilder.this.request.queryString(findPath.toString(), value);
             return builder;
         }
     }
