@@ -1,4 +1,4 @@
-package de.opendiabetes.vault.nsapi;
+package de.opendiabetes.nsapi;
 
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
