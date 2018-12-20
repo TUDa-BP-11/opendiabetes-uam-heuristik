@@ -100,8 +100,8 @@ public class Main {
 
                 if (found.length() == 0) {  // first search
                     getBuilder.find("dateString").gte(start);
-                } else {    // next search, start at last found entry
-                    String last = found.getJSONObject(found.length() - 1).getString("dateString");
+                } else {    // next search, start after oldest found entry
+                    String last = found.getJSONObject(0).getString("dateString");
                     getBuilder.find("dateString").gt(last);
                 }
 
