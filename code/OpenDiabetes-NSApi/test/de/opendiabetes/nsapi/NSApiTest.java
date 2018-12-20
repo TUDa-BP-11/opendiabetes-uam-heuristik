@@ -2,6 +2,7 @@ package de.opendiabetes.nsapi;
 
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.opendiabetes.vault.engine.container.VaultEntry;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
@@ -21,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NSApiTest {
     private static NSApi api;
-
 
     @BeforeAll
     static void setUp() {
@@ -86,17 +87,14 @@ class NSApiTest {
         }
         assertNotNull(result);
 
-        JsonNode entries = null;
+        List<VaultEntry> entries = null;
         try {
-            entries = api.getEntries().find("dateString").eq(entryDateString).get();
+            entries = api.getEntries().find("dateString").eq(entryDateString).getVaultEntries();
         } catch (UnirestException e) {
             fail(e);
         }
-        assertTrue(entries.isArray());
-        JSONArray entryArray = entries.getArray();
-        assertEquals(1, entryArray.length());
-        JSONObject entry = entryArray.getJSONObject(0);
-        assertEquals(entrySgv, entry.getInt("sgv"));
+        assertEquals(1, entries.size());
+        assertEquals(entrySgv, entries.get(0).getValue());
     }
 
     private final static String ID_RANGE = "0123456789abcdef";
