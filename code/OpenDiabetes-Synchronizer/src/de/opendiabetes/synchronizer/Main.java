@@ -91,6 +91,7 @@ public class Main {
         Synchronizer synchronizer = new Synchronizer(read, write, start, end, count);
 
         synchronizer.findMissing();
+        System.out.println("Found " + synchronizer.getFindCount() + " entries of which " + synchronizer.getMissingCount() + " are missing in the target instance.");
         synchronizer.postMissing();
         synchronizer.close();
         System.out.println("Done!");

@@ -13,7 +13,8 @@ public class Synchronizer {
     private String end;
     private int batchSize;
 
-    private JSONArray missing = new JSONArray();
+    private int findCount;
+    private JSONArray missing;
 
     public Synchronizer(NSApi read, NSApi write, String start, String end, int batchSize) {
         this.read = read;
@@ -23,10 +24,31 @@ public class Synchronizer {
         this.batchSize = batchSize;
     }
 
+    public NSApi getReadApi() {
+        return read;
+    }
+
+    public NSApi getWriteApi() {
+        return write;
+    }
+
+    public String getStart() {
+        return start;
+    }
+
+    public String getEnd() {
+        return end;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
     public void findMissing() {
+        findCount = 0;
+        missing = new JSONArray();
         GetBuilder getBuilder;
         JSONArray found = new JSONArray();
-        int fc = 0;
         try {
             do {
                 getBuilder = read.getEntries().count(batchSize);
@@ -42,7 +64,7 @@ public class Synchronizer {
                     getBuilder.find("dateString").lt(end);
 
                 found = getBuilder.get().getArray();
-                fc += found.length();
+                findCount += found.length();
 
                 for (int i = 0; i < found.length(); i++) {
                     JSONObject entry = found.getJSONObject(i);
@@ -52,16 +74,22 @@ public class Synchronizer {
                         missing.put(entry);
                 }
             } while (found.length() != 0);
-            System.out.println("Found " + fc + " entries of which " + missing.length() + " are missing in the target instance.");
         } catch (UnirestException e) {
             System.out.println("Exception while trying to compile list of missing entries");
             e.printStackTrace();
         }
     }
 
+    public int getFindCount() {
+        return findCount;
+    }
+
+    public int getMissingCount() {
+        return missing.length();
+    }
+
     public void postMissing() {
         if (missing.length() > 0) {
-            System.out.println("Uploading missing entries...");
             try {
                 write.postEntries(missing.toString());
             } catch (UnirestException e) {
