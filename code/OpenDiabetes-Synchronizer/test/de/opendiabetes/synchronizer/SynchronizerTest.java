@@ -11,7 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SynchronizerTest {
     private static Synchronizer synchronizer;
@@ -47,11 +48,11 @@ public class SynchronizerTest {
 
     @Test
     void testMissing() {
-        synchronizer.findMissing();
-        int missing = synchronizer.getMissingCount();
-        synchronizer.postMissing();
-        synchronizer.findMissing();
-        int missingNew = synchronizer.getMissingCount();
+        synchronizer.findMissingEntries();
+        int missing = synchronizer.getMissingEntriesCount();
+        synchronizer.postMissingEntries();
+        synchronizer.findMissingEntries();
+        int missingNew = synchronizer.getMissingEntriesCount();
         assertEquals(0, missingNew);
     }
 }

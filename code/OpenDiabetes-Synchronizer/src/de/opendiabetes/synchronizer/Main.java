@@ -90,9 +90,12 @@ public class Main {
 
         Synchronizer synchronizer = new Synchronizer(read, write, start, end, count);
 
-        synchronizer.findMissing();
-        System.out.println("Found " + synchronizer.getFindCount() + " entries of which " + synchronizer.getMissingCount() + " are missing in the target instance.");
-        synchronizer.postMissing();
+        synchronizer.findMissingEntries();
+        System.out.println("Found " + synchronizer.getFindEntriesCount() + " entries of which " + synchronizer.getMissingEntriesCount() + " are missing in the target instance.");
+        synchronizer.postMissingEntries();
+        synchronizer.findMissingTreatments();
+        System.out.println("Found " + synchronizer.getFindTreatmentsCount() + " treatments of which " + synchronizer.getMissingTreatmentsCount() + " are missing in the target instance.");
+        synchronizer.postMissingTreatments();
         synchronizer.close();
         System.out.println("Done!");
     }
