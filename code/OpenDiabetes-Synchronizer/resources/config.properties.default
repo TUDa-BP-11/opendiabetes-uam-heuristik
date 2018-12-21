@@ -1,7 +1,7 @@
-read.host = 
-read.port = 
-read.token = 
+read.host =
+read.port =
+read.secret =
 
-write.host = 
+write.host =
 write.port =
-write.token =
+write.secret =
