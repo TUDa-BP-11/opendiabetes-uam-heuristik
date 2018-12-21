@@ -111,22 +111,22 @@ public class Synchronizer {
                 getBuilder = read.getTreatments().count(batchSize);
 
                 if (found.length() == 0) {  // first search
-                    getBuilder.find("dateString").gte(start);
+                    getBuilder.find("created_at").gte(start);
                 } else {    // next search, start after oldest found entry
-                    String last = found.getJSONObject(0).getString("dateString");
-                    getBuilder.find("dateString").gt(last);
+                    String last = found.getJSONObject(0).getString("created_at");
+                    getBuilder.find("created_at").gt(last);
                 }
 
                 if (end != null)
-                    getBuilder.find("dateString").lt(end);
+                    getBuilder.find("created_at").lt(end);
 
                 found = getBuilder.get().getArray();
                 findTreatmentsCount += found.length();
 
                 for (int i = 0; i < found.length(); i++) {
                     JSONObject entry = found.getJSONObject(i);
-                    String date = entry.getString("dateString");
-                    JSONArray target = write.getTreatments().find("dateString").eq(date).get().getArray();
+                    String date = entry.getString("created_at");
+                    JSONArray target = write.getTreatments().find("created_at").eq(date).get().getArray();
                     if (target.length() == 0)    //no result found
                         missingTreatments.put(entry);
                 }
