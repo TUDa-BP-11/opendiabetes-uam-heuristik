@@ -5,6 +5,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -12,24 +13,23 @@ import java.io.IOException;
 
 public class NSApi {
     private String host;
-    private String token;
 
     /**
      * Constructs a new NighScout API instance. Connects to the specified host and port, using the given token for all queries
      *
-     * @param host  Host to connect to
-     * @param port  Port to connect to
-     * @param token Token to use for all queries
+     * @param host   Host to connect to
+     * @param port   Port to connect to
+     * @param secret Your API-Secret
      */
-    public NSApi(String host, String port, String token) {
+    public NSApi(String host, String port, String secret) {
         this.host = "https://" + host + ":" + port + "/api/v1/";
-        this.token = token;
         Unirest.setDefaultHeader("accept", "application/json");
         Unirest.setDefaultHeader("content-type", "application/json");
+        Unirest.setDefaultHeader("API-SECRET", DigestUtils.sha1Hex(secret));
     }
 
     private HttpRequest get(String path) {
-        return Unirest.get(host + path).queryString("token", token);
+        return Unirest.get(host + path);
     }
 
     /**
@@ -118,7 +118,6 @@ public class NSApi {
      */
     public JsonNode postEntries(String entries) throws UnirestException {
         return Unirest.post(host + "entries")
-                .queryString("token", token)
                 .body(entries)
                 .asJson().getBody();
     }
@@ -140,7 +139,6 @@ public class NSApi {
      */
     public JsonNode postTreatments(String treatments) throws UnirestException {
         return Unirest.post(host + "treatments")
-                .queryString("token", token)
                 .body(treatments)
                 .asJson().getBody();
     }

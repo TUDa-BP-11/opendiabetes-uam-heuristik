@@ -3,7 +3,6 @@ package de.opendiabetes.nsapi;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.vault.engine.container.VaultEntry;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,7 +25,7 @@ class NSApiTest {
 
     @BeforeAll
     static void setUp() {
-        String host, port, token;
+        String host, port, secret;
 
         try (InputStream input = new FileInputStream("resources/config.properties")) {
             Properties properties = new Properties();
@@ -34,14 +33,14 @@ class NSApiTest {
 
             host = properties.getProperty("host");
             port = properties.getProperty("port");
-            token = properties.getProperty("token");
+            secret = properties.getProperty("secret");
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
             return;
         }
 
-        api = new NSApi(host, port, token);
+        api = new NSApi(host, port, secret);
     }
 
     @AfterAll
