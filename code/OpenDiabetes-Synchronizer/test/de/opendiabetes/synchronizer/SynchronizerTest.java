@@ -47,12 +47,22 @@ public class SynchronizerTest {
     }
 
     @Test
-    void testMissing() {
+    void testMissingEntries() {
         synchronizer.findMissingEntries();
         int missing = synchronizer.getMissingEntriesCount();
         synchronizer.postMissingEntries();
         synchronizer.findMissingEntries();
         int missingNew = synchronizer.getMissingEntriesCount();
+        assertEquals(0, missingNew);
+    }
+
+    @Test
+    void testMissingTreatments() {
+        synchronizer.findMissingTreatments();
+        int missing = synchronizer.getMissingTreatmentsCount();
+        synchronizer.postMissingTreatments();
+        synchronizer.findMissingTreatments();
+        int missingNew = synchronizer.getMissingTreatmentsCount();
         assertEquals(0, missingNew);
     }
 }
