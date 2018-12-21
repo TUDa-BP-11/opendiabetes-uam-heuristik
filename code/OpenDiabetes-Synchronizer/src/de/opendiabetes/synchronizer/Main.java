@@ -64,7 +64,7 @@ public class Main {
             return;
         }
 
-        String readHost, readPort, readToken, writeHost, writePort, writeToken;
+        String readHost, readPort, readSecret, writeHost, writePort, writeSecret;
 
         try (InputStream input = new FileInputStream(configpath)) {
             Properties properties = new Properties();
@@ -72,10 +72,10 @@ public class Main {
 
             readHost = properties.getProperty("read.host");
             readPort = properties.getProperty("read.port");
-            readToken = properties.getProperty("read.token");
+            readSecret = properties.getProperty("read.secret");
             writeHost = properties.getProperty("write.host");
             writePort = properties.getProperty("write.port");
-            writeToken = properties.getProperty("write.token");
+            writeSecret = properties.getProperty("write.secret");
         } catch (FileNotFoundException e) {
             System.out.println("Cannot find config file at " + configpath);
             return;
@@ -85,8 +85,8 @@ public class Main {
             return;
         }
 
-        NSApi read = new NSApi(readHost, readPort, readToken);
-        NSApi write = new NSApi(writeHost, writePort, writeToken);
+        NSApi read = new NSApi(readHost, readPort, readSecret);
+        NSApi write = new NSApi(writeHost, writePort, writeSecret);
 
         Synchronizer synchronizer = new Synchronizer(read, write, start, end, count);
 

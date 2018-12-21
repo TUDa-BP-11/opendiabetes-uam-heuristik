@@ -19,7 +19,7 @@ public class SynchronizerTest {
 
     @BeforeAll
     static void setUp() {
-        String readHost, readPort, readToken, writeHost, writePort, writeToken;
+        String readHost, readPort, readSecret, writeHost, writePort, writeSecret;
 
         try (InputStream input = new FileInputStream("resources/config.properties")) {
             Properties properties = new Properties();
@@ -27,17 +27,17 @@ public class SynchronizerTest {
 
             readHost = properties.getProperty("read.host");
             readPort = properties.getProperty("read.port");
-            readToken = properties.getProperty("read.token");
+            readSecret = properties.getProperty("read.secret");
             writeHost = properties.getProperty("write.host");
             writePort = properties.getProperty("write.port");
-            writeToken = properties.getProperty("write.token");
+            writeSecret = properties.getProperty("write.secret");
         } catch (IOException e) {
             fail(e);
             return;
         }
 
-        NSApi read = new NSApi(readHost, readPort, readToken);
-        NSApi write = new NSApi(writeHost, writePort, writeToken);
+        NSApi read = new NSApi(readHost, readPort, readSecret);
+        NSApi write = new NSApi(writeHost, writePort, writeSecret);
         synchronizer = new Synchronizer(read, write, "1970-01-01", null, 100);
     }
 
