@@ -6,10 +6,11 @@
 package opendiabetes.algo;
 
 
-
 import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.engine.container.VaultEntryType;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
@@ -23,8 +24,6 @@ public class OpenDiabetesAlgo {
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
-    private VaultEntry current;
-    double startValue;
 
     /*
     startWert -> Zeitdiff zwischen current und next -> predict next GlucoseValue (tmp)
@@ -35,41 +34,59 @@ public class OpenDiabetesAlgo {
     OpenDiabetesAlgo() {
         carbRatio = 5;
         insSensivityFactor = 10;
-        glucose = new ArrayList<VaultEntry>();
         bolusTreatments = new ArrayList<VaultEntry>();
-        mealTreatments = new ArrayList<VaultEntry>();
     }
 
     public void setGlucose(List<VaultEntry> glucose) {
-        current = glucose.remove(0);
-        startValue = current.getValue();
-        bolusTreatments = new ArrayList<VaultEntry>();
-        mealTreatments  = new ArrayList<VaultEntry>();
         this.glucose = glucose;
     }
 
     public List<VaultEntry> calc() {
+        mealTreatments = new ArrayList<VaultEntry>();
+        VaultEntry current = glucose.remove(0);
+        double startValue = current.getValue();
+
+        while (!glucose.isEmpty()) {
+            VaultEntry next = glucose.remove(0);
+            long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
+            if (deltaTime <= 9) {
+                continue;
+            }
+
+            double prediction = predict(startValue, next.getTimestamp().getTime());
+            double deltaBg = next.getValue() - prediction;
+            if (deltaBg > 0) {
+                createMeal(deltaBg, deltaTime, current.getTimestamp());
+            }
+            current = next;
+        }
 
 
         return mealTreatments;
 
     }
 
-    private double predict(long time){
+    private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
+        double value = deltaBg * carbRatio / (insSensivityFactor * cob(deltaTime, absorptionTime));
+        mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
+
+    }
+
+    private double predict(double startValue, long time) {
         double result = startValue;
-        for (VaultEntry meal: mealTreatments){
-            long deltaTime = Math.round((time - meal.getTimestamp().getTime())/60000.0);//Time in minutes
-            if(deltaTime<=0){
+        for (VaultEntry meal : mealTreatments) {
+            long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);//Time in minutes
+            if (deltaTime <= 0) {
                 break;
             }
-            result += deltaBGC(deltaTime,insSensivityFactor,carbRatio,meal.getValue(),absorptionTime);
+            result += deltaBGC(deltaTime, insSensivityFactor, carbRatio, meal.getValue(), absorptionTime);
         }
-        for (VaultEntry bolus: bolusTreatments){
-            long deltaTime = Math.round((time - bolus.getTimestamp().getTime())/60000.0);//Time in minutes
-            if(deltaTime<=0){
+        for (VaultEntry bolus : bolusTreatments) {
+            long deltaTime = Math.round((time - bolus.getTimestamp().getTime()) / 60000.0);//Time in minutes
+            if (deltaTime <= 0) {
                 break;
             }
-            result += deltaBGI(deltaTime,bolus.getValue(),insSensivityFactor,insDuration);
+            result += deltaBGI(deltaTime, bolus.getValue(), insSensivityFactor, insDuration);
         }
 
 
@@ -91,7 +108,7 @@ public class OpenDiabetesAlgo {
         } else if (timeFromEvent >= insDuration * 60) {
             IOBWeight = 0;
         } else {
-            IOBWeight =  (int) (-3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951);
+            IOBWeight = (int) (-3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951);
         }
         return IOBWeight;
     }
@@ -119,7 +136,7 @@ public class OpenDiabetesAlgo {
         return integral;
 
     }
-    
+
     //g is time in minutes,gt is carb type
     //function cob(g,ct)
     public double cob(double timeFromEvent, double absorptionTime) {
