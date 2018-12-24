@@ -20,7 +20,7 @@ public class OpenDiabetesAlgo {
     private final double absorptionTime = 120;
     private final int insDuration = 3;
     private double carbRatio;
-    private double insSensivityFactor;
+    private double insSensitivityFactor;
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
@@ -33,12 +33,16 @@ public class OpenDiabetesAlgo {
 
     OpenDiabetesAlgo() {
         carbRatio = 5;
-        insSensivityFactor = 10;
+        insSensitivityFactor = 10;
         bolusTreatments = new ArrayList<VaultEntry>();
     }
 
     public void setGlucose(List<VaultEntry> glucose) {
         this.glucose = glucose;
+    }
+
+    public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
+        this.bolusTreatments = bolusTreatments;
     }
 
     public List<VaultEntry> calc() {
@@ -49,7 +53,7 @@ public class OpenDiabetesAlgo {
         while (!glucose.isEmpty()) {
             VaultEntry next = glucose.remove(0);
             long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-            if (deltaTime <= 9) {
+            if (deltaTime < 10) {
                 continue;
             }
 
@@ -67,7 +71,7 @@ public class OpenDiabetesAlgo {
     }
 
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
-        double value = deltaBg * carbRatio / (insSensivityFactor * cob(deltaTime, absorptionTime));
+        double value = deltaBg * carbRatio / (insSensitivityFactor * cob(deltaTime, absorptionTime));
         mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
 
     }
@@ -79,14 +83,14 @@ public class OpenDiabetesAlgo {
             if (deltaTime <= 0) {
                 break;
             }
-            result += deltaBGC(deltaTime, insSensivityFactor, carbRatio, meal.getValue(), absorptionTime);
+            result += deltaBGC(deltaTime, insSensitivityFactor, carbRatio, meal.getValue(), absorptionTime);
         }
         for (VaultEntry bolus : bolusTreatments) {
             long deltaTime = Math.round((time - bolus.getTimestamp().getTime()) / 60000.0);//Time in minutes
             if (deltaTime <= 0) {
                 break;
             }
-            result += deltaBGI(deltaTime, bolus.getValue(), insSensivityFactor, insDuration);
+            result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
         }
 
 
@@ -148,30 +152,31 @@ public class OpenDiabetesAlgo {
             total = 1.0;
         } else if ((timeFromEvent > 0) && (timeFromEvent <= absorptionTime / 2.0)) {
             total = 2.0 / Math.pow(absorptionTime, 2) * Math.pow(timeFromEvent, 2);
-        } else
+        } else {
             total = -1.0 + 4.0 / absorptionTime * (timeFromEvent - Math.pow(timeFromEvent, 2) / (2.0 * absorptionTime));
+        }
         return total;
     }
 
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
-    public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensivityFactor, int insDuration, double t1, double t2) {
-        return -tempInsAmount * insSensivityFactor * ((t2 - t1) - 1 / 100 * integrateIOB(t1, t2, insDuration, timeFromEvent));
+    public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, int insDuration, double t1, double t2) {
+        return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIOB(t1, t2, insDuration, timeFromEvent));
     }
 
     //function deltaBGC(g,sensf,cratio,camount,ct)
-    public double deltaBGC(double timeFromEvent, double insSensivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
-        return insSensivityFactor / carbRatio * carbsAmount * cob(timeFromEvent, absorptionTime);
+    public double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
+        return insSensitivityFactor / carbRatio * carbsAmount * cob(timeFromEvent, absorptionTime);
     }
 
     //function deltaBGI(g,bolus,sensf,idur)
-    public double deltaBGI(double timeFromEvent, double insBolus, double insSensivityFactor, int insDuration) {
-        return -insBolus * insSensivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
+    public double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, int insDuration) {
+        return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
 
     //deltaBG(g,sensf,cratio,camount,ct,bolus,idur)
-    public double deltaBG(double timeFromEvent, double insSensivityFactor, double carbRatio, double carbsAmount, double absorptionTime, double insBolus, int insDuration) {
-        return deltaBGI(timeFromEvent, insBolus, insSensivityFactor, insDuration) +
-                deltaBGC(timeFromEvent, insSensivityFactor, carbRatio, carbsAmount, absorptionTime);
+    public double deltaBG(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime, double insBolus, int insDuration) {
+        return deltaBGI(timeFromEvent, insBolus, insSensitivityFactor, insDuration) +
+                deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
     }
 
 }
