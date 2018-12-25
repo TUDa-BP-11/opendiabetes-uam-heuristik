@@ -97,6 +97,30 @@ public class OpenDiabetesAlgo {
         return result;
     }
 
+    public double fastActingIob(double timeFromEvent, int insDuration) {
+        double endEventTime = insDuration * 60;
+        double IOBWeight;
+        if (timeFromEvent <= 0) {
+            IOBWeight = 100;
+        } else if (timeFromEvent >= endEventTime) {
+            IOBWeight = 0;
+        } else {
+
+            double magicParam = 55;
+            //Time constant of exp decay
+            double decay = magicParam * (1 - magicParam / endEventTime) / (1 - 2 * magicParam / endEventTime);
+
+            //Rise time factor
+            double growth = 2 * decay / endEventTime;
+
+            //Auxiliary scale factor
+            double scale = 1 / (1 - growth + (1 + growth) * Math.exp(-endEventTime / decay));
+
+            IOBWeight = 1 - scale * (1 - growth) * ((Math.pow(timeFromEvent, 2) / (decay * endEventTime * (1 - growth)) - timeFromEvent / decay - 1) * Math.exp(-timeFromEvent / decay) + 1);
+        }
+        return IOBWeight;
+    }
+
     /**
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
@@ -170,7 +194,8 @@ public class OpenDiabetesAlgo {
 
     //function deltaBGI(g,bolus,sensf,idur)
     public double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, int insDuration) {
-        return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
+       return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration));
+       //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
 
     //deltaBG(g,sensf,cratio,camount,ct,bolus,idur)
