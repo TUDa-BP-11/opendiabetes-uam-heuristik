@@ -18,7 +18,7 @@ public class OpenDiabetesAlgo {
 
 
     private final double absorptionTime = 120;
-    private final int insDuration = 3;
+    private final int insDuration = 180;
     private double carbRatio;
     private double insSensitivityFactor;
     private List<VaultEntry> glucose;
@@ -98,25 +98,24 @@ public class OpenDiabetesAlgo {
     }
 
     public double fastActingIob(double timeFromEvent, int insDuration) {
-        double endEventTime = insDuration * 60;
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 100;
-        } else if (timeFromEvent >= endEventTime) {
+        } else if (timeFromEvent >= insDuration) {
             IOBWeight = 0;
         } else {
 
             double magicParam = 55;
             //Time constant of exp decay
-            double decay = magicParam * (1 - magicParam / endEventTime) / (1 - 2 * magicParam / endEventTime);
+            double decay = magicParam * (1 - magicParam / insDuration) / (1 - 2 * magicParam / insDuration);
 
             //Rise time factor
-            double growth = 2 * decay / endEventTime;
+            double growth = 2 * decay / insDuration;
 
             //Auxiliary scale factor
-            double scale = 1 / (1 - growth + (1 + growth) * Math.exp(-endEventTime / decay));
+            double scale = 1 / (1 - growth + (1 + growth) * Math.exp(-insDuration / decay));
 
-            IOBWeight = 1 - scale * (1 - growth) * ((Math.pow(timeFromEvent, 2) / (decay * endEventTime * (1 - growth)) - timeFromEvent / decay - 1) * Math.exp(-timeFromEvent / decay) + 1);
+            IOBWeight = 1 - scale * (1 - growth) * ((Math.pow(timeFromEvent, 2) / (decay * insDuration * (1 - growth)) - timeFromEvent / decay - 1) * Math.exp(-timeFromEvent / decay) + 1);
         }
         return IOBWeight;
     }
@@ -125,7 +124,7 @@ public class OpenDiabetesAlgo {
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
      * @param timeFromEvent
-     * @param insDuration   //Insulin decomposition rate
+     * @param insDuration   //Insulin decomposition rate in minutes
      * @return
      */
     //function iob(g,idur)
@@ -133,7 +132,7 @@ public class OpenDiabetesAlgo {
         int IOBWeight = 0;
         if (timeFromEvent <= 0) {
             IOBWeight = 100;
-        } else if (timeFromEvent >= insDuration * 60) {
+        } else if (timeFromEvent >= insDuration) {
             IOBWeight = 0;
         } else {
             IOBWeight = (int) (-3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951);
