@@ -1,9 +1,8 @@
 package de.opendiabetes.parser;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonElement;
-
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 import org.json.JSONArray;
@@ -97,12 +96,12 @@ public class VaultEntryParser {
                 result.add(new VaultEntry(entryType, date, o.getDouble("sgv")));
 
             }
-            if (o.has("insulin")) {
+            if (o.has("insulin") && !o.isNull("insulin")) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("insulin")));
             }
-            if (o.has("carbs")) {
+            if (o.has("carbs") && !o.isNull("carbs")) {
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("carbs")));
@@ -171,89 +170,86 @@ public class VaultEntryParser {
     }
 
     /**
-     *
      * @param vaultEntries
      * @return Entry{
-     *
+     * <p>
      * type string
-     *
+     * <p>
      * dateString string
-     *
+     * <p>
      * date number
-     *
+     * <p>
      * sgv number (only available for sgv types)
-     *
+     * <p>
      * direction string (only available for sgv types)
-     *
+     * <p>
      * noise number (only available for sgv types)
-     *
+     * <p>
      * filtered number (only available for sgv types)
-     *
+     * <p>
      * unfiltered number (only available for sgv types)
-     *
+     * <p>
      * rssi number (only available for sgv types)
-     *
+     * <p>
      * trend number ( ??? undefined in yaml file)
-     *
+     * <p>
      * }
-     *
+     * <p>
      * Treatment{
-     *
+     * <p>
      * _id string
-     *
+     * <p>
      * eventType string
-     *
+     * <p>
      * created_at string
-     *
+     * <p>
      * glucose string
-     *
+     * <p>
      * glucoseType string
-     *
+     * <p>
      * carbs number
-     *
+     * <p>
      * insulin number
-     *
+     * <p>
      * units string
-     *
+     * <p>
      * notes string
-     *
+     * <p>
      * enteredBy string
-     *
+     * <p>
      * }
-     *
+     * <p>
      * Profile{
-     *
+     * <p>
      * sens	integer
-     *
+     * <p>
      * dia	integer
-     *
+     * <p>
      * carbratio	integer
-     *
+     * <p>
      * carbs_hr	integer
-     *
+     * <p>
      * _id	string
-     *
+     * <p>
      * }
-     *
+     * <p>
      * Status{
-     *
+     * <p>
      * apiEnabled	boolean
-     *
+     * <p>
      * careportalEnabled	boolean
-     *
+     * <p>
      * head	string
-     *
+     * <p>
      * name	string
-     *
+     * <p>
      * version	string
-     *
+     * <p>
      * settings	Settings{...} [Jump to definition]
-     *
+     * <p>
      * extendedSettings ExtendedSettings{...} [Jump to definition]
-     *
+     * <p>
      * }
-     *
-     *
      */
 
     // "Correction Bolus", "duration", "unabsorbed", "type", "programmed", "insulin"
