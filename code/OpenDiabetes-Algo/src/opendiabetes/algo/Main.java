@@ -13,22 +13,18 @@ public class Main {
         VaultEntryParser parser = new VaultEntryParser();
 
 
-        String path = "";
+        String path = "C:\\Users\\Jan\\Desktop\\00390014\\direct-sharing-31\\entries_test.json";
         List<VaultEntry> entries = parser.parseFile(path);
 
         entries.sort(new SortVaultEntryByDate());
 
-        for (VaultEntry entry : entries) {
-            System.out.println(entry.toString());
-        }
         OpenDiabetesAlgo algo = new OpenDiabetesAlgo();
         algo.setGlucose(entries);
-        algo.setBolusTreatments(new ArrayList<VaultEntry>());
+        algo.setBolusTreatments(new ArrayList<>());
         System.out.println("calc :");
         List<VaultEntry> meals = algo.calc();
         for (VaultEntry meal : meals) {
             System.out.println(meal.toString());
         }
-
     }
 }
