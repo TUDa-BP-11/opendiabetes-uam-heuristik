@@ -1,36 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- You may freely edit this file. See commented blocks below for -->
-<!-- some examples of how to customize the build. -->
-<!-- (If you delete it and reopen the project it will be recreated.) -->
-<!-- By default, only the Clean and Build commands use this build script. -->
-<!-- Commands such as Run, Debug, and Test only use this build script if -->
-<!-- the Compile on Save feature is turned off for the project. -->
-<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
-<!-- in the project's Project Properties dialog box.-->
-<project name="OpenDiabetes-NSApi" default="main" basedir=".">
+<project name="OpenDiabetes-NSApi" default="full" basedir=".">
     <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
-    <import file="nbproject/build-impl.xml"/>
     <property file="build.properties"/>
 
     <path id="classpath">
-        <fileset dir="../../lib" erroronmissingdir="false"/>
+        <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
     </path>
 
     <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
     <target name="main" depends="compile, compress" description="Build jar with existing librarys"/>
 
     <target name="clean">
-        <delete dir="build/classes" failonerror="false"/>
+        <delete dir="build" failonerror="false"/>
         <delete dir="dist" failonerror="false"/>
-        <mkdir dir="build/classes"/>
+        <mkdir dir="build"/>
         <mkdir dir="dist"/>
     </target>
 
     <target name="unjar">
-        <unjar dest="build/classes">
-            <filelist dir="../../lib">
-                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
-            </filelist>
+        <unjar dest="build">
+            <fileset dir="../OpenDiabetes-Parser/dist" includes="*.jar"/>
         </unjar>
     </target>
 
@@ -47,18 +36,18 @@
     </target>
 
     <target name="compile" depends="getversion">
-        <javac srcdir="src" destdir="build/classes" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
+        <javac srcdir="src" destdir="build" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
                includeantruntime="false">
             <compilerarg line="-encoding utf-8"/>
         </javac>
-        <copy todir="build/classes">
+        <copy todir="build">
             <fileset dir="resources" erroronmissingdir="false"/>
         </copy>
     </target>
 
     <target name="compress" depends="getversion">
         <tstamp/>
-        <jar destfile="dist/${jarname}" basedir="build/classes">
+        <jar destfile="dist/${jarname}" basedir="build">
             <manifest>
                 <attribute name="Main-Class" value="${mainclass}"/>
                 <attribute name="Built-By" value="${user.name}"/>

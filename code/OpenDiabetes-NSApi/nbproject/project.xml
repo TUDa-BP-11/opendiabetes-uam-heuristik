@@ -1,19 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://www.netbeans.org/ns/project/1">
-    <type>org.netbeans.modules.java.j2seproject</type>
+    <type>org.netbeans.modules.ant.freeform</type>
     <configuration>
-        <data xmlns="http://www.netbeans.org/ns/j2se-project/3">
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
             <name>OpenDiabetes-NSApi</name>
-            <source-roots>
-                <root id="src.dir"/>
-            </source-roots>
-            <test-roots>
-                <root id="test.test.dir"/>
-            </test-roots>
-        </data>
-        <libraries xmlns="http://www.netbeans.org/ns/ant-project-libraries/1">
-            <definitions>../../../lib\nblibraries.properties</definitions>
-        </libraries>
-        <references xmlns="http://www.netbeans.org/ns/ant-project-references/1"/>
+        </general-data>
+        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
+            <!-- Do not use Project Properties customizer when editing this file manually. 
+ To prevent the customizer from showing, create nbproject/project.properties file and enter 
+auxiliary.show.customizer=false 
+property there. Adding 
+auxiliary.show.customizer.message=<message>
+ will show your customized message when someone attempts to open the customizer.  -->
+            <name>OpenDiabetes-NSApi</name>
+            <properties/>
+            <folders>
+                <source-folder>
+                    <label>OpenDiabetes-NSApi</label>
+                    <location>.</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>src</label>
+                    <type>java</type>
+                    <location>src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>test</label>
+                    <type>java</type>
+                    <location>test</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+            </folders>
+            <ide-actions>
+                <action name="build">
+                    <target>full</target>
+                </action>
+                <action name="clean">
+                    <target>clean</target>
+                </action>
+                <action name="rebuild">
+                    <target>clean</target>
+                    <target>full</target>
+                </action>
+            </ide-actions>
+            <export>
+                <type>folder</type>
+                <location>dist</location>
+                <build-target>full</build-target>
+            </export>
+            <view>
+                <items>
+                    <source-folder style="packages">
+                        <label>src</label>
+                        <location>src</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>test</label>
+                        <location>test</location>
+                    </source-folder>
+                    <source-file>
+                        <location>build.xml</location>
+                    </source-file>
+                </items>
+                <context-menu>
+                    <ide-action name="build"/>
+                    <ide-action name="rebuild"/>
+                    <ide-action name="clean"/>
+                </context-menu>
+            </view>
+            <subprojects/>
+        </general-data>
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
+            <compilation-unit>
+                <package-root>src</package-root>
+                <classpath mode="compile">../OpenDiabetesVault-Engine/src;../OpenDiabetes-Parser/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar</classpath>
+                <built-to>dist</built-to>
+                <source-level>1.8</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>test</package-root>
+                <unit-tests/>
+                <classpath mode="compile">src;../OpenDiabetes-Parser/src;../OpenDiabetesVault-Engine/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar;../../lib/junit-platform-commons-1.0.0.jar;../../lib/junit-jupiter-api-5.0.0.jar;../../lib/opentest4j-1.0.0.jar</classpath>
+                <source-level>1.8</source-level>
+            </compilation-unit>
+        </java-data>
     </configuration>
 </project>
