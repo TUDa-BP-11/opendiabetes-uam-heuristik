@@ -4,6 +4,6 @@
         <ant dir="code/OpenDiabetesVault-Engine" target="jar"/>
         <ant dir="code/OpenDiabetes-Parser" target="full"/>
         <ant dir="code/OpenDiabetes-NSApi" target="full"/>
-        <!-- <ant dir="code/OpenDiabetes-Synchronizer" target="full"/> -->
+        <ant dir="code/OpenDiabetes-Synchronizer" target="full"/>
     </target>
 </project>
