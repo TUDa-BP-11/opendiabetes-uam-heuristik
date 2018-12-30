@@ -8,10 +8,6 @@ import de.opendiabetes.vault.engine.container.VaultEntryType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,9 +15,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.stream.Stream;
 
-public class VaultEntryParser {
+public class VaultEntryParser implements Parser<List<VaultEntry>> {
 
     public static final int ONE_HOUR = 3600000;
 
@@ -29,6 +24,7 @@ public class VaultEntryParser {
 
     }
 
+    @Override
     public List<VaultEntry> parse(String vaultEntries) {
 
         ArrayList<VaultEntry> result = new ArrayList<>();
@@ -74,7 +70,6 @@ public class VaultEntryParser {
         }
 
         return result;
-
     }
 
     /**
@@ -114,18 +109,6 @@ public class VaultEntryParser {
             }
         }
         return result;
-    }
-
-    public List<VaultEntry> parseFile(String path) {
-        StringBuilder builder = new StringBuilder();
-
-        try (Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)) {
-            stream.forEach(line -> builder.append(line));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return this.parse(builder.toString());
     }
 
     /**
