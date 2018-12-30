@@ -1,32 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-Parser" default="default" basedir=".">
-    <description>Builds, tests, and runs the project OpenDiabetes-Parser.</description>
-    <import file="nbproject/build-impl.xml"/>
+<project name="OpenDiabetes-Parser" default="full" basedir=".">
+    <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
     <property file="build.properties"/>
 
     <path id="classpath">
-        <fileset dir="../../lib" erroronmissingdir="false"/>
-        <file basedir="../OpenDiabetesVault-Engine/out" name="VaultEngine.jar"/>
+        <fileset dir="../OpenDiabetesVault-Engine/dist" includes="*.jar"/>
+        <filelist dir="../../lib">
+            <file name="gson-2.8.0.jar"/>
+            <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
+        </filelist>
     </path>
 
     <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
     <target name="main" depends="compile, compress" description="Build jar with existing librarys"/>
 
     <target name="clean">
-        <delete dir="bin" failonerror="false"/>
-        <delete dir="out" failonerror="false"/>
-        <mkdir dir="bin"/>
-        <mkdir dir="out"/>
+        <delete dir="build" failonerror="false"/>
+        <delete dir="dist" failonerror="false"/>
+        <mkdir dir="build"/>
+        <mkdir dir="dist"/>
     </target>
 
     <target name="unjar">
-        <unjar dest="bin">
+        <unjar dest="build">
+            <fileset dir="../OpenDiabetesVault-Engine/dist" includes="*.jar"/>
             <filelist dir="../../lib">
                 <file name="gson-2.8.0.jar"/>
+                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
             </filelist>
-            <fileset dir="../OpenDiabetesVault-Engine/out">
-                <include name="*.jar"/>
-            </fileset>
         </unjar>
     </target>
 
@@ -43,18 +44,18 @@
     </target>
 
     <target name="compile" depends="getversion">
-        <javac srcdir="src" destdir="bin" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
+        <javac srcdir="src" destdir="build" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
                includeantruntime="false">
             <compilerarg line="-encoding utf-8"/>
         </javac>
-        <copy todir="bin">
+        <copy todir="build">
             <fileset dir="resources" erroronmissingdir="false"/>
         </copy>
     </target>
 
     <target name="compress" depends="getversion">
         <tstamp/>
-        <jar destfile="out/${jarname}" basedir="bin">
+        <jar destfile="dist/${jarname}" basedir="build">
             <manifest>
                 <attribute name="Main-Class" value="${mainclass}"/>
                 <attribute name="Built-By" value="${user.name}"/>
