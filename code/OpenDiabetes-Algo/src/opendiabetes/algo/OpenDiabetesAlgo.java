@@ -24,6 +24,7 @@ public class OpenDiabetesAlgo {
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
+    private List<VaultEntry> basalTratments;
 
     /*
     startWert -> Zeitdiff zwischen current und next -> predict next GlucoseValue (tmp)
@@ -32,8 +33,8 @@ public class OpenDiabetesAlgo {
      */
 
     OpenDiabetesAlgo() {
-        carbRatio = 5;
-        insSensitivityFactor = 10;
+        carbRatio = 10;
+        insSensitivityFactor = 35;
         bolusTreatments = new ArrayList<VaultEntry>();
     }
 
@@ -105,9 +106,11 @@ public class OpenDiabetesAlgo {
             IOBWeight = 0;
         } else {
 
-            double magicParam = 55;
+            double peak = 55;
+            //double peak = insDuration * 75 / 180.0;
+
             //Time constant of exp decay
-            double decay = magicParam * (1 - magicParam / insDuration) / (1 - 2 * magicParam / insDuration);
+            double decay = peak * (1 - peak / insDuration) / (1 - 2 * peak / insDuration);
 
             //Rise time factor
             double growth = 2 * decay / insDuration;
@@ -152,10 +155,12 @@ public class OpenDiabetesAlgo {
         //initialize with first and last terms of simpson series
         //t1 & t2 Grenzen des Intervalls das betrachtet wird
         dx = (t2 - t1) / nn;
-        integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
+        //integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
+        integral = fastActingIob((timeFromEvent - t1), insDuration) + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
 
         while (ii < nn - 2) {
-            integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
+            //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
+            integral = integral + 4 * fastActingIob(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * fastActingIob(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
             ii = ii + 2;
         }
 
@@ -183,7 +188,8 @@ public class OpenDiabetesAlgo {
 
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
     public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, int insDuration, double t1, double t2) {
-        return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIOB(t1, t2, insDuration, timeFromEvent));
+        return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIOB(t1, t2, insDuration, timeFromEvent));
+        //return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIOB(t1, t2, insDuration, timeFromEvent));
     }
 
     //function deltaBGC(g,sensf,cratio,camount,ct)
@@ -193,8 +199,8 @@ public class OpenDiabetesAlgo {
 
     //function deltaBGI(g,bolus,sensf,idur)
     public double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, int insDuration) {
-       return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration));
-       //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
+        return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration));
+        //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
 
     //deltaBG(g,sensf,cratio,camount,ct,bolus,idur)
