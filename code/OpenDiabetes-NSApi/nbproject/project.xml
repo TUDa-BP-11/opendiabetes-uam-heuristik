@@ -3,7 +3,7 @@
     <type>org.netbeans.modules.ant.freeform</type>
     <configuration>
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
-            <name>OpenDiabetes-Parser</name>
+            <name>OpenDiabetes-NSApi</name>
         </general-data>
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
             <!-- Do not use Project Properties customizer when editing this file manually. 
@@ -12,11 +12,11 @@ auxiliary.show.customizer=false
 property there. Adding 
 auxiliary.show.customizer.message=<message>
  will show your customized message when someone attempts to open the customizer.  -->
-            <name>OpenDiabetes-Parser</name>
+            <name>OpenDiabetes-NSApi</name>
             <properties/>
             <folders>
                 <source-folder>
-                    <label>OpenDiabetes-Parser</label>
+                    <label>OpenDiabetes-NSApi</label>
                     <location>.</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
@@ -24,6 +24,12 @@ auxiliary.show.customizer.message=<message>
                     <label>src</label>
                     <type>java</type>
                     <location>src</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>test</label>
+                    <type>java</type>
+                    <location>test</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>
@@ -42,13 +48,17 @@ auxiliary.show.customizer.message=<message>
             <export>
                 <type>folder</type>
                 <location>dist</location>
-                <build-target>main</build-target>
+                <build-target>full</build-target>
             </export>
             <view>
                 <items>
                     <source-folder style="packages">
                         <label>src</label>
                         <location>src</location>
+                    </source-folder>
+                    <source-folder style="packages">
+                        <label>test</label>
+                        <location>test</location>
                     </source-folder>
                     <source-file>
                         <location>build.xml</location>
@@ -65,8 +75,14 @@ auxiliary.show.customizer.message=<message>
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
             <compilation-unit>
                 <package-root>src</package-root>
-                <classpath mode="compile">../OpenDiabetesVault-Engine/src;../../lib/gson-2.8.0.jar;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar</classpath>
+                <classpath mode="compile">../OpenDiabetesVault-Engine/src;../OpenDiabetes-Parser/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar</classpath>
                 <built-to>dist</built-to>
+                <source-level>1.8</source-level>
+            </compilation-unit>
+            <compilation-unit>
+                <package-root>test</package-root>
+                <unit-tests/>
+                <classpath mode="compile">src;../OpenDiabetes-Parser/src;../OpenDiabetesVault-Engine/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar;../../lib/junit-platform-commons-1.0.0.jar;../../lib/junit-jupiter-api-5.0.0.jar;../../lib/opentest4j-1.0.0.jar</classpath>
                 <source-level>1.8</source-level>
             </compilation-unit>
         </java-data>

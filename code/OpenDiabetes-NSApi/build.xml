@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-Parser" default="full" basedir=".">
+<project name="OpenDiabetes-NSApi" default="full" basedir=".">
     <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
     <property file="build.properties"/>
 
     <path id="classpath">
-        <fileset dir="../OpenDiabetesVault-Engine/dist" includes="*.jar"/>
-        <filelist dir="../../lib">
-            <file name="gson-2.8.0.jar"/>
-            <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
-        </filelist>
+        <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
     </path>
 
     <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
@@ -23,11 +19,7 @@
 
     <target name="unjar">
         <unjar dest="build">
-            <fileset dir="../OpenDiabetesVault-Engine/dist" includes="*.jar"/>
-            <filelist dir="../../lib">
-                <file name="gson-2.8.0.jar"/>
-                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
-            </filelist>
+            <fileset dir="../OpenDiabetes-Parser/dist" includes="*.jar"/>
         </unjar>
     </target>
 
