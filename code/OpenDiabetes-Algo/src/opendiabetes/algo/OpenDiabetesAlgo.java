@@ -46,6 +46,39 @@ public class OpenDiabetesAlgo {
         this.bolusTreatments = bolusTreatments;
     }
 
+    public List<VaultEntry> calc2() {
+        mealTreatments = new ArrayList<VaultEntry>();
+        VaultEntry current = glucose.remove(0);
+        double startValue = current.getValue();
+
+        while (!glucose.isEmpty()) {
+            VaultEntry next = glucose.get(0);
+            long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
+
+            for (int i = 1; i < glucose.size()&& deltaTime < 30; i++) {
+                next = glucose.get(i);
+                deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
+
+            }
+
+            double currentPrediction = predict(0, current.getTimestamp().getTime());
+            double nextPrediction = predict(0, next.getTimestamp().getTime());
+            double deltaBg = next.getValue() - current.getValue();
+            double dBgDerivation = deltaBg / deltaTime;
+            double predictedDerivation = (nextPrediction - currentPrediction)/ deltaTime;
+            double deltaDerivation = dBgDerivation - predictedDerivation;
+
+            if (deltaDerivation > 0) {
+                createMeal(deltaBg, deltaTime, current.getTimestamp());
+            }
+            current = glucose.remove(0);
+        }
+
+
+        return mealTreatments;
+
+    }
+
     public List<VaultEntry> calc() {
         mealTreatments = new ArrayList<VaultEntry>();
         VaultEntry current = glucose.remove(0);
@@ -185,6 +218,20 @@ public class OpenDiabetesAlgo {
         }
         return total;
     }
+
+    public double cobDerivation(double timeFromEvent, double absorptionTime) {
+        double total;
+
+        if (timeFromEvent <= 0|| timeFromEvent >= absorptionTime) {
+            total = 0.0;
+        } else if (timeFromEvent <= absorptionTime / 2.0) {
+            total = 4.0 / Math.pow(absorptionTime, 2) * timeFromEvent;
+        } else {
+            total = 4.0 / absorptionTime * (1 - timeFromEvent / absorptionTime);
+        }
+        return total;
+    }
+
 
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
     public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, int insDuration, double t1, double t2) {
