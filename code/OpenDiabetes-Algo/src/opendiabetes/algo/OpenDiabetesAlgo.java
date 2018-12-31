@@ -60,12 +60,11 @@ public class OpenDiabetesAlgo {
             double currentPrediction = predict(0, current.getTimestamp().getTime());
             double nextPrediction = predict(0, next.getTimestamp().getTime());
             double deltaBg = next.getValue() - current.getValue();
-            double dBgDerivation = deltaBg / deltaTime;
-            double predictedDerivation = (nextPrediction - currentPrediction)/ deltaTime;
-            double deltaDerivation = dBgDerivation - predictedDerivation;
+            double deltaPrediction = (nextPrediction - currentPrediction);
+            double deltaDerivation = (deltaBg - deltaPrediction)/deltaTime;
 
             if (deltaDerivation > 0) {
-                createMeal(deltaBg, deltaTime, current.getTimestamp());
+                createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
             }
             current = glucose.remove(0);
         }
@@ -156,7 +155,7 @@ public class OpenDiabetesAlgo {
      */
     //function iob(g,idur)
     public int getIOBWeight(double timeFromEvent, int insDuration) {
-        int IOBWeight = 0;
+        int IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 100;
         } else if (timeFromEvent >= insDuration) {
