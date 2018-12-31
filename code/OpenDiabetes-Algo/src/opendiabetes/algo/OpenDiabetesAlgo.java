@@ -5,7 +5,6 @@
  */
 package opendiabetes.algo;
 
-
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
@@ -13,9 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
 public class OpenDiabetesAlgo {
-
 
     private final double absorptionTime = 120;
     private final int insDuration = 180;
@@ -35,7 +32,7 @@ public class OpenDiabetesAlgo {
     OpenDiabetesAlgo() {
         carbRatio = 10;
         insSensitivityFactor = 35;
-        bolusTreatments = new ArrayList<VaultEntry>();
+        bolusTreatments = new ArrayList<>();
     }
 
     public void setGlucose(List<VaultEntry> glucose) {
@@ -47,9 +44,8 @@ public class OpenDiabetesAlgo {
     }
 
     public List<VaultEntry> calc2() {
-        mealTreatments = new ArrayList<VaultEntry>();
+        mealTreatments = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
-        double startValue = current.getValue();
 
         while (!glucose.isEmpty()) {
             VaultEntry next = glucose.get(0);
@@ -80,7 +76,7 @@ public class OpenDiabetesAlgo {
     }
 
     public List<VaultEntry> calc() {
-        mealTreatments = new ArrayList<VaultEntry>();
+        mealTreatments = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
         double startValue = current.getValue();
 
@@ -99,15 +95,12 @@ public class OpenDiabetesAlgo {
             current = next;
         }
 
-
         return mealTreatments;
-
     }
 
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
         double value = deltaBg * carbRatio / (insSensitivityFactor * cob(deltaTime, absorptionTime));
         mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
-
     }
 
     private double predict(double startValue, long time) {
@@ -126,8 +119,6 @@ public class OpenDiabetesAlgo {
             }
             result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
         }
-
-
         return result;
     }
 
@@ -211,7 +202,7 @@ public class OpenDiabetesAlgo {
             total = 0.0;
         } else if (timeFromEvent >= absorptionTime) {
             total = 1.0;
-        } else if ((timeFromEvent > 0) && (timeFromEvent <= absorptionTime / 2.0)) {
+        } else if (timeFromEvent <= absorptionTime / 2.0) {
             total = 2.0 / Math.pow(absorptionTime, 2) * Math.pow(timeFromEvent, 2);
         } else {
             total = -1.0 + 4.0 / absorptionTime * (timeFromEvent - Math.pow(timeFromEvent, 2) / (2.0 * absorptionTime));
@@ -255,5 +246,4 @@ public class OpenDiabetesAlgo {
         return deltaBGI(timeFromEvent, insBolus, insSensitivityFactor, insDuration) +
                 deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
     }
-
 }

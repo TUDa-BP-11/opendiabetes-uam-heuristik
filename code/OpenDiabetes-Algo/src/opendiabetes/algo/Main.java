@@ -18,17 +18,13 @@ public class Main {
 
         entries.sort(new SortVaultEntryByDate());
 
-        for (VaultEntry entry : entries) {
-            System.out.println(entry.toString());
-        }
         OpenDiabetesAlgo algo = new OpenDiabetesAlgo();
         algo.setGlucose(entries);
-        algo.setBolusTreatments(new ArrayList<VaultEntry>());
+        algo.setBolusTreatments(new ArrayList<>());
         System.out.println("calc :");
-        List<VaultEntry> meals = algo.calc();
+        List<VaultEntry> meals = algo.calc2();
         for (VaultEntry meal : meals) {
             System.out.println(meal.toString());
         }
-
     }
 }
