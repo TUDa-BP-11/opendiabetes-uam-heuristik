@@ -17,11 +17,11 @@
         <references xmlns="http://www.netbeans.org/ns/ant-project-references/1">
             <reference>
                 <foreign-project>OpenDiabetes-Parser</foreign-project>
-                <artifact-type>jar</artifact-type>
+                <artifact-type>folder</artifact-type>
                 <script>build.xml</script>
-                <target>jar</target>
+                <target>main</target>
                 <clean-target>clean</clean-target>
-                <id>jar</id>
+                <id>main</id>
             </reference>
             <reference>
                 <foreign-project>OpenDiabetesVault-Engine</foreign-project>
