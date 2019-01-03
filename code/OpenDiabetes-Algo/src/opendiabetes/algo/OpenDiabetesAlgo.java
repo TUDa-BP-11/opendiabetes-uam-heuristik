@@ -8,9 +8,7 @@ package opendiabetes.algo;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class OpenDiabetesAlgo {
 
@@ -51,7 +49,7 @@ public class OpenDiabetesAlgo {
             VaultEntry next = glucose.get(0);
             long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
 
-            for (int i = 1; i < glucose.size()&& deltaTime < 30; i++) {
+            for (int i = 1; i < glucose.size() && deltaTime < 30; i++) {
                 next = glucose.get(i);
                 deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
 
@@ -61,7 +59,7 @@ public class OpenDiabetesAlgo {
             double nextPrediction = predict(0, next.getTimestamp().getTime());
             double deltaBg = next.getValue() - current.getValue();
             double deltaPrediction = (nextPrediction - currentPrediction);
-            double deltaDerivation = (deltaBg - deltaPrediction)/deltaTime;
+            double deltaDerivation = (deltaBg - deltaPrediction) / deltaTime;
 
             if (deltaDerivation > 0) {
                 createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
@@ -69,9 +67,7 @@ public class OpenDiabetesAlgo {
             current = glucose.remove(0);
         }
 
-
         return mealTreatments;
-
     }
 
     public List<VaultEntry> calc() {
@@ -95,6 +91,36 @@ public class OpenDiabetesAlgo {
         }
 
         return mealTreatments;
+    }
+
+    public List<VaultEntry> bruteForce() {
+        glucose.sort(Comparator.comparing(VaultEntry::getTimestamp));
+        List<VaultEntry> meals = new ArrayList<>();
+        VaultEntry current = glucose.remove(0);
+        while (!glucose.isEmpty()) {
+            VaultEntry next;
+            long deltaTime;
+            double deltaBG;
+            do {
+                next = glucose.remove(0);
+                deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000D);
+                deltaBG = next.getValue() - current.getValue();
+            } while (deltaTime < 10 && Math.abs(deltaBG) < 1);
+
+            double find = findBruteForce(deltaTime, deltaBG, 20);
+            meals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, current.getTimestamp(), find));
+            current = next;
+        }
+        return meals;
+    }
+
+    private double findBruteForce(long deltaT, double deltaBG, double carbsAmount) {
+        double test = deltaBGC(deltaT, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
+        if (Math.abs(test - deltaBG) <= 0.1)
+            return carbsAmount;
+        if (test < deltaBG)
+            return findBruteForce(deltaT, deltaBG, carbsAmount * 1.5);
+        return findBruteForce(deltaT, deltaBG, carbsAmount * 0.75);
     }
 
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
@@ -212,7 +238,7 @@ public class OpenDiabetesAlgo {
     public double cobDerivation(double timeFromEvent, double absorptionTime) {
         double total;
 
-        if (timeFromEvent <= 0|| timeFromEvent >= absorptionTime) {
+        if (timeFromEvent <= 0 || timeFromEvent >= absorptionTime) {
             total = 0.0;
         } else if (timeFromEvent <= absorptionTime / 2.0) {
             total = 4.0 / Math.pow(absorptionTime, 2) * timeFromEvent;
@@ -244,5 +270,21 @@ public class OpenDiabetesAlgo {
     public double deltaBG(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime, double insBolus, int insDuration) {
         return deltaBGI(timeFromEvent, insBolus, insSensitivityFactor, insDuration) +
                 deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
+    }
+
+    public double getAbsorptionTime() {
+        return absorptionTime;
+    }
+
+    public int getInsDuration() {
+        return insDuration;
+    }
+
+    public double getCarbRatio() {
+        return carbRatio;
+    }
+
+    public double getInsSensitivityFactor() {
+        return insSensitivityFactor;
     }
 }
