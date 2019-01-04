@@ -69,15 +69,15 @@ public class BasalCalc {
         }
 
         //last case 24:00
-        long profileTime = 24*60;
+        long profileTime = 24 * 60;
 
         if (treatmentTime + duration <= profileTime) {
-            tmpBasals.add(new tmpBasal(value - (list.get(list.size()-1).getValue() * duration / 60), duration, date));
+            tmpBasals.add(new tmpBasal(value - (list.get(list.size() - 1).getValue() * duration / 60), duration, date));
         } else {
             long deltadur = profileTime - treatmentTime;
             double deltaValue = value * deltadur / duration;
 
-            tmpBasals.add(new tmpBasal(deltaValue - (list.get(list.size()-1).getValue() * deltadur / 60), deltadur, date));
+            tmpBasals.add(new tmpBasal(deltaValue - (list.get(list.size() - 1).getValue() * deltadur / 60), deltadur, date));
             maketmpBasal(value - deltaValue, duration - deltadur, new Date(date.getTime() + deltadur * 60000));
         }
     }

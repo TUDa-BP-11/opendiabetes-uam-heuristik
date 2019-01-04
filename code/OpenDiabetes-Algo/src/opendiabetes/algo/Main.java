@@ -30,12 +30,12 @@ public class Main {
         List<VaultEntry> bolusTreatment = new ArrayList<>();
         List<VaultEntry> mealTreatment = new ArrayList<>();
 
-        for(VaultEntry treatment : treatments){
-            if (treatment.getType().equals(VaultEntryType.BASAL_MANUAL)){
+        for (VaultEntry treatment : treatments) {
+            if (treatment.getType().equals(VaultEntryType.BASAL_MANUAL)) {
                 basalTreatments.add(treatment);
-            }else if (treatment.getType().equals(VaultEntryType.BOLUS_NORMAL)){
+            } else if (treatment.getType().equals(VaultEntryType.BOLUS_NORMAL)) {
                 bolusTreatment.add(treatment);
-            }else if (treatment.getType().equals(VaultEntryType.MEAL_MANUAL)){
+            } else if (treatment.getType().equals(VaultEntryType.MEAL_MANUAL)) {
                 mealTreatment.add(treatment);
             }
 

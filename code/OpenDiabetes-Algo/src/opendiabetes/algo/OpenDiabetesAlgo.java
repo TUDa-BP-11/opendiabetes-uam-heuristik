@@ -8,7 +8,10 @@ package opendiabetes.algo;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 
 public class OpenDiabetesAlgo {
 
@@ -148,13 +151,13 @@ public class OpenDiabetesAlgo {
             }
             result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
         }
-        for (tmpBasal basal: basalTratments){
+        for (tmpBasal basal : basalTratments) {
             long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);//Time in minutes
             if (deltaTime <= 0) {
                 break;
             }
             double unitsPerMin = basal.getValue() / basal.getDuration();
-            result += deltatempBGI(deltaTime,unitsPerMin,insSensitivityFactor,insDuration,0,basal.getDuration());
+            result += deltatempBGI(deltaTime, unitsPerMin, insSensitivityFactor, insDuration, 0, basal.getDuration());
         }
 
         return result;

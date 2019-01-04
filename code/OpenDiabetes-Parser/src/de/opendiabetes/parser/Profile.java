@@ -42,7 +42,7 @@ public class Profile {
 
     public void adjustProfile() {
 
-        int offset = - timezone.getRules().getOffset(Instant.EPOCH).getTotalSeconds() / 60;
+        int offset = -timezone.getRules().getOffset(Instant.EPOCH).getTotalSeconds() / 60;
         List<Profile.BasalProfile> list = new ArrayList<>();
 
         for (BasalProfile basalProfile : basalProfiles) {
