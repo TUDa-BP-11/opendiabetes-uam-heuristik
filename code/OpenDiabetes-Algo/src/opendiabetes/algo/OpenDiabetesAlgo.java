@@ -19,9 +19,9 @@ public class OpenDiabetesAlgo {
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
-    private List<VaultEntry> basalTratments;
+    private List<tmpBasal> basalTratments;
 
-    /*
+/*
     startWert -> Zeitdiff zwischen current und next -> predict next GlucoseValue (tmp)
     -> diff zwischen next und tmp -> Ins oder Mealtreatment bruteforcen -> current = next
     -> von vorne bis liste leer
@@ -41,6 +41,11 @@ public class OpenDiabetesAlgo {
         this.bolusTreatments = bolusTreatments;
     }
 
+    public void setBasalTratments(List<tmpBasal> basalTratments) {
+        this.basalTratments = basalTratments;
+    }
+
+
     public List<VaultEntry> calc2() {
         mealTreatments = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
@@ -59,9 +64,8 @@ public class OpenDiabetesAlgo {
             double nextPrediction = predict(0, next.getTimestamp().getTime());
             double deltaBg = next.getValue() - current.getValue();
             double deltaPrediction = (nextPrediction - currentPrediction);
-            double deltaDerivation = (deltaBg - deltaPrediction) / deltaTime;
 
-            if (deltaDerivation > 0) {
+            if (deltaBg - deltaPrediction > 0) {
                 createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
             }
             current = glucose.remove(0);
@@ -144,13 +148,22 @@ public class OpenDiabetesAlgo {
             }
             result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
         }
+        for (tmpBasal basal: basalTratments){
+            long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);//Time in minutes
+            if (deltaTime <= 0) {
+                break;
+            }
+            double unitsPerMin = basal.getValue() / basal.getDuration();
+            result += deltatempBGI(deltaTime,unitsPerMin,insSensitivityFactor,insDuration,0,basal.getDuration());
+        }
+
         return result;
     }
 
     public double fastActingIob(double timeFromEvent, int insDuration) {
         double IOBWeight;
         if (timeFromEvent <= 0) {
-            IOBWeight = 100;
+            IOBWeight = 1;
         } else if (timeFromEvent >= insDuration) {
             IOBWeight = 0;
         } else {
@@ -235,20 +248,7 @@ public class OpenDiabetesAlgo {
         return total;
     }
 
-    public double cobDerivation(double timeFromEvent, double absorptionTime) {
-        double total;
-
-        if (timeFromEvent <= 0 || timeFromEvent >= absorptionTime) {
-            total = 0.0;
-        } else if (timeFromEvent <= absorptionTime / 2.0) {
-            total = 4.0 / Math.pow(absorptionTime, 2) * timeFromEvent;
-        } else {
-            total = 4.0 / absorptionTime * (1 - timeFromEvent / absorptionTime);
-        }
-        return total;
-    }
-
-
+    //tempInsAmount in U/min
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
     public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, int insDuration, double t1, double t2) {
         return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIOB(t1, t2, insDuration, timeFromEvent));
