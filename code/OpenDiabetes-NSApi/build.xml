@@ -4,7 +4,7 @@
     <property file="build.properties"/>
 
     <path id="classpath">
-        <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
+        <fileset dir="../OpenDiabetes-Parser/dist" includes="*.jar"/>
     </path>
 
     <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
