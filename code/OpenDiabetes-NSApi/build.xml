@@ -1,24 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-NSApi" default="full" basedir=".">
+<project name="OpenDiabetes-NSApi" default="main" basedir=".">
     <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
     <property file="build.properties"/>
+    <property name="src.dir" value="${basedir}/src"/>
+    <property name="src.test.dir" value="${basedir}/test"/>
+    <property name="resources.dir" value="${basedir}/resources"/>
+    <property name="output.dir" value="${basedir}/dist"/>
+    <property name="build.classes.dir" value="${basedir}/build/classes"/>
+    <property name="build.test.dir" value="${basedir}/build/test"/>
 
     <path id="classpath">
         <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
     </path>
 
-    <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
-    <target name="main" depends="compile, compress" description="Build jar with existing librarys"/>
+    <path id="junit.classpath">
+        <fileset dir="${basedir}/../../lib/junit" includes="*.jar"/>
+    </path>
+
+    <path id="test.classpath">
+        <pathelement path="${build.classes.dir}"/>
+        <pathelement path="${build.test.dir}"/>
+        <fileset dir="${ant.home}/lib" includes="*.jar"/>
+    </path>
+
+    <target name="full" depends="clean, unjar, compile, compress, test"
+            description="Clean, build jar with all librarys, run tests"/>
+    <target name="main" depends="unjar, compile, compress" description="Build jar with existing librarys"/>
 
     <target name="clean">
-        <delete dir="build" failonerror="false"/>
-        <delete dir="dist" failonerror="false"/>
-        <mkdir dir="build"/>
-        <mkdir dir="dist"/>
+        <delete dir="${build.classes.dir}" failonerror="false"/>
+        <delete dir="${output.dir}" failonerror="false"/>
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${output.dir}"/>
     </target>
 
     <target name="unjar">
-        <unjar dest="build">
+        <unjar dest="${build.classes.dir}" overwrite="false">
             <fileset dir="../OpenDiabetes-Parser/dist" includes="*.jar"/>
         </unjar>
     </target>
@@ -36,18 +53,18 @@
     </target>
 
     <target name="compile" depends="getversion">
-        <javac srcdir="src" destdir="build" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
-               includeantruntime="false">
+        <javac srcdir="${src.dir}" destdir="${build.classes.dir}">
+            <classpath refid="classpath"/>
             <compilerarg line="-encoding utf-8"/>
         </javac>
-        <copy todir="build">
-            <fileset dir="resources" erroronmissingdir="false"/>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${resources.dir}" erroronmissingdir="false"/>
         </copy>
     </target>
 
     <target name="compress" depends="getversion">
         <tstamp/>
-        <jar destfile="dist/${jarname}" basedir="build">
+        <jar destfile="${output.dir}/${jarname}" basedir="${build.classes.dir}">
             <manifest>
                 <attribute name="Main-Class" value="${mainclass}"/>
                 <attribute name="Built-By" value="${user.name}"/>
@@ -56,5 +73,25 @@
                 <attribute name="Revision" value="${build.number}"/>
             </manifest>
         </jar>
+    </target>
+
+    <target name="compile-test" depends="compile">
+        <mkdir dir="${build.test.dir}"/>
+        <javac srcdir="${src.test.dir}" destdir="${build.test.dir}">
+            <classpath refid="classpath"/>
+            <classpath refid="junit.classpath"/>
+            <compilerarg line="-encoding utf-8"/>
+        </javac>
+    </target>
+
+    <target name="test" depends="compile-test">
+        <junitlauncher haltonfailure="true" printsummary="true">
+            <classpath refid="junit.classpath"/>
+            <classpath refid="test.classpath"/>
+            <testclasses outputdir="${output.dir}">
+                <fileset dir="${build.test.dir}" includes="**"/>
+            </testclasses>
+            <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
+        </junitlauncher>
     </target>
 </project>

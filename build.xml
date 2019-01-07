@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="OpenDiabetes-UAM" default="all" basedir=".">
-    <target name="all">
+    <description>Builds and tests all the modules of this project. To build all modules, execute target "all"
+    </description>
+
+    <target name="all" depends="Engine, Parser, NSApi"/>
+
+    <target name="Engine">
         <ant dir="code/OpenDiabetesVault-Engine" target="jar"/>
+    </target>
+
+    <target name="Parser" depends="Engine">
         <ant dir="code/OpenDiabetes-Parser" target="full"/>
+    </target>
+
+    <target name="NSApi" depends="Parser">
         <ant dir="code/OpenDiabetes-NSApi" target="full"/>
-        <!-- <ant dir="code/OpenDiabetes-Synchronizer" target="full"/> -->
     </target>
 </project>
