@@ -20,7 +20,6 @@
     <path id="test.classpath">
         <pathelement path="${build.classes.dir}"/>
         <pathelement path="${build.test.dir}"/>
-        <fileset dir="${ant.home}/lib" includes="*.jar"/>
     </path>
 
     <target name="full" depends="clean, unjar, compile, compress, test"
@@ -29,12 +28,17 @@
 
     <target name="clean">
         <delete dir="${build.classes.dir}" failonerror="false"/>
+        <delete dir="${build.test.dir}" failonerror="false"/>
         <delete dir="${output.dir}" failonerror="false"/>
+    </target>
+
+    <target name="init">
         <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
         <mkdir dir="${output.dir}"/>
     </target>
 
-    <target name="unjar">
+    <target name="unjar" depends="init">
         <unjar dest="${build.classes.dir}" overwrite="false">
             <fileset dir="../OpenDiabetes-Parser/dist" includes="*.jar"/>
         </unjar>
@@ -52,8 +56,8 @@
         <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
     </target>
 
-    <target name="compile" depends="getversion">
-        <javac srcdir="${src.dir}" destdir="${build.classes.dir}">
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false">
             <classpath refid="classpath"/>
             <compilerarg line="-encoding utf-8"/>
         </javac>
@@ -76,9 +80,8 @@
     </target>
 
     <target name="compile-test" depends="compile">
-        <mkdir dir="${build.test.dir}"/>
-        <javac srcdir="${src.test.dir}" destdir="${build.test.dir}">
-            <classpath refid="classpath"/>
+        <javac srcdir="${src.test.dir}" destdir="${build.test.dir}" includeantruntime="false">
+            <classpath refid="test.classpath"/>
             <classpath refid="junit.classpath"/>
             <compilerarg line="-encoding utf-8"/>
         </javac>
