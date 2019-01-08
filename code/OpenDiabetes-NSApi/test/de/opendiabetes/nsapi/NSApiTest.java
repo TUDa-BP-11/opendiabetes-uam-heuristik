@@ -114,7 +114,7 @@ class NSApiTest {
     void testTimes() throws UnirestException {
         List<VaultEntry> entries = api.getTimes("2018", "T{15..17}:.*").getVaultEntries();
         entries.stream()
-                .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.systemDefault()))
+                .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.of("Europe/Berlin"))) //TODO: does not work for Nightscout instances outside of this zone
                 .forEach(t -> assertTrue(t.getHour() >= 15 && t.getHour() <= 17));
     }
 
