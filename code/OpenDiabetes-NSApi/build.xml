@@ -2,19 +2,32 @@
 <project name="OpenDiabetes-NSApi" default="main" basedir=".">
     <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
     <property file="build.properties"/>
+
+    <!-- source, output, build and library directories -->
     <property name="src.dir" value="${basedir}/src"/>
     <property name="src.test.dir" value="${basedir}/test"/>
     <property name="resources.dir" value="${basedir}/resources"/>
     <property name="output.dir" value="${basedir}/dist"/>
-    <property name="build.classes.dir" value="${basedir}/build/classes"/>
-    <property name="build.test.dir" value="${basedir}/build/test"/>
+    <property name="build.dir" value="${basedir}/build"/>
+    <property name="build.classes.dir" value="${build.dir}/classes"/>
+    <property name="build.test.dir" value="${build.dir}/test"/>
+    <property name="lib.dir" value="${basedir}/../../lib"/>
 
+    <!-- OpenDiabetesVault-Engine properties -->
+    <property name="engine.dir" value="${basedir}/../OpenDiabetesVault-Engine"/>
+    <property name="engine.jar" value="OpenDiabetesVault-Engine.jar"/>
+    <condition property="engine.available">
+        <available file="${engine.dir}/dist/${engine.jar}"/>
+    </condition>
+
+    <!-- classpaths for compilation and tests -->
     <path id="classpath">
-        <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
+        <fileset dir="${engine.dir}/dist" includes="*.jar"/>
+        <fileset dir="${lib.dir}" includes="*.jar"/>
     </path>
 
     <path id="junit.classpath">
-        <fileset dir="${basedir}/../../lib/junit" includes="*.jar"/>
+        <fileset dir="${lib.dir}/junit" includes="*.jar"/>
     </path>
 
     <path id="test.classpath">
@@ -23,32 +36,42 @@
     </path>
 
     <target name="full" depends="clean, unjar, compile, compress, test"
-            description="Clean, build jar with all librarys, run tests"/>
+            description="Clean, build jar with all libraries, run tests"/>
     <target name="main" depends="unjar, compile, compress" description="Build jar with existing librarys"/>
 
-    <target name="clean">
-        <delete dir="${build.classes.dir}" failonerror="false"/>
-        <delete dir="${build.test.dir}" failonerror="false"/>
+    <target name="clean" description="Deletes the build and output directories">
+        <delete dir="${build.dir}" failonerror="false"/>
         <delete dir="${output.dir}" failonerror="false"/>
     </target>
 
-    <target name="init">
+    <target name="init" description="Creates the build and output directories">
         <mkdir dir="${build.classes.dir}"/>
         <mkdir dir="${build.test.dir}"/>
         <mkdir dir="${output.dir}"/>
     </target>
 
-    <target name="unjar" depends="init">
+    <target name="compile.engine" unless="engine.available" description="Builds the engine, unless it already exists">
+        <ant dir="${engine.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
+    </target>
+
+    <target name="unjar" depends="init, compile.engine"
+            description="Unjars all dependencies. Builds the engine if necessary">
         <unjar dest="${build.classes.dir}" overwrite="false">
-            <fileset dir="../OpenDiabetes-Parser/dist" includes="*.jar"/>
+            <filelist dir="${engine.dir}/dist">
+                <file name="${engine.jar}"/>
+            </filelist>
+            <filelist dir="${lib.dir}">
+                <file name="gson-2.8.0.jar"/>
+                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
+            </filelist>
         </unjar>
     </target>
 
-    <target name="getversion">
+    <target name="getversion" description="Sets the build number to the current git revision and time">
         <tstamp>
             <format property="TODAY_MY" pattern="dd.MM.yyyy HH.mm" locale="en,UK"/>
         </tstamp>
-        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="UNKNOWN">
+        <exec executable="git" resultproperty="git.revision" failifexecutionfails="false">
             <arg value="rev-parse"/>
             <arg value="--short"/>
             <arg value="HEAD"/>
@@ -56,7 +79,7 @@
         <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
     </target>
 
-    <target name="compile" depends="init">
+    <target name="compile" depends="init" description="Compiles the project">
         <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false">
             <classpath refid="classpath"/>
             <compilerarg line="-encoding utf-8"/>
@@ -66,7 +89,7 @@
         </copy>
     </target>
 
-    <target name="compress" depends="getversion">
+    <target name="compress" depends="getversion" description="Creates the jar">
         <tstamp/>
         <jar destfile="${output.dir}/${jarname}" basedir="${build.classes.dir}">
             <manifest>
@@ -79,7 +102,7 @@
         </jar>
     </target>
 
-    <target name="compile-test" depends="compile">
+    <target name="compile-test" depends="compile" description="Compiles the tests">
         <javac srcdir="${src.test.dir}" destdir="${build.test.dir}" includeantruntime="false">
             <classpath refid="test.classpath"/>
             <classpath refid="junit.classpath"/>
@@ -87,7 +110,7 @@
         </javac>
     </target>
 
-    <target name="test" depends="compile-test">
+    <target name="test" depends="compile-test" description="Runs the tests">
         <junitlauncher haltonfailure="true" printsummary="true">
             <classpath refid="junit.classpath"/>
             <classpath refid="test.classpath"/>

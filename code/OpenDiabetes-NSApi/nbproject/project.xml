@@ -79,7 +79,7 @@ auxiliary.show.customizer.message=<message>
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
             <compilation-unit>
                 <package-root>src</package-root>
-                <classpath mode="compile">../OpenDiabetesVault-Engine/src;../OpenDiabetes-Parser/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar</classpath>
+                <classpath mode="compile">../OpenDiabetesVault-Engine/src;../OpenDiabetes-Parser/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar;../../lib/gson-2.8.0.jar</classpath>
                 <built-to>dist</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
