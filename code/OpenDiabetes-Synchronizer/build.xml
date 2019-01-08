@@ -1,32 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-Synchronizer" default="full" basedir=".">
+<project name="OpenDiabetes-Synchronizer" default="main" basedir=".">
+    <description>Builds, tests, and runs the project OpenDiabetes-Synchronizer.</description>
     <property file="build.properties"/>
 
+    <!-- source, output, build and library directories -->
+    <property name="src.dir" value="${basedir}/src"/>
+    <property name="src.test.dir" value="${basedir}/test"/>
+    <property name="resources.dir" value="${basedir}/resources"/>
+    <property name="output.dir" value="${basedir}/dist"/>
+    <property name="build.dir" value="${basedir}/build"/>
+    <property name="build.classes.dir" value="${build.dir}/classes"/>
+    <property name="build.test.dir" value="${build.dir}/test"/>
+    <property name="lib.dir" value="${basedir}/../../lib"/>
+
+    <!-- OpenDiabetes-NSApi properties -->
+    <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
+    <property name="nsapi.jar" value="NSApi.jar"/>
+    <condition property="nsapi.available">
+        <available file="${nsapi.dir}/dist/${nsapi.jar}"/>
+    </condition>
+
+    <!-- classpaths for compilation and tests -->
     <path id="classpath">
-        <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
+        <fileset dir="${nsapi.dir}/dist" includes="*.jar"/>
+        <fileset dir="${lib.dir}" includes="*.jar"/>
     </path>
 
-    <target name="full" depends="clean, unjar, compile, compress" description="Build jar with all librarys"/>
-    <target name="main" depends="compile, compress" description="Build jar with existing librarys"/>
+    <path id="junit.classpath">
+        <fileset dir="${lib.dir}/junit" includes="*.jar"/>
+    </path>
 
-    <target name="clean">
-        <delete dir="build" failonerror="false"/>
-        <delete dir="dist" failonerror="false"/>
-        <mkdir dir="build"/>
-        <mkdir dir="dist"/>
+    <path id="test.classpath">
+        <pathelement path="${build.classes.dir}"/>
+        <pathelement path="${build.test.dir}"/>
+    </path>
+
+    <target name="full" depends="clean, unjar, compile, compress, test"
+            description="Clean, build jar with all libraries, run tests"/>
+    <target name="main" depends="unjar, compile, compress" description="Build jar with existing librarys"/>
+
+    <target name="clean" description="Deletes the build and output directories">
+        <delete dir="${build.dir}" failonerror="false"/>
+        <delete dir="${output.dir}" failonerror="false"/>
     </target>
 
-    <target name="unjar">
-        <unjar dest="build">
-            <fileset dir="../OpenDiabetes-NSApi/dist" includes="*.jar"/>
+    <target name="init" description="Creates the build and output directories">
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
+        <mkdir dir="${output.dir}"/>
+    </target>
+
+    <target name="compile.nsapi" unless="engine.available" description="Builds the engine, unless it already exists">
+        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
+        <ant dir="${nsapi.dir}" target="main" usenativebasedir="true" inheritall="false"/>
+    </target>
+
+    <target name="unjar" depends="init, compile.nsapi"
+            description="Unjars all dependencies. Builds the engine if necessary">
+        <unjar dest="${build.classes.dir}" overwrite="false">
+            <filelist dir="${nsapi.dir}/dist">
+                <file name="${nsapi.jar}"/>
+            </filelist>
+            <filelist dir="${lib.dir}">
+                <file name="gson-2.8.0.jar"/>
+                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
+            </filelist>
         </unjar>
     </target>
 
-    <target name="getversion">
+    <target name="getversion" description="Sets the build number to the current git revision and time">
         <tstamp>
             <format property="TODAY_MY" pattern="dd.MM.yyyy HH.mm" locale="en,UK"/>
         </tstamp>
-        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="UNKNOWN">
+        <exec executable="git" resultproperty="git.revision" failifexecutionfails="false">
             <arg value="rev-parse"/>
             <arg value="--short"/>
             <arg value="HEAD"/>
@@ -34,19 +80,19 @@
         <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
     </target>
 
-    <target name="compile" depends="getversion">
-        <javac srcdir="src" destdir="build" debug="on" debuglevel="lines,vars,source" classpathref="classpath"
-               includeantruntime="false">
+    <target name="compile" depends="init" description="Compiles the project">
+        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false">
+            <classpath refid="classpath"/>
             <compilerarg line="-encoding utf-8"/>
         </javac>
-        <copy todir="build">
-            <fileset dir="resources" erroronmissingdir="false"/>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${resources.dir}" erroronmissingdir="false"/>
         </copy>
     </target>
 
-    <target name="compress" depends="getversion">
+    <target name="compress" depends="getversion" description="Creates the jar">
         <tstamp/>
-        <jar destfile="dist/${jarname}" basedir="build">
+        <jar destfile="${output.dir}/${jarname}" basedir="${build.classes.dir}">
             <manifest>
                 <attribute name="Main-Class" value="${mainclass}"/>
                 <attribute name="Built-By" value="${user.name}"/>
@@ -55,5 +101,24 @@
                 <attribute name="Revision" value="${build.number}"/>
             </manifest>
         </jar>
+    </target>
+
+    <target name="compile.test" depends="compile" description="Compiles the tests">
+        <javac srcdir="${src.test.dir}" destdir="${build.test.dir}" includeantruntime="false">
+            <classpath refid="test.classpath"/>
+            <classpath refid="junit.classpath"/>
+            <compilerarg line="-encoding utf-8"/>
+        </javac>
+    </target>
+
+    <target name="test" depends="compile.test" description="Runs the tests">
+        <junitlauncher haltonfailure="true" printsummary="true">
+            <classpath refid="junit.classpath"/>
+            <classpath refid="test.classpath"/>
+            <testclasses outputdir="${output.dir}">
+                <fileset dir="${build.test.dir}" includes="**"/>
+            </testclasses>
+            <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
+        </junitlauncher>
     </target>
 </project>

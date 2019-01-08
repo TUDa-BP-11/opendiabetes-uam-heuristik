@@ -6,11 +6,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -19,25 +14,23 @@ public class SynchronizerTest {
 
     @BeforeAll
     static void setUp() {
-        String readHost, readPort, readSecret, writeHost, writePort, writeSecret;
+        String readHost = System.getenv("NS_HOST");
+        String readSecret = System.getenv("NS_APISECRET");
+        String writeHost = System.getenv("NS_HOST_2");
+        String writeSecret = System.getenv("NS_APISECRET_2");
+        if (readHost == null)
+            System.err.println("Environment variable NS_HOST not found!");
+        if (readSecret == null)
+            System.err.println("Environment variable NS_APISECRET not found!");
+        if (writeHost == null)
+            System.err.println("Environment variable NS_HOST_2 not found!");
+        if (writeSecret == null)
+            System.err.println("Environment variable NS_APISECRET_2 not found!");
+        if (readHost == null || readSecret == null || writeHost == null || writeSecret == null)
+            fail("");
 
-        try (InputStream input = new FileInputStream("resources/config.properties")) {
-            Properties properties = new Properties();
-            properties.load(input);
-
-            readHost = properties.getProperty("read.host");
-            readPort = properties.getProperty("read.port");
-            readSecret = properties.getProperty("read.secret");
-            writeHost = properties.getProperty("write.host");
-            writePort = properties.getProperty("write.port");
-            writeSecret = properties.getProperty("write.secret");
-        } catch (IOException e) {
-            fail(e);
-            return;
-        }
-
-        NSApi read = new NSApi(readHost, readPort, readSecret);
-        NSApi write = new NSApi(writeHost, writePort, writeSecret);
+        NSApi read = new NSApi(readHost, readSecret);
+        NSApi write = new NSApi(writeHost, writeSecret);
         synchronizer = new Synchronizer(read, write, "1970-01-01", null, 100);
     }
 

@@ -1,7 +1,5 @@
 read.host =
-read.port =
 read.secret =
 
 write.host =
-write.port =
 write.secret =
