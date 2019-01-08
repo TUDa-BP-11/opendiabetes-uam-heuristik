@@ -5,25 +5,36 @@ import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.engine.container.csv.VaultCsvEntry;
+import de.opendiabetes.vault.engine.data.VaultDao;
+import de.opendiabetes.vault.engine.exporter.ExporterOptions;
+import de.opendiabetes.vault.engine.exporter.FileExporter;
+import de.opendiabetes.vault.engine.exporter.VaultCsvExporter;
 import de.opendiabetes.vault.engine.util.SortVaultEntryByDate;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 
 public class Main {
 
     public static void main(String[] args) {
 
-
         ProfileParser profileParser = new ProfileParser();
-        String profilePath = "";
+        String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
         profile.adjustProfile();
 
         BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
 
-        String treatmentPath = "";
+        String treatmentPath = "./treatments_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> treatments = parser.parseFile(treatmentPath);
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
@@ -41,7 +52,6 @@ public class Main {
 
         }
 
-
         List<tmpBasal> basals = basalCalculator.calculateBasal(basalTreatments);
         /*
         for (tmpBasal b:basals){
@@ -49,7 +59,7 @@ public class Main {
 
         }*/
 
-        String entriesPath = "";
+        String entriesPath = "./entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
@@ -62,6 +72,42 @@ public class Main {
         List<VaultEntry> meals = algo.calc2();
         for (VaultEntry meal : meals) {
             System.out.println(meal.toString());
+        }
+
+        // query data
+        List<VaultEntry> data = VaultDao.getInstance().queryAllVaultEntries();
+
+        if (data == null || data.isEmpty()) {
+            Logger.getLogger(Main.class.getName()).severe("Database empty after processing");
+            System.exit(0);
+        } else {
+            // export Data
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMM-HHmmss");
+            String odvExpotFileName = "export-"
+                    + VaultCsvEntry.VERSION_STRING
+                    + "-"
+                    + formatter.format(new Date())
+                    + ".csv";
+
+            String path = "./"; //System.getProperty("java.io.tmpdir");
+            odvExpotFileName = new File(path).getAbsolutePath()
+                    + "/" + odvExpotFileName;
+
+            ExporterOptions eOptions = new ExporterOptions(
+                    true, //export all
+                    null, //from date
+                    null // to date     
+            );
+
+            // standard export
+            FileExporter exporter = new VaultCsvExporter(eOptions,
+                    VaultDao.getInstance(),
+                    odvExpotFileName);
+            int result = exporter.exportDataToFile(null);
+            if (result != VaultCsvExporter.RESULT_OK) {
+                Logger.getLogger(Main.class.getName()).severe("Export Error");
+                System.exit(0);
+            }
         }
     }
 }
