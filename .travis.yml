@@ -11,14 +11,19 @@ install:
   - chmod -R 755 lib/junit/
 
 script:
-  - ant -lib lib/junit/junit-4.12.jar -lib lib/junit/junit-jupiter-api-5.3.2.jar -lib lib/junit/junit-jupiter-engine-5.3.2.jar -lib lib/junit/junit-jupiter-params-5.3.2.jar -lib lib/junit/junit-platform-commons-1.3.2.jar -lib lib/junit/junit-platform-engine-1.3.2.jar -lib lib/junit/junit-platform-launcher-1.3.2.jar -lib lib/junit/junit-vintage-engine-5.3.2.jar -lib lib/junit/opentest4j-1.0.0.jar
+  - ant -lib lib/junit
 
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
    - secure: "D+Shdubv0/f++hp5BTjjx++kq3k0zqvWB0kISmZM8SiVseV6KLgw8lCaW9IDixguIqAKlMsgaeEPDI9HXcFwI+D/Cl40pMeR56svn8mWr0vNJFSQO07RIDeaMOnQ5C05bngbjKDd/4GOHbOqAUz3bLscQIc3HAnL/InrR0YPeM2mSz3ZyfwIyXX14WhgXH2bwLVzOBdGBB7qbJ8qRKVsrr1t+5Gj34BfUuLwvN8Nl6Ym0jlgKg0jzyy8/FblXdDbEW0cwhhFK0rgRUHdhq/1AKo0r+LkF5pi8zHbBcMm1YFG1g7SA/tQ1vqtUH8QAOR4XNd8yPbiOeCAC3TGgO2nsChYIgGqyt7ScOogJ9z5KLuujjhDaZ2qfEZaClGogYudBIVtnFNtgSxT7uPbiGcUM6AbjVmc+KCI7rMtPnxGYNdr4iwiO11so3EWVuWOaX/jKdfahoWcPq8X9+miidHR1UUieL4TeXtO26/Ck9orcZZtDczh2EnHDcLcJvESrKel1bb40SqnGZyDsUQruQ8UVXMbFMj+LHwHm6ugpZfo6PXYYo6QH4N/erU5DX4wgmW4f3Di9oGdWtEkoMeQPdxEMh0uHQh+0Er0SXsT3ZTbCSV/2jlgkygOtwnKbHBIu4W79XcjypWDzWa4/bFShuMB+dCN+mJxmfl8dAwKW7umq54="
-
+   # Nightscout host for testing: $NS_HOST
+   - secure:  "mQlhPToIc53EL5Vx4y+0h21DllJN6O58kgR/RIibKxfMWhJQK6rUSYp+om9iKh8hX9Vx5EFiAQoRLE3FEjkqR9F664g0u8kpAL+GNq9inBVvwLlW2Hs2utO/IqKVyFnrdF0X9BiyslDM4T7VQpkb6R/FWe3fm7QmATRDprBgV84Qctdj+CqSxa3EdIwnkUVZqIgykLee2IWWBypepLtVUdJ/Nhy1EWfc6kGdP3gHKyY5CP4ASlsokvx3LFJiE33DJ+K9MLFgu7/MdvAjLgVmzChDw0bjPJ5m29hIjJiXDYAmiJR3nV7St2EPwNDmnpfvdM+dqOM9B36fJP1rLKrobHfKHOpN+sELMnDLVRZL4L3IMOL8vB6wmW3j6L/yTKBmtWHU74KS+0aBaJvJvZIOM6phKREgsrIRT4qG/dip1eCKfcuLRQU4i7wieUqjcrNPqVCVTNsqBayMVGGcO01S9KAKu6CzpjfralNLROTiFFvPRTCvGQittXFvRjgScz2TdWvPjxLjz6DDS2W6bPI6OTiFdmllNFJeDF8krpD3xmRUUZ91gKJdwEKKbEX5du4zL6m/3chJV0vFratPSQUckLKh5BI7iasfaUbvj8aGax6p2uazvz80dKspv5TEsDCE+4qFqZx6bRCMQAZlAY6q/s+X82yEi6Pr5Z1sbEwqC1M="
+   # Nightscout port for testing: $NS_PORT
+   - secure: "ixROoV3LQvtzbxlMJlSX5SxZUWqKWJ7nvxfuqH8XN5A9c37h0ONCRw7gp6OpVE6UWD5KvGkzzfuYI3dyYP+Q1di42m37FZ0yG/iHISNMWC1l43/EYNumPuoD7jGrc+5J+3WFZVhRE+oCeeaNQyq1LFkPTRSVYRED5/k9p6t9DZIw2jX2/W9No2u8QphJx+FGl1G7+eS9ECa5BbhyFx1Zwpyqt1hl/ZqrG1XQUfHSh2gsq1aknr1tvj1KzkJhX0mTKRslozbhNx1qH2PwM4BYuoVdZPDEvosd8f7Ft2oKGdoI6LLiUjL6Xb1STMhXDlXoZUwQcBNNDVwPvBB602HduekeqCeQeIU57/ZRkgLiiaNnZcprMjtA3Mahv+RrC3LPsxrckccu+w5lmVTUgUgWgDVb2vM7oepJfSI9PemkFFpGfFjeeWGa0RxTlTZoOqAv9mtYEvmuPaNHq/DVAM6UBTkWsLLCZJi28sSh7FiwYzxfm44EBbSaBbQMMj53zfCdRvNyaW1N4vHNvWID42BWd1YgvzlPyNKZAppe9TZStJ3xIVmB71ciQghuyWjImMNHWJOtfw/gA6DJ1nBK7bb4nAq/aoslSS8UgbUKwB8r7gEKQrswopgLbztcCWqMVrHe+rYNOEFQyv2cmQCBs+5bCRTJXXdpi/Pn8+Mpw9d0Udg="
+   # Nightscout api secret for testing: $NS_APISECRET
+   - secure: "nMMIIULYrWAERKdHZv5GnmN5Zxm3iODJfKavUZ9mCUVVRdijilFyNXcI7cAefieBDkd3TVG6Kk8vx3SO0VspySMp32LH05+g8UeOGsXlg+DSuAdDg62ee7CxK9kjY9Zw7KFyeo6LeCXQDm2eJQja2y5c2jIiRU/3W2QatjMFoAlAIRhhKQXgjOE1ga6CgKh9LXCYDnFNXlK4hy6+Bv+X6QmYcP7aUUpEXsQtXLDOJUq0AKKMBQ9zvuRTKUuEiUZFvUzPc7asVX5al3dRkcYobN/AvnOMYqG8w19QkGFSZbq37ugaJ9GtzKHT8xSNm+l6xaf9PExrI+MS+mOjsJEhQPyzJhTpv4HSiPor1tb7VxYFUB05NArrOEwdpCu52z0/n7EDpgi4P6UEdEcanGoWqLGsvlCQy8cCVGgcDGO0oPV+i4Z9LiR3n8QtRDgBQqSwH+wjAuYUJ9fPdVGwFW5eMmmlzZeJDFLyZkDAT1FV3soDuyelbekz9TYhSpu87jewK8Q2DGo6aydjHdJpqcqlc70cZAvMbBpaREuzMSPueRfHZf06wV9u2G26sSqJ44qMyoto2nF74pyRhCOku4ssbx9kD3PLWY2cp9WUNU6B8cAQvjyAGDjRN3iElhr3TZtpzO1cp/0r9mvmhstPCvfre6n62Br/hoUSXO+7VgC4Gtw="
 addons:
   coverity_scan:
     project:
