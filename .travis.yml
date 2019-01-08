@@ -12,6 +12,7 @@ install:
 
 script:
   - ant -lib lib/junit
+  - cat code/*/dist/TEST-*.txt
 
 env:
   global:
