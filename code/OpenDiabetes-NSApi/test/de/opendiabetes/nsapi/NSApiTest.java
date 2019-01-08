@@ -9,15 +9,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,20 +23,17 @@ class NSApiTest {
 
     @BeforeAll
     static void setUp() {
-        String host, port, secret;
-
-        try (InputStream input = new FileInputStream("resources/config.properties")) {
-            Properties properties = new Properties();
-            properties.load(input);
-
-            host = properties.getProperty("host");
-            port = properties.getProperty("port");
-            secret = properties.getProperty("secret");
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-            return;
-        }
+        String host = System.getenv("NS_HOST");
+        String port = System.getenv("NS_PORT");
+        String secret = System.getenv("NS_APISECRET");
+        if (host == null)
+            System.err.println("Environment variable NS_HOST not found!");
+        if (port == null)
+            System.err.println("Environment variable NS_PORT not found!");
+        if (secret == null)
+            System.err.println("Environment variable NS_APISECRET not found!");
+        if (host == null || port == null || secret == null)
+            fail("");
 
         api = new NSApi(host, port, secret);
     }
@@ -121,7 +114,7 @@ class NSApiTest {
     void testTimes() throws UnirestException {
         List<VaultEntry> entries = api.getTimes("2018", "T{15..17}:.*").getVaultEntries();
         entries.stream()
-                .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.systemDefault()))
+                .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.of("Europe/Berlin"))) //TODO: does not work for Nightscout instances outside of this zone
                 .forEach(t -> assertTrue(t.getHour() >= 15 && t.getHour() <= 17));
     }
 

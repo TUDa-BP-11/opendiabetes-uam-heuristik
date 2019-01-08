@@ -1,8 +1,5 @@
 package de.opendiabetes.parser;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 import org.json.JSONArray;
@@ -14,62 +11,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 public class VaultEntryParser implements Parser<List<VaultEntry>> {
 
-    public static final int ONE_HOUR = 3600000;
-
-    public VaultEntryParser() {
-
-    }
-
     @Override
     public List<VaultEntry> parse(String vaultEntries) {
-
-        ArrayList<VaultEntry> result = new ArrayList<>();
-        JsonParser parser = new JsonParser();
-        JsonElement jsonArray = parser.parse(vaultEntries);
-        for (JsonElement element : jsonArray.getAsJsonArray()) {
-            JsonObject o = element.getAsJsonObject();
-
-            Date date;
-            JsonElement field = o.get("type");
-            if (field != null && field.getAsString().equals("sgv")) {
-                VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
-                date = new Date(o.get("date").getAsLong());
-                result.add(new VaultEntry(entryType, date, o.get("sgv").getAsDouble()));
-
-            }
-            field = o.get("insulin");
-            if (field != null && !field.isJsonNull()) {
-                VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
-                date = makeDate(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType, date, field.getAsDouble()));
-            }
-            field = o.get("carbs");
-            if (field != null && !field.isJsonNull()) {
-                VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
-                date = makeDate(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType, date, field.getAsDouble()));
-            }
-// oder vielleicht besser: ?
-//          field = o.get("eventType");
-//          if (type != null && field.getAsString().equals("Meal Bolus")){
-//                VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
-//                date = makeDateWithTimeZone(o.get("timestamp").getAsString());
-//                result.add(new VaultEntry(entryType, date, o.get("carbs").getAsDouble()));
-//          }
-            field = o.get("eventType");
-            if (field != null && field.getAsString().equals("Temp Basal")) {
-                VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
-                date = makeDate(o.get("timestamp").getAsString());
-                result.add(new VaultEntry(entryType, date, o.get("absolute").getAsDouble(), o.get("duration").getAsDouble()));
-            }
-
-        }
-
-        return result;
+        return parse(new JSONArray(vaultEntries));
     }
 
     /**
@@ -112,31 +59,6 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
     }
 
     /**
-     * compare epoch in date object with epoch extracted from string. Java
-     * interprets dateString as in locale time zone, correction required
-     *
-     * @deprecated vielleicht zumindest
-     */
-    private void getJSONTimeZone(Date date, String dateString) {
-        TimeZone localeTimezone = TimeZone.getDefault();
-        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        Date tmp = new Date(0);
-        try {
-            tmp = formatter.parse(dateString);
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-        }
-
-        int offset = 0;
-        if (localeTimezone.inDaylightTime(tmp)) {
-            offset = ONE_HOUR;
-        }
-        int timezoneOffset = (int) (localeTimezone.getRawOffset() + offset - date.getTime() + tmp.getTime());
-        String[] ids = TimeZone.getAvailableIDs(timezoneOffset);
-        TimeZone timezone = TimeZone.getTimeZone(ids[0]);
-    }
-
-    /**
      * get a date object from string with time zone information
      */
     private Date makeDate(String dateString) {
@@ -152,8 +74,8 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
         return date;
     }
 
-    /**
-     * @param vaultEntries
+    /*
+      @param vaultEntries
      * @return Entry{
      * <p>
      * type string
@@ -235,6 +157,7 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
      * }
      */
 
+    /*
     // "Correction Bolus", "duration", "unabsorbed", "type", "programmed", "insulin"
     // "Meal Bolus", "carbs", "absorptionTime"
     public String unparse(List<VaultEntry> vaultEntries) {
@@ -243,9 +166,6 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
         formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
         String result = "[";
 
-        long date;
-        String dateString;
-        String type;
         for (VaultEntry element : vaultEntries) {
             result += "{";
             if (null != element.getType()) {
@@ -253,7 +173,6 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                     case GLUCOSE_CGM:
                         result += "\"type\": \"sgv\",";
                         result += "\"sgv\": " + element.getValue() + ",";
-                        // date only with entries. Anything an entry except GLUCOSE_CGM?
                         result += "\"date\": " + element.getTimestamp().getTime() + ",";
                         result += "\"direction\":" + ",";
                         result += "\"trend\":" + ",";
@@ -277,11 +196,11 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                 }
             }
 
-            dateString = formatter.format(element.getTimestamp());
+            String dateString = formatter.format(element.getTimestamp());
             result += "\"dateString\": " + dateString + "}";
         }
         result += "]";
 
         return result;
-    }
+    }*/
 }
