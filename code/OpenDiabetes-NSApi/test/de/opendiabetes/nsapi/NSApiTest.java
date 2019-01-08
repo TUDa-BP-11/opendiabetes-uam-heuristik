@@ -24,18 +24,15 @@ class NSApiTest {
     @BeforeAll
     static void setUp() {
         String host = System.getenv("NS_HOST");
-        String port = System.getenv("NS_PORT");
         String secret = System.getenv("NS_APISECRET");
         if (host == null)
             System.err.println("Environment variable NS_HOST not found!");
-        if (port == null)
-            System.err.println("Environment variable NS_PORT not found!");
         if (secret == null)
             System.err.println("Environment variable NS_APISECRET not found!");
-        if (host == null || port == null || secret == null)
+        if (host == null || secret == null)
             fail("");
 
-        api = new NSApi(host, port, secret);
+        api = new NSApi(host, secret);
     }
 
     @AfterAll

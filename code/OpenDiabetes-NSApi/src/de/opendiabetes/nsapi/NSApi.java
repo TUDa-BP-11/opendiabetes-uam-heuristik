@@ -18,11 +18,10 @@ public class NSApi {
      * Constructs a new NighScout API instance. Connects to the specified host and port, using the given token for all queries
      *
      * @param host   Host to connect to
-     * @param port   Port to connect to
      * @param secret Your API-Secret
      */
-    public NSApi(String host, String port, String secret) {
-        this.host = "https://" + host + ":" + port + "/api/v1/";
+    public NSApi(String host, String secret) {
+        this.host = host + "/api/v1/";
         Unirest.setDefaultHeader("accept", "application/json");
         Unirest.setDefaultHeader("content-type", "application/json");
         Unirest.setDefaultHeader("API-SECRET", DigestUtils.sha1Hex(secret));
