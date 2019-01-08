@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 /**
  * Abstract class implementing the CSV Entry data structure.
  */
-public abstract class CSVEntry implements ExportEntry {
+public abstract class CsvEntry implements ExportEntry {
 
     /**
      * Declaration of the decimal format.
@@ -44,13 +44,13 @@ public abstract class CSVEntry implements ExportEntry {
      * Method to convert entries to CSV records.
      * @return The CSV records.
      */
-    public abstract String[] toCSVRecord();
+    public abstract String[] toCsvRecord();
 
     /**
      * Method to get the CSV header.
      * @return The CSV header.
      */
-    public abstract String[] getCSVHeaderRecord();
+    public abstract String[] getCsvHeaderRecord();
 
     /**
      * {@inheritDoc}
@@ -59,7 +59,7 @@ public abstract class CSVEntry implements ExportEntry {
     public byte[] toByteEntryLine() throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        os = writeStringArray(os, toCSVRecord());
+        os = writeStringArray(os, toCsvRecord());
 
         return os.toByteArray();
     }
@@ -82,7 +82,7 @@ public abstract class CSVEntry implements ExportEntry {
                 os.write(line.getBytes(Charset.forName("UTF-8")));
                 delimiter = delimiterConverted;
             } catch (IOException ex) {
-                Logger.getLogger(CSVEntry.class.getName()).log(Level.SEVERE,
+                Logger.getLogger(CsvEntry.class.getName()).log(Level.SEVERE,
                         "Error converting String in UTF8", ex);
                 throw ex;
             }
