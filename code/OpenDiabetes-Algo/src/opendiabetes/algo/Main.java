@@ -74,40 +74,41 @@ public class Main {
             System.out.println(meal.toString());
         }
 
-        // query data
-        List<VaultEntry> data = VaultDao.getInstance().queryAllVaultEntries();
-
-        if (data == null || data.isEmpty()) {
-            Logger.getLogger(Main.class.getName()).severe("Database empty after processing");
-            System.exit(0);
-        } else {
-            // export Data
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMM-HHmmss");
-            String odvExpotFileName = "export-"
-                    + VaultCsvEntry.VERSION_STRING
-                    + "-"
-                    + formatter.format(new Date())
-                    + ".csv";
-
-            String path = "./"; //System.getProperty("java.io.tmpdir");
-            odvExpotFileName = new File(path).getAbsolutePath()
-                    + "/" + odvExpotFileName;
-
-            ExporterOptions eOptions = new ExporterOptions(
-                    true, //export all
-                    null, //from date
-                    null // to date     
-            );
-
-            // standard export
-            FileExporter exporter = new VaultCsvExporter(eOptions,
-                    VaultDao.getInstance(),
-                    odvExpotFileName);
-            int result = exporter.exportDataToFile(null);
-            if (result != VaultCsvExporter.RESULT_OK) {
-                Logger.getLogger(Main.class.getName()).severe("Export Error");
-                System.exit(0);
-            }
-        }
+//        //FOR LATER USE
+//        // query data
+//        List<VaultEntry> data = VaultDao.getInstance().queryAllVaultEntries();
+//
+//        if (data == null || data.isEmpty()) {
+//            Logger.getLogger(Main.class.getName()).severe("Database empty after processing");
+//            System.exit(0);
+//        } else {
+//            // export Data
+//            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMM-HHmmss");
+//            String odvExpotFileName = "export-"
+//                    + VaultCsvEntry.VERSION_STRING
+//                    + "-"
+//                    + formatter.format(new Date())
+//                    + ".csv";
+//
+//            String path = "./"; //System.getProperty("java.io.tmpdir");
+//            odvExpotFileName = new File(path).getAbsolutePath()
+//                    + "/" + odvExpotFileName;
+//
+//            ExporterOptions eOptions = new ExporterOptions(
+//                    true, //export all
+//                    null, //from date
+//                    null // to date     
+//            );
+//
+//            // standard export
+//            FileExporter exporter = new VaultCsvExporter(eOptions,
+//                    VaultDao.getInstance(),
+//                    odvExpotFileName);
+//            int result = exporter.exportDataToFile(null);
+//            if (result != VaultCsvExporter.RESULT_OK) {
+//                Logger.getLogger(Main.class.getName()).severe("Export Error");
+//                System.exit(0);
+//            }
+//        }
     }
 }
