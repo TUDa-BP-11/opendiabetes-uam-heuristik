@@ -28,6 +28,9 @@
 
     <path id="junit.classpath">
         <fileset dir="${lib.dir}/junit" includes="*.jar"/>
+        <filelist dir="${lib.dir}">
+            <file name="ormlite-core-5.0.jar"/>
+        </filelist>
     </path>
 
     <path id="test.classpath">
