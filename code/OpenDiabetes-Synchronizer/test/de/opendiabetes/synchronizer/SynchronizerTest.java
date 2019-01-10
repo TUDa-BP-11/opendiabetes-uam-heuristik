@@ -4,7 +4,8 @@ package de.opendiabetes.synchronizer;
 import de.opendiabetes.nsapi.NSApi;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -39,23 +40,19 @@ public class SynchronizerTest {
         synchronizer.close();
     }
 
-    @Test
-    void testMissingEntries() {
-        synchronizer.findMissingEntries();
-        int missing = synchronizer.getMissingEntriesCount();
-        synchronizer.postMissingEntries();
-        synchronizer.findMissingEntries();
-        int missingNew = synchronizer.getMissingEntriesCount();
-        assertEquals(0, missingNew);
-    }
-
-    @Test
-    void testMissingTreatments() {
-        synchronizer.findMissingTreatments();
-        int missing = synchronizer.getMissingTreatmentsCount();
-        synchronizer.postMissingTreatments();
-        synchronizer.findMissingTreatments();
-        int missingNew = synchronizer.getMissingTreatmentsCount();
+    @ParameterizedTest
+    @CsvSource(value = {
+            "entries, dateString",
+            "treatments, created_at",
+            "devicestatus, created_at"
+    })
+    void testMissing(String apiPath, String dateString) {
+        Synchronizable sync = new Synchronizable(apiPath, dateString);
+        synchronizer.findMissing(sync);
+        int missing = sync.getMissingCount();
+        synchronizer.postMissing(sync);
+        synchronizer.findMissing(sync);
+        int missingNew = sync.getMissingCount();
         assertEquals(0, missingNew);
     }
 }

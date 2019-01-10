@@ -27,7 +27,7 @@ public class NSApi {
         Unirest.setDefaultHeader("API-SECRET", DigestUtils.sha1Hex(secret));
     }
 
-    private HttpRequest get(String path) {
+    public HttpRequest get(String path) {
         return Unirest.get(host + path);
     }
 
@@ -109,6 +109,12 @@ public class NSApi {
         return new GetBuilder(get("times/" + prefix + "/" + regex));
     }
 
+    public JsonNode post(String path, String body) throws UnirestException {
+        return Unirest.post(host + path)
+                .body(body)
+                .asJson().getBody();
+    }
+
     /**
      * Sends a POST request with the given entries as its payload. Inserts all entries into the database
      *
@@ -116,9 +122,7 @@ public class NSApi {
      * @return whatever the NightScout API returns, as JSON String
      */
     public JsonNode postEntries(String entries) throws UnirestException {
-        return Unirest.post(host + "entries")
-                .body(entries)
-                .asJson().getBody();
+        return post("entries", entries);
     }
 
     /**
@@ -137,9 +141,7 @@ public class NSApi {
      * @return whatever the NightScout API returns, as JSON String
      */
     public JsonNode postTreatments(String treatments) throws UnirestException {
-        return Unirest.post(host + "treatments")
-                .body(treatments)
-                .asJson().getBody();
+        return post("treatments", treatments);
     }
 
 

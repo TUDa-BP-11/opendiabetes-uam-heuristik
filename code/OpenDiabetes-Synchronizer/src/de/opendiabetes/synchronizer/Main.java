@@ -16,6 +16,7 @@ public class Main {
         String end = null;
         String batchsize = null;
         int count = 100;
+        boolean debug = false;
         try {
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
@@ -34,6 +35,9 @@ public class Main {
                         case "batch":
                         case "batchsize":
                             batchsize = getValue(arg, args, i);
+                            break;
+                        case "debug":
+                            debug = true;
                             break;
                         default:
                             throw new IllegalArgumentException("Unknown argument " + arg);
@@ -61,6 +65,8 @@ public class Main {
             }
         } catch (IllegalArgumentException e) {
             System.out.println("Error while parsing arguments: " + e.getMessage());
+            if (debug)
+                e.printStackTrace();
             return;
         }
 
@@ -76,10 +82,13 @@ public class Main {
             writeSecret = properties.getProperty("write.secret");
         } catch (FileNotFoundException e) {
             System.out.println("Cannot find config file at " + configpath);
+            if (debug)
+                e.printStackTrace();
             return;
         } catch (IOException e) {
-            System.out.println("Exception while reading config file: ");
-            e.printStackTrace();
+            System.out.println("Exception while reading config file: " + e.getMessage());
+            if (debug)
+                e.printStackTrace();
             return;
         }
 
@@ -87,13 +96,26 @@ public class Main {
         NSApi write = new NSApi(writeHost, writeSecret);
 
         Synchronizer synchronizer = new Synchronizer(read, write, start, end, count);
+        synchronizer.setDebug(debug);
+        Synchronizable entries = new Synchronizable("entries", "dateString");
+        Synchronizable treatments = new Synchronizable("treatments", "created_at");
+        Synchronizable status = new Synchronizable("devicestatus", "created_at");
 
-        synchronizer.findMissingEntries();
-        System.out.println("Found " + synchronizer.getFindEntriesCount() + " entries of which " + synchronizer.getMissingEntriesCount() + " are missing in the target instance.");
-        synchronizer.postMissingEntries();
-        synchronizer.findMissingTreatments();
-        System.out.println("Found " + synchronizer.getFindTreatmentsCount() + " treatments of which " + synchronizer.getMissingTreatmentsCount() + " are missing in the target instance.");
-        synchronizer.postMissingTreatments();
+        try {
+            synchronizer.findMissing(entries);
+            System.out.println("Found " + entries.getFindCount() + " entries of which " + entries.getMissingCount() + " are missing in the target instance.");
+            synchronizer.postMissing(entries);
+            synchronizer.findMissing(treatments);
+            System.out.println("Found " + treatments.getFindCount() + " treatments of which " + treatments.getMissingCount() + " are missing in the target instance.");
+            synchronizer.postMissing(treatments);
+            synchronizer.findMissing(status);
+            System.out.println("Found " + status.getFindCount() + " devicestatus of which " + status.getMissingCount() + " are missing in the target instance.");
+            synchronizer.postMissing(status);
+        } catch (SynchronizerException e) {
+            System.out.println(e.getMessage());
+            if (debug)
+                e.printStackTrace();
+        }
         synchronizer.close();
         System.out.println("Done!");
     }

@@ -6,6 +6,8 @@ import de.opendiabetes.nsapi.NSApi;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.time.ZonedDateTime;
+
 public class Synchronizer {
     private NSApi read;
     private NSApi write;
@@ -13,10 +15,7 @@ public class Synchronizer {
     private String end;
     private int batchSize;
 
-    private int findEntriesCount;
-    private JSONArray missingEntries;
-    private int findTreatmentsCount;
-    private JSONArray missingTreatments;
+    private boolean debug = false;
 
     public Synchronizer(NSApi read, NSApi write, String start, String end, int batchSize) {
         this.read = read;
@@ -46,118 +45,94 @@ public class Synchronizer {
         return batchSize;
     }
 
-    public void findMissingEntries() {
-        findEntriesCount = 0;
-        missingEntries = new JSONArray();
-        GetBuilder getBuilder;
-        JSONArray found = new JSONArray();
+    public void findMissing(Synchronizable synchronizable) {
+        synchronizable.reset();
+        GetBuilder sourceGetBuilder;
+        GetBuilder targetGetBuilder;
+        JSONArray sourceEntries = new JSONArray();
+        JSONArray targetEntries;
+        String dateField = synchronizable.getDateField();
         try {
             do {
-                getBuilder = read.getEntries().count(batchSize);
+                sourceGetBuilder = new GetBuilder(read.get(synchronizable.getApiPath()));
+                sourceGetBuilder.count(batchSize);
 
-                if (found.length() == 0) {  // first search
-                    getBuilder.find("dateString").gte(start);
+                if (sourceEntries.length() == 0) {  // first search
+                    sourceGetBuilder.find(dateField).gte(start);
                 } else {    // next search, start after oldest found entry
-                    String last = found.getJSONObject(0).getString("dateString");
-                    getBuilder.find("dateString").gt(last);
+                    String last = sourceEntries.getJSONObject(0).getString(dateField);
+                    sourceGetBuilder.find(dateField).gt(last);
                 }
 
                 if (end != null)
-                    getBuilder.find("dateString").lt(end);
+                    sourceGetBuilder.find(dateField).lt(end);
 
-                found = getBuilder.get().getArray();
-                findEntriesCount += found.length();
+                sourceEntries = sourceGetBuilder.get().getArray();
+                synchronizable.incrFindCount(sourceEntries.length());
 
-                for (int i = 0; i < found.length(); i++) {
-                    JSONObject entry = found.getJSONObject(i);
-                    String date = entry.getString("dateString");
-                    JSONArray target = write.getEntries().find("dateString").eq(date).get().getArray();
-                    if (target.length() == 0)    //no result found
-                        missingEntries.put(entry);
+                if (sourceEntries.length() > 0) {
+                    // entries are always sorted in descending order
+                    int i = sourceEntries.length() - 1;
+                    JSONObject original = sourceEntries.getJSONObject(i);
+                    String originalDate = original.getString(dateField);
+
+                    do {
+                        // get entries from target to compare
+                        targetGetBuilder = new GetBuilder(write.get(synchronizable.getApiPath()))
+                                .count(batchSize)
+                                .find(dateField).gte(originalDate);
+                        if (end != null)
+                            targetGetBuilder.find(dateField).lt(end);
+
+                        targetEntries = targetGetBuilder.get().getArray();
+                        if (targetEntries.length() == 0) {  // if no result in target instance, all entries are missing
+                            for (; i >= 0; i--)
+                                synchronizable.putMissing(sourceEntries.getJSONObject(i));
+                        } else {
+                            // start comparing entries from source with target
+                            int k = targetEntries.length() - 1;
+                            do {
+                                original = sourceEntries.getJSONObject(i);
+                                originalDate = original.getString(dateField);
+                                String compareDate = targetEntries.getJSONObject(k).getString(dateField);
+                                if (originalDate.equals(compareDate)) {     // not missing
+                                    k--;
+                                    i--;
+                                } else {
+                                    ZonedDateTime originalZDT = ZonedDateTime.parse(originalDate);
+                                    ZonedDateTime compareZDT = ZonedDateTime.parse(compareDate);
+                                    if (originalZDT.isBefore(compareZDT)) {   // original is missing
+                                        synchronizable.putMissing(original);
+                                        i--;
+                                    } else {    // compare is older then original, test next
+                                        k--;
+                                    }
+                                }
+                            } while (i >= 0 && k >= 0); // compare as long as there is something to compare
+                        }
+                    } while (i >= 0);
+                    // repeat if there are still entries not compared (target returned more results than batch size)
                 }
-            } while (found.length() != 0);
+            } while (sourceEntries.length() != 0);  // repeat as long as source returns something
         } catch (UnirestException e) {
-            System.out.println("Exception while trying to compile list of missingEntries entries");
-            e.printStackTrace();
+            throw new SynchronizerException("Exception while trying to compile list of missing " + synchronizable.getApiPath() + " entries!");
         }
     }
 
-    public int getFindEntriesCount() {
-        return findEntriesCount;
-    }
-
-    public int getMissingEntriesCount() {
-        return missingEntries.length();
-    }
-
-    public void postMissingEntries() {
-        if (missingEntries.length() > 0) {
-            try {
-                write.postEntries(missingEntries.toString());
-            } catch (UnirestException e) {
-                System.out.println("Exception while trying to post missing entries");
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void findMissingTreatments() {
-        findTreatmentsCount = 0;
-        missingTreatments = new JSONArray();
-        GetBuilder getBuilder;
-        JSONArray found = new JSONArray();
+    public void postMissing(Synchronizable synchronizable) {
         try {
-            do {
-                getBuilder = read.getTreatments().count(batchSize);
-
-                if (found.length() == 0) {  // first search
-                    getBuilder.find("created_at").gte(start);
-                } else {    // next search, start after oldest found entry
-                    String last = found.getJSONObject(0).getString("created_at");
-                    getBuilder.find("created_at").gt(last);
-                }
-
-                if (end != null)
-                    getBuilder.find("created_at").lt(end);
-
-                found = getBuilder.get().getArray();
-                findTreatmentsCount += found.length();
-
-                for (int i = 0; i < found.length(); i++) {
-                    JSONObject entry = found.getJSONObject(i);
-                    String date = entry.getString("created_at");
-                    JSONArray target = write.getTreatments().find("created_at").eq(date).get().getArray();
-                    if (target.length() == 0)    //no result found
-                        missingTreatments.put(entry);
-                }
-            } while (found.length() != 0);
+            write.post(synchronizable.getApiPath(), synchronizable.getMissing().toString());
         } catch (UnirestException e) {
-            System.out.println("Exception while trying to compile list of missing treatments");
-            e.printStackTrace();
-        }
-    }
-
-    public int getFindTreatmentsCount() {
-        return findTreatmentsCount;
-    }
-
-    public int getMissingTreatmentsCount() {
-        return missingTreatments.length();
-    }
-
-    public void postMissingTreatments() {
-        if (missingTreatments.length() > 0) {
-            try {
-                write.postTreatments(missingTreatments.toString());
-            } catch (UnirestException e) {
-                System.out.println("Exception while trying to post missing treatments");
-                e.printStackTrace();
-            }
+            throw new SynchronizerException("Exception while trying to post missing " + synchronizable.getApiPath() + " entries!", e);
         }
     }
 
     public void close() {
         read.close();
         write.close();
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 }
