@@ -16,8 +16,16 @@
     <!-- OpenDiabetes-NSApi properties -->
     <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
     <property name="nsapi.jar" value="NSApi.jar"/>
-    <condition property="nsapi.available">
-        <available file="${nsapi.dir}/dist/${nsapi.jar}"/>
+    <available property="nsapi.available" file="${nsapi.dir}/dist/${nsapi.jar}"/>
+
+    <!-- Check if tests can be run -->
+    <condition property="cantest">
+        <and>
+            <antversion atleast="1.10.3"/>
+            <available classname="org.junit.platform.launcher.core.LauncherFactory"/>
+            <available classname="org.junit.platform.commons.util.Preconditions"/>
+            <available classname="org.junit.platform.engine.TestEngine"/>
+        </and>
     </condition>
 
     <!-- classpaths for compilation and tests -->
@@ -38,8 +46,7 @@
         <pathelement path="${build.test.dir}"/>
     </path>
 
-    <target name="full" depends="clean, unjar, compile, compress, test"
-            description="Clean, build jar with all libraries, run tests"/>
+    <target name="full" depends="clean, unjar, compile, compress, test" description="Clean, build jar with all libraries, run tests"/>
     <target name="main" depends="unjar, compile, compress" description="Build jar with existing librarys"/>
 
     <target name="clean" description="Deletes the build and output directories">
@@ -83,7 +90,7 @@
         <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
     </target>
 
-    <target name="compile" depends="init" description="Compiles the project">
+    <target name="compile" depends="unjar" description="Compiles the project">
         <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false">
             <classpath refid="classpath"/>
             <compilerarg line="-encoding utf-8"/>
@@ -114,7 +121,13 @@
         </javac>
     </target>
 
-    <target name="test" depends="compile.test" description="Runs the tests">
+    <target name="test.checkversion" unless="cantest" description="Prints a warning if the current version of ant does not support tests">
+        <echo>One of the following conditions to run tests is not met:</echo>
+        <echo>Ant version 1.10.3 or newer</echo>
+        <echo>JUnit Platform Launcher, Commons and Engine need to available in the ant classpath</echo>
+    </target>
+
+    <target name="test" if="cantest" depends="test.checkversion, compile.test" description="Runs the tests. Ant version 1.10.3 or higher required">
         <junitlauncher haltonfailure="true" printsummary="true">
             <classpath refid="junit.classpath"/>
             <classpath refid="test.classpath"/>
