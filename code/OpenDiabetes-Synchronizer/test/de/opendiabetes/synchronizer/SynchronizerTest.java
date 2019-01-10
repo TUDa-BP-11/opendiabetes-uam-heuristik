@@ -1,6 +1,7 @@
 package de.opendiabetes.synchronizer;
 
 
+import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.nsapi.NSApi;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,7 +33,8 @@ public class SynchronizerTest {
 
         NSApi read = new NSApi(readHost, readSecret);
         NSApi write = new NSApi(writeHost, writeSecret);
-        synchronizer = new Synchronizer(read, write, "1970-01-01", null, 100);
+        synchronizer = new Synchronizer(read, write, "1970-01-01", null, 20);
+        //synchronizer.setDebug(true);
     }
 
     @AfterAll
@@ -46,11 +48,11 @@ public class SynchronizerTest {
             "treatments, created_at",
             "devicestatus, created_at"
     })
-    void testMissing(String apiPath, String dateString) {
-        Synchronizable sync = new Synchronizable(apiPath, dateString);
+    void testMissingZero(String apiPath, String dateField) throws UnirestException {
+        Synchronizable sync = new Synchronizable(apiPath, dateField);
         synchronizer.findMissing(sync);
-        int missing = sync.getMissingCount();
-        synchronizer.postMissing(sync);
+        if (sync.getMissingCount() > 0)
+            synchronizer.postMissing(sync);
         synchronizer.findMissing(sync);
         int missingNew = sync.getMissingCount();
         assertEquals(0, missingNew);

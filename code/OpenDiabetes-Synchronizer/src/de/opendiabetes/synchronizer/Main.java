@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -25,16 +26,21 @@ public class Main {
                     switch (arg) {
                         case "config":
                             configpath = getValue(arg, args, i);
+                            i++;
                             break;
                         case "start":
                             start = getValue(arg, args, i);
+                            i++;
                             break;
                         case "end":
                             end = getValue(arg, args, i);
+                            i++;
                             break;
+                        case "n":
                         case "batch":
                         case "batchsize":
                             batchsize = getValue(arg, args, i);
+                            i++;
                             break;
                         case "debug":
                             debug = true;
@@ -42,7 +48,6 @@ public class Main {
                         default:
                             throw new IllegalArgumentException("Unknown argument " + arg);
                     }
-                    i++;
                 } else if (start == null) {
                     start = arg;
                 } else if (end == null) {
@@ -56,6 +61,8 @@ public class Main {
                 start = "1970-01-01";
             if (end != null && !timepattern.matcher(end).find())
                 throw new IllegalArgumentException("end date invalid");
+            if (end == null)
+                end = LocalDateTime.now().toString();
             if (batchsize != null) {
                 try {
                     count = Integer.parseInt(batchsize);
@@ -104,13 +111,16 @@ public class Main {
         try {
             synchronizer.findMissing(entries);
             System.out.println("Found " + entries.getFindCount() + " entries of which " + entries.getMissingCount() + " are missing in the target instance.");
-            synchronizer.postMissing(entries);
+            if (entries.getMissingCount() > 0)
+                synchronizer.postMissing(entries);
             synchronizer.findMissing(treatments);
             System.out.println("Found " + treatments.getFindCount() + " treatments of which " + treatments.getMissingCount() + " are missing in the target instance.");
-            synchronizer.postMissing(treatments);
+            if (treatments.getMissingCount() > 0)
+                synchronizer.postMissing(treatments);
             synchronizer.findMissing(status);
             System.out.println("Found " + status.getFindCount() + " devicestatus of which " + status.getMissingCount() + " are missing in the target instance.");
-            synchronizer.postMissing(status);
+            if (status.getMissingCount() > 0)
+                synchronizer.postMissing(status);
         } catch (SynchronizerException e) {
             System.out.println(e.getMessage());
             if (debug)

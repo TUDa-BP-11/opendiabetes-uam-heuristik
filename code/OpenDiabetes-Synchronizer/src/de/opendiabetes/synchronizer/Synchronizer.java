@@ -45,6 +45,12 @@ public class Synchronizer {
         return batchSize;
     }
 
+    /**
+     * Finds all missing entries in the target NS instance. Nightscout returns entries in order from newest to oldest.
+     * Therefore we actually compare in reverse order, from end to start
+     *
+     * @param synchronizable The Synchronizable that will be tested.
+     */
     public void findMissing(Synchronizable synchronizable) {
         synchronizable.reset();
         GetBuilder sourceGetBuilder;
@@ -58,64 +64,74 @@ public class Synchronizer {
                 sourceGetBuilder.count(batchSize);
 
                 if (sourceEntries.length() == 0) {  // first search
-                    sourceGetBuilder.find(dateField).gte(start);
-                } else {    // next search, start after oldest found entry
-                    String last = sourceEntries.getJSONObject(0).getString(dateField);
-                    sourceGetBuilder.find(dateField).gt(last);
+                    sourceGetBuilder.find(dateField).lte(end);
+                } else {    // next search, start at oldest found entry
+                    String last = sourceEntries.getJSONObject(sourceEntries.length() - 1).getString(dateField);
+                    sourceGetBuilder.find(dateField).lt(last);
                 }
-
-                if (end != null)
-                    sourceGetBuilder.find(dateField).lt(end);
+                sourceGetBuilder.find(dateField).gte(start);
 
                 sourceEntries = sourceGetBuilder.get().getArray();
                 synchronizable.incrFindCount(sourceEntries.length());
+                if (debug)
+                    System.out.println("Found " + sourceEntries.length() + " entries in source");
 
                 if (sourceEntries.length() > 0) {
-                    // entries are always sorted in descending order
-                    int i = sourceEntries.length() - 1;
+                    int i = 0;
                     JSONObject original = sourceEntries.getJSONObject(i);
                     String originalDate = original.getString(dateField);
 
                     do {
                         // get entries from target to compare
-                        targetGetBuilder = new GetBuilder(write.get(synchronizable.getApiPath()))
-                                .count(batchSize)
-                                .find(dateField).gte(originalDate);
-                        if (end != null)
-                            targetGetBuilder.find(dateField).lt(end);
-
+                        targetGetBuilder = new GetBuilder(write.get(synchronizable.getApiPath()));
+                        targetGetBuilder.count(batchSize);
+                        if (i == 0) // first search
+                            targetGetBuilder.find(dateField).lte(originalDate);
+                        else // next search, start at oldest found entry
+                            targetGetBuilder.find(dateField).lt(originalDate);
+                        targetGetBuilder.find(dateField).gte(start);
                         targetEntries = targetGetBuilder.get().getArray();
+                        if (debug)
+                            System.out.println("Found " + targetEntries.length() + " entries in target");
+
                         if (targetEntries.length() == 0) {  // if no result in target instance, all entries are missing
-                            for (; i >= 0; i--)
+                            if (debug)
+                                System.out.println("Marking remaining " + (sourceEntries.length() - i) + " entries as missing");
+                            for (; i < sourceEntries.length(); i++)
                                 synchronizable.putMissing(sourceEntries.getJSONObject(i));
                         } else {
                             // start comparing entries from source with target
-                            int k = targetEntries.length() - 1;
+                            int k = 0;
                             do {
                                 original = sourceEntries.getJSONObject(i);
                                 originalDate = original.getString(dateField);
                                 String compareDate = targetEntries.getJSONObject(k).getString(dateField);
                                 if (originalDate.equals(compareDate)) {     // not missing
-                                    k--;
-                                    i--;
+                                    if (debug)
+                                        System.out.println("- " + originalDate + " IS NOT missing");
+                                    k++;
+                                    i++;
                                 } else {
                                     ZonedDateTime originalZDT = ZonedDateTime.parse(originalDate);
                                     ZonedDateTime compareZDT = ZonedDateTime.parse(compareDate);
-                                    if (originalZDT.isBefore(compareZDT)) {   // original is missing
+                                    if (originalZDT.isAfter(compareZDT)) {   // original is missing
+                                        if (debug)
+                                            System.out.println("+ " + originalDate + " IS missing");
                                         synchronizable.putMissing(original);
-                                        i--;
-                                    } else {    // compare is older then original, test next
-                                        k--;
+                                        i++;
+                                    } else {    // original is newer then compare, test next
+                                        k++;
                                     }
                                 }
-                            } while (i >= 0 && k >= 0); // compare as long as there is something to compare
+                            } while (i < sourceEntries.length() && k < targetEntries.length());
+                            // compare as long as there is something to compare
                         }
-                    } while (i >= 0);
-                    // repeat if there are still entries not compared (target returned more results than batch size)
+                    } while (i < sourceEntries.length());
+                    // repeat if there are still entries not compared (target has more results than batch size)
                 }
             } while (sourceEntries.length() != 0);  // repeat as long as source returns something
         } catch (UnirestException e) {
-            throw new SynchronizerException("Exception while trying to compile list of missing " + synchronizable.getApiPath() + " entries!");
+            throw new SynchronizerException("Exception while trying to compile list of missing " + synchronizable.getApiPath() + " entries!", e);
         }
     }
 
