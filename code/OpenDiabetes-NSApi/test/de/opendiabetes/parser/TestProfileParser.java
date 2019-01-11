@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestProfileParser {
     @Test
-    public void testProfile() {
+    public void randomProfile() {
         Random random = new Random();
         ZoneId zone = ZoneId.systemDefault();
         double sensitivity = random.nextDouble() * 100;
