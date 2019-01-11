@@ -33,7 +33,7 @@ public class TestOpenDiabetesAlgo {
             assertEquals(expected, algo.cob(t, tEnd));
         } else {
             double expected = -1 + (4 * t / tEnd) - (2 * (t * t) / (tEnd * tEnd));
-            assertEquals(expected, algo.cob(t, tEnd), 1e-15);   //TODO: fix this delta?
+            assertEquals(expected, algo.cob(t, tEnd), 1e-14);   //TODO: fix this delta?
         }
     }
 
