@@ -2,6 +2,7 @@ package de.opendiabetes.nsapi;
 
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 import org.json.JSONObject;
@@ -43,10 +44,10 @@ class NSApiTest {
 
     @Test
     void testStatus() throws UnirestException {
-        JSONObject status = api.getStatus();
+        Status status = api.getStatus();
         assertNotNull(status);
-        assertEquals("ok", status.getString("status"));        // tests should break if status is not ok
-        assertTrue(status.getBoolean("apiEnabled"));    // test should break if api is not enabled
+        assertTrue(status.isStatusOk());      // tests should break if status is not ok
+        assertTrue(status.isApiEnabled());    // tests should break if api is not enabled
     }
 
     @Test
