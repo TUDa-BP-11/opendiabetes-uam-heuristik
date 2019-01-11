@@ -1,4 +1,4 @@
-package opendiabetes.algo;
+package de.opendiabetes.algo;
 
 import java.util.Date;
 

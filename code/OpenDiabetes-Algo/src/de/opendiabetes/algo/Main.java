@@ -1,4 +1,4 @@
-package opendiabetes.algo;
+package de.opendiabetes.algo;
 
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;

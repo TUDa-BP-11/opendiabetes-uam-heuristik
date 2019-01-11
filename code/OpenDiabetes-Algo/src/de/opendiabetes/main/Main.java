@@ -1,6 +1,6 @@
-package de.opendiabetes.uam;
+package de.opendiabetes.main;
 
-import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.nsapi.NSApi;
 
 import java.io.FileInputStream;
 import java.io.IOException;

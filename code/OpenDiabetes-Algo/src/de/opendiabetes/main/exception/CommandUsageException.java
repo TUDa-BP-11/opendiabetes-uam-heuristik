@@ -1,4 +1,4 @@
-package de.opendiabetes.uam.exception;
+package de.opendiabetes.main.exception;
 
 public class CommandUsageException extends RuntimeException {
     public CommandUsageException(String command, String usage) {

@@ -1,4 +1,4 @@
-package opendiabetes.algo;
+package de.opendiabetes.algo;
 
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;

@@ -1,6 +1,6 @@
-package de.opendiabetes.uam;
+package de.opendiabetes.main;
 
-import de.opendiabetes.uam.exception.CommandUsageException;
+import de.opendiabetes.main.exception.CommandUsageException;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package de.opendiabetes.uam;
+package de.opendiabetes.main;
 
 import java.text.SimpleDateFormat;
 
