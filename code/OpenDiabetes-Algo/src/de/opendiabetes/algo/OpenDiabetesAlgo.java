@@ -112,10 +112,12 @@ public class OpenDiabetesAlgo {
                 next = glucose.remove(0);
                 deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000D);
                 deltaBG = next.getValue() - current.getValue();
-            } while (deltaTime < 10 && Math.abs(deltaBG) < 1);
+            } while (!glucose.isEmpty() && deltaTime < 10 && Math.abs(deltaBG) < 1);
 
-            double find = findBruteForce(deltaTime, deltaBG, 20);
-            meals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, current.getTimestamp(), find));
+            if (deltaTime < 10 && Math.abs(deltaBG) < 1) {
+                double find = findBruteForce(deltaTime, deltaBG, 20);
+                meals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, current.getTimestamp(), find));
+            }
             current = next;
         }
         return meals;
