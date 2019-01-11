@@ -61,6 +61,7 @@
     </target>
 
     <target name="compile.engine" unless="engine.available" description="Builds the engine, unless it already exists">
+        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
         <ant dir="${engine.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
     </target>
 
