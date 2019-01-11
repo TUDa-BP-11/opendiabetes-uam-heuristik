@@ -14,8 +14,8 @@ import java.util.Date;
 import java.util.List;
 
 public class OpenDiabetesAlgo implements Algorithm {
-    private double absorptionTime = 120;
-    private double insDuration = 180;
+    private double absorptionTime;
+    private double insDuration;
     private double carbRatio;
     private double insSensitivityFactor;
     private List<VaultEntry> glucose;
@@ -30,9 +30,25 @@ public class OpenDiabetesAlgo implements Algorithm {
      */
 
     public OpenDiabetesAlgo() {
+        absorptionTime = 120;
+        insDuration = 180;
         carbRatio = 10;
         insSensitivityFactor = 35;
+        glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
+        mealTreatments = new ArrayList<>();
+        basalTratments = new ArrayList<>();
+    }
+
+    public OpenDiabetesAlgo(double absorptionTime, double insDuration, double carbRatio, double insSensitivityFactor) {
+        this.absorptionTime = absorptionTime;
+        this.insDuration = insDuration;
+        this.carbRatio = carbRatio;
+        this.insSensitivityFactor = insSensitivityFactor;
+        glucose = new ArrayList<>();
+        bolusTreatments = new ArrayList<>();
+        mealTreatments = new ArrayList<>();
+        basalTratments = new ArrayList<>();
     }
 
     @Override

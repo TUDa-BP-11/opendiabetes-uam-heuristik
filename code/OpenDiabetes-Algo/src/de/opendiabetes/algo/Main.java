@@ -13,8 +13,8 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-
         ProfileParser profileParser = new ProfileParser();
+
         String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
         profile.adjustProfile();
@@ -51,7 +51,7 @@ public class Main {
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
-        OpenDiabetesAlgo algo = new OpenDiabetesAlgo();
+        OpenDiabetesAlgo algo = new OpenDiabetesAlgo(120, 180, profile.getCarbratio(), profile.getSensitivity());
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
         algo.setBasalTratments(basals);
