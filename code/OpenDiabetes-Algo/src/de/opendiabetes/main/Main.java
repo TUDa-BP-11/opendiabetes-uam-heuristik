@@ -1,7 +1,7 @@
 package de.opendiabetes.main;
 
 import de.opendiabetes.algo.Algorithm;
-import de.opendiabetes.algo.DemoAlgorithm;
+import de.opendiabetes.algo.OpenDiabetesAlgo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.vault.engine.container.VaultEntry;
@@ -91,7 +91,7 @@ public class Main {
         Algorithm algorithm;
         switch (algorithmName.toLowerCase()) {
             case "demo":
-                algorithm = new DemoAlgorithm();
+                algorithm = new OpenDiabetesAlgo();
                 break;
             default:
                 Log.logError("Unknown algorithm " + algorithmName);

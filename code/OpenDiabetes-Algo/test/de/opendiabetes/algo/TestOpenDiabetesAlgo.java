@@ -39,7 +39,7 @@ public class TestOpenDiabetesAlgo {
 
     @Test
     public void testDeltaBGC() {
-        double sens = algo.getInsSensitivityFactor();
+        double sens = algo.getInsulinSensitivity();
         double carb = algo.getCarbRatio();
 
         double x = 32;
@@ -49,8 +49,8 @@ public class TestOpenDiabetesAlgo {
 
     @Test
     public void testDeltaBGI() {
-        double sens = algo.getInsSensitivityFactor();
-        int insDuration = algo.getInsDuration();
+        double sens = algo.getInsulinSensitivity();
+        double insDuration = algo.getInsulinDuration();
 
         double y = 3;
         double expected = -1 * y * sens * (1 - algo.fastActingIob(t, insDuration));     //TODO fastActingIOB vs getIOBWeight / 100D ?
@@ -69,7 +69,7 @@ public class TestOpenDiabetesAlgo {
         for (VaultEntry vaultEntry : glucose) {
             System.out.println("BG " + vaultEntry.getTimestamp().toString() + ": " + vaultEntry.getValue());
         }
-        algo.setGlucose(glucose);
+        algo.setGlucoseMeasurements(glucose);
         List<VaultEntry> meals = algo.bruteForce();
         for (VaultEntry meal : meals) {
             System.out.println("+Meal " + meal.getTimestamp().toString() + ": " + meal.getValue());

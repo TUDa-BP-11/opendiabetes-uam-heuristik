@@ -52,12 +52,12 @@ public class Main {
         entries.sort(new SortVaultEntryByDate());
 
         OpenDiabetesAlgo algo = new OpenDiabetesAlgo();
-        algo.setGlucose(entries);
+        algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
         algo.setBasalTratments(basals);
 
         System.out.println("calc :");
-        List<VaultEntry> meals = algo.calc2();
+        List<VaultEntry> meals = algo.calculateMeals();
         for (VaultEntry meal : meals) {
             System.out.println(meal.toString());
         }
