@@ -13,12 +13,12 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestOpenDiabetesAlgo {
-    private static OpenDiabetesAlgo algo;
+    private static BruteForceAlgo algo;
     private static double t, tEnd;
 
     @BeforeAll
     public static void setup() {
-        algo = new OpenDiabetesAlgo();
+        algo = new BruteForceAlgo();
         Random random = new Random();
         tEnd = random.nextDouble() * 100;
         t = random.nextDouble() * tEnd;
@@ -70,7 +70,7 @@ public class TestOpenDiabetesAlgo {
             System.out.println("BG " + vaultEntry.getTimestamp().toString() + ": " + vaultEntry.getValue());
         }
         algo.setGlucoseMeasurements(glucose);
-        List<VaultEntry> meals = algo.bruteForce();
+        List<VaultEntry> meals = algo.calculateMeals();
         for (VaultEntry meal : meals) {
             System.out.println("+Meal " + meal.getTimestamp().toString() + ": " + meal.getValue());
         }
