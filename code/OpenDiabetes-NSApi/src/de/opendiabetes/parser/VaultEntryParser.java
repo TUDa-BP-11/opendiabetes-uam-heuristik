@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 public class VaultEntryParser implements Parser<List<VaultEntry>> {
 
@@ -75,7 +76,7 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
     }
 
     /*
-      @param vaultEntries
+     * @param vaultEntries
      * @return Entry{
      * <p>
      * type string
@@ -157,50 +158,98 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
      * }
      */
 
-    /*
     // "Correction Bolus", "duration", "unabsorbed", "type", "programmed", "insulin"
     // "Meal Bolus", "carbs", "absorptionTime"
-    public String unparse(List<VaultEntry> vaultEntries) {
+    public String toJson(List<VaultEntry> vaultEntries) {
+        return toJson(vaultEntries, 120);
+    }
 
-        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+    public String toJson(List<VaultEntry> vaultEntries, int absorptionTime) {
         String result = "[";
-
-        for (VaultEntry element : vaultEntries) {
-            result += "{";
-            if (null != element.getType()) {
-                switch (element.getType()) {
-                    case GLUCOSE_CGM:
-                        result += "\"type\": \"sgv\",";
-                        result += "\"sgv\": " + element.getValue() + ",";
-                        result += "\"date\": " + element.getTimestamp().getTime() + ",";
-                        result += "\"direction\":" + ",";
-                        result += "\"trend\":" + ",";
-                        result += "\"_id\":" + ",";
-                        result += "\"device\":" + ",";
-                        break;
-                    case BOLUS_NORMAL:
-                        result += "\"insulin\": " + element.getValue() + ",";
-                        break;
-                    case BASAL_MANUAL:
-                        result += "\"eventType\": \"Temp Basal\",";
-                        result += "\"absolute\": " + element.getValue() + ",";
-                        result += "\"duration\": " + element.getValue2() + ",";
-                        break;
-                    case MEAL_MANUAL:
-                        result += "\"eventType\": \"Meal Bolus\",";
-                        result += "\"carbs\": " + element.getValue() + ",";
-                        break;
-                    default:
-                        break;
-                }
+        if (!vaultEntries.isEmpty()) {
+            result += toJson(vaultEntries.remove(0), absorptionTime);
+            while (!vaultEntries.isEmpty()) {
+                result += "," + toJson(vaultEntries.remove(0), absorptionTime);
             }
-
-            String dateString = formatter.format(element.getTimestamp());
-            result += "\"dateString\": " + dateString + "}";
         }
         result += "]";
-
         return result;
-    }*/
+    }
+
+    private String toJson(VaultEntry entry, int absorptionTime) {
+        String result = "{";
+        result += "\"_id\": \"" + 0 + "\","; //TODO id
+
+        DateFormat formatter;
+        String timestamp;
+        switch (entry.getType()) {
+            case GLUCOSE_CGM:
+                result += "\"type\": \"sgv\",";
+                result += "\"sgv\": " + entry.getValue() + ",";
+                result += "\"date\": " + entry.getTimestamp().getTime() + ",";
+                //TODO direction, trend, device?
+                result += "\"direction\": \"" + "\",";
+                result += "\"trend\": \"" + "\",";
+                result += "\"device\": \"UAMALGO\",";
+
+                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+                formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+                timestamp = formatter.format(entry.getTimestamp());
+                result += "\"dateString\": \"" + timestamp + "\"";
+                break;
+            case BOLUS_NORMAL:
+                result += "\"eventType\": \"Correction Bolus\",";
+                result += "\"insulin\": " + entry.getValue() + ",";
+                result += "\"programmed\": " + entry.getValue() + ",";
+                //TODO programmed, duration, type, unabsorbed, carbs, enteredBy?
+                result += "\"duration\": 0,";
+                result += "\"type\": \"normal\",";
+                result += "\"unabsorbed\": 0,";
+                result += "\"carbs\": null,";
+                result += "\"enteredBy\": \"UAMALGO\"";
+
+                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+                formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+                timestamp = formatter.format(entry.getTimestamp());
+                result += "\"created_at\": \"" + timestamp + "\"";
+                result += "\"timestamp\": \"" + timestamp + "\"";
+                break;
+            case BASAL_MANUAL:
+                result += "\"eventType\": \"Temp Basal\",";
+                result += "\"rate\": " + entry.getValue() + ",";
+                result += "\"duration\": " + entry.getValue2() + ",";
+                //TODO temp, ablsolute, insulin, carbs, enteredBy?
+                result += "\"temp\": \"absolute\",";
+                result += "\"absolute\": " + entry.getValue() + ",";
+                result += "\"insulin\": null,";
+                result += "\"carbs\": null,";
+                result += "\"enteredBy\": \"UAMALGO\"";
+
+                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+                formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+                timestamp = formatter.format(entry.getTimestamp());
+                result += "\"created_at\": \"" + timestamp + "\"";
+                result += "\"timestamp\": \"" + timestamp + "\"";
+                break;
+            case MEAL_MANUAL:
+                result += "\"eventType\": \"Meal Bolus\",";
+                result += "\"carbs\": " + entry.getValue() + ",";
+                result += "\"absorptionTime\": " + absorptionTime + ",";
+                //TODO insulin, enteredBy?
+                result += "\"insulin\": null";
+                result += "\"enteredBy\": \"UAMALGO\"";
+
+                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+                formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+                timestamp = formatter.format(entry.getTimestamp());
+                result += "\"created_at\": \"" + timestamp + "\"";
+                result += "\"timestamp\": \"" + timestamp + "\"";
+                break;
+            default:
+                break;
+        }
+
+        result += "}";
+        return result;
+    }
 }
