@@ -10,14 +10,14 @@ import java.util.List;
 public class BasalCalc {
 
     private Profile profile;
-    private List<tmpBasal> tmpBasals;
+    private List<TempBasal> TempBasals;
 
     public BasalCalc(Profile profile) {
         this.profile = profile;
     }
 
-    public List<tmpBasal> calculateBasal(List<VaultEntry> basalTreatments) {
-        tmpBasals = new ArrayList<>();
+    public List<TempBasal> calculateBasal(List<VaultEntry> basalTreatments) {
+        TempBasals = new ArrayList<>();
         VaultEntry current;
 
         if (!basalTreatments.isEmpty()) {
@@ -39,7 +39,7 @@ public class BasalCalc {
             //last one
             maketmpBasal(current.getValue(), Math.round(current.getValue2()), current.getTimestamp());
         }
-        return tmpBasals;
+        return TempBasals;
     }
 
     private void maketmpBasal(double value, long duration, Date date) {
@@ -54,14 +54,14 @@ public class BasalCalc {
 
             if (profileTime1 <= treatmentTime && treatmentTime < profileTime2) {
                 if (treatmentTime + duration <= profileTime2) {
-                    tmpBasals.add(new tmpBasal(value - (list.get(i).getValue() * duration / 60), duration, date));
+                    TempBasals.add(new TempBasal(value - (list.get(i).getValue() * duration / 60), duration, date));
                     return;
                 } else {
 
                     long deltadur = profileTime2 - treatmentTime;
                     double deltaValue = value * deltadur / duration;
 
-                    tmpBasals.add(new tmpBasal(deltaValue - (list.get(i).getValue() * deltadur / 60), deltadur, date));
+                    TempBasals.add(new TempBasal(deltaValue - (list.get(i).getValue() * deltadur / 60), deltadur, date));
                     maketmpBasal(value - deltaValue, duration - deltadur, new Date(date.getTime() + deltadur * 60000));
                     return;
                 }
@@ -72,12 +72,12 @@ public class BasalCalc {
         long profileTime = 24 * 60;
 
         if (treatmentTime + duration <= profileTime) {
-            tmpBasals.add(new tmpBasal(value - (list.get(list.size() - 1).getValue() * duration / 60), duration, date));
+            TempBasals.add(new TempBasal(value - (list.get(list.size() - 1).getValue() * duration / 60), duration, date));
         } else {
             long deltadur = profileTime - treatmentTime;
             double deltaValue = value * deltadur / duration;
 
-            tmpBasals.add(new tmpBasal(deltaValue - (list.get(list.size() - 1).getValue() * deltadur / 60), deltadur, date));
+            TempBasals.add(new TempBasal(deltaValue - (list.get(list.size() - 1).getValue() * deltadur / 60), deltadur, date));
             maketmpBasal(value - deltaValue, duration - deltadur, new Date(date.getTime() + deltadur * 60000));
         }
     }

@@ -40,9 +40,9 @@ public class Main {
 
         }
 
-        List<tmpBasal> basals = basalCalculator.calculateBasal(basalTreatments);
+        List<TempBasal> basals = basalCalculator.calculateBasal(basalTreatments);
         /*
-        for (tmpBasal b:basals){
+        for (TempBasal b:basals){
             System.out.println(b.toString());
 
         }*/

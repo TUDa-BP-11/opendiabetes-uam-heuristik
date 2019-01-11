@@ -22,7 +22,7 @@ public class OpenDiabetesAlgo {
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
-    private List<tmpBasal> basalTratments;
+    private List<TempBasal> basalTratments;
 
 /*
     startWert -> Zeitdiff zwischen current und next -> predict next GlucoseValue (tmp)
@@ -44,7 +44,7 @@ public class OpenDiabetesAlgo {
         this.bolusTreatments = bolusTreatments;
     }
 
-    public void setBasalTratments(List<tmpBasal> basalTratments) {
+    public void setBasalTratments(List<TempBasal> basalTratments) {
         this.basalTratments = basalTratments;
     }
 
@@ -151,7 +151,7 @@ public class OpenDiabetesAlgo {
             }
             result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
         }
-        for (tmpBasal basal : basalTratments) {
+        for (TempBasal basal : basalTratments) {
             long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);//Time in minutes
             if (deltaTime <= 0) {
                 break;

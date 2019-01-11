@@ -29,11 +29,11 @@ public class Input extends Thread {
                     String[] split = input.split(" ");
                     switch (split[0].toLowerCase()) {
                         case "stop":
-                            Main.getMainControl().stop();
+                            //TODO
                             shutdown();
                             break loop;
                         case "abort":
-                            Main.getMainControl().abort();
+                            //TODO
                             shutdown();
                             break loop;
                         default:
