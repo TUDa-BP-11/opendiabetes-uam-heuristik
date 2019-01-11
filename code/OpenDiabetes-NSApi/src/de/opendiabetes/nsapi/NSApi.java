@@ -5,8 +5,9 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
+import de.opendiabetes.parser.Status;
+import de.opendiabetes.parser.StatusParser;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -36,9 +37,10 @@ public class NSApi {
      *
      * @return the status as a JSON formatted String
      */
-    public JSONObject getStatus() throws UnirestException {
-        HttpResponse<JsonNode> response = get("status").asJson();
-        return response.getBody().getObject();
+    public Status getStatus() throws UnirestException {
+        HttpResponse<String> response = get("status").asString();
+        StatusParser parser = new StatusParser();
+        return parser.parse(response.getBody());
     }
 
     /**
