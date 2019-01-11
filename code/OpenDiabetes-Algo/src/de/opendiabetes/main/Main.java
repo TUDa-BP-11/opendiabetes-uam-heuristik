@@ -4,6 +4,8 @@ import de.opendiabetes.algo.Algorithm;
 import de.opendiabetes.algo.OpenDiabetesAlgo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.dataprovider.DemoDataProvider;
+import de.opendiabetes.main.dataprovider.NightscoutDataProvider;
+import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 
 import java.util.List;
@@ -26,6 +28,7 @@ public class Main {
         double insulinSensitivity = 35;
         double absorptionTime = 120;
         double insulinDuration = 180;
+        String configPath = "config.properties";
         boolean debug = false;
         try {
             for (int i = 0; i < args.length; i++) {
@@ -63,6 +66,10 @@ public class Main {
                             insulinDuration = getDoubleValue(arg, args, i);
                             i++;
                             break;
+                        case "config":
+                            configPath = getValue(arg, args, i);
+                            i++;
+                            break;
                         case "debug":
                             debug = true;
                             break;
@@ -79,13 +86,24 @@ public class Main {
         }
 
         AlgorithmDataProvider dataProvider;
-        switch (dataProviderName.toLowerCase()) {
-            case "demo":
-                dataProvider = new DemoDataProvider();
-                break;
-            default:
-                Log.logError("Unknown dataprovider " + dataProviderName);
-                return;
+        try {
+            switch (dataProviderName.toLowerCase()) {
+                case "demo":
+                    dataProvider = new DemoDataProvider();
+                    break;
+                case "ns":
+                case "nightscout":
+                    dataProvider = new NightscoutDataProvider(configPath);
+                    break;
+                default:
+                    Log.logError("Unknown dataprovider " + dataProviderName);
+                    return;
+            }
+        } catch (DataProviderException e) {
+            Log.logError(e.getMessage());
+            if (debug)
+                e.getCause().printStackTrace();
+            return;
         }
 
         Algorithm algorithm;
@@ -108,6 +126,7 @@ public class Main {
             List<VaultEntry> meals = algorithm.calculateMeals();
             Log.logInfo("Calculated %d meals:", meals.size());
             meals.forEach(e -> Log.logInfo("%s: %.3f", e.getTimestamp().toString(), e.getValue()));
+            dataProvider.close();
         });
         main.start();
 

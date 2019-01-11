@@ -27,4 +27,10 @@ public interface AlgorithmDataProvider {
      * @return list of TempBasal entries
      */
     List<TempBasal> getBasalTratments();
+
+    /**
+     * Gets called before exiting the program. Implement this method if you have open resources to close
+     */
+    default void close() {
+    }
 }

@@ -13,6 +13,8 @@
     <property name="build.test.dir" value="${build.dir}/test"/>
     <property name="lib.dir" value="${basedir}/../../lib"/>
 
+    <property name="run.main" value="de.opendiabetes.main.Main"/>
+
     <!-- OpenDiabetes-NSApi properties -->
     <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
     <property name="nsapi.jar" value="NSApi.jar"/>
@@ -135,5 +137,9 @@
             </testclasses>
             <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
         </junitlauncher>
+    </target>
+
+    <target name="run" depends="compile" description="Runs the algorithm with the demo data provider and demo algorithm">
+        <java classname="${run.main}" classpath="${build.classes.dir}" fork="true" output="${output.dir}/RUN-${run.main}.txt"/>
     </target>
 </project>

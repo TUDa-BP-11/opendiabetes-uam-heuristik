@@ -45,7 +45,7 @@ auxiliary.show.customizer.message=<message>
                     <target>main</target>
                 </action>
                 <action name="run">
-                    <target>main</target>
+                    <target>run</target>
                 </action>
                 <action name="test">
                     <target>test</target>
