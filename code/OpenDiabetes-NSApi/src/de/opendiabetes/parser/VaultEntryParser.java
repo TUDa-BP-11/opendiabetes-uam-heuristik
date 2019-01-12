@@ -52,7 +52,7 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
             if (eventType != null && eventType.equals("Temp Basal")) {
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
-                result.add(new VaultEntry(entryType, date, o.getDouble("absolute"), o.getDouble("duration")));
+                result.add(new VaultEntry(entryType, date, o.getDouble("rate"), o.getDouble("duration")));
             }
         }
         return result;
