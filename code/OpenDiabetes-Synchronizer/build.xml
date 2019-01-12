@@ -25,6 +25,11 @@
             <available classname="org.junit.platform.launcher.core.LauncherFactory"/>
             <available classname="org.junit.platform.commons.util.Preconditions"/>
             <available classname="org.junit.platform.engine.TestEngine"/>
+            <available classname="org.opentest4j.AssertionFailedError"/>
+            <available classname="org.junit.vintage.engine.VintageTestEngine"/>
+            <available classname="org.junit.runners.model.RunnerBuilder"/>
+            <available classname="org.junit.jupiter.engine.JupiterTestEngine"/>
+            <available classname="org.junit.jupiter.api.Test"/>
         </and>
     </condition>
 
@@ -124,7 +129,15 @@
     <target name="test.checkversion" unless="cantest" description="Prints a warning if the current version of ant does not support tests">
         <echo>One of the following conditions to run tests is not met:</echo>
         <echo>Ant version 1.10.3 or newer</echo>
-        <echo>JUnit Platform Launcher, Commons and Engine need to available in the ant classpath</echo>
+        <echo>All libraries listed below available in the classpath:</echo>
+        <echo>junit-platform-commons.jar</echo>
+        <echo>junit-platform-engine.jar</echo>
+        <echo>junit-platform-launcher.jar</echo>
+        <echo>opentest4j.jar</echo>
+        <echo>junit-vintage-engine.jar</echo>
+        <echo>junit.jar</echo>
+        <echo>junit-jupiter-engine.jar</echo>
+        <echo>junit-jupiter-api.jar</echo>
     </target>
 
     <target name="test" if="cantest" depends="test.checkversion, compile.test" description="Runs the tests. Ant version 1.10.3 or higher required">
