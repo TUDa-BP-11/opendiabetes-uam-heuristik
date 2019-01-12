@@ -6,6 +6,11 @@ dist/
 nbdist/
 .nb-gradle/
 
+# IntelliJ IDEA
+*.iml
+out/
+bin/
+
 # Compiled class file
 *.class
 
