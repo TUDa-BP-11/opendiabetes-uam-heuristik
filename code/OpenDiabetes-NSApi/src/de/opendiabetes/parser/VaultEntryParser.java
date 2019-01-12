@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class VaultEntryParser implements Parser<List<VaultEntry>> {
 
@@ -165,15 +166,9 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
     }
 
     public String toJson(List<VaultEntry> vaultEntries, int absorptionTime) {
-        String result = "[";
-        if (!vaultEntries.isEmpty()) {
-            result += toJson(vaultEntries.remove(0), absorptionTime);
-            while (!vaultEntries.isEmpty()) {
-                result += "," + toJson(vaultEntries.remove(0), absorptionTime);
-            }
-        }
-        result += "]";
-        return result;
+        return "[" + vaultEntries.stream()
+                .map(e -> toJson(e, absorptionTime))
+                .collect(Collectors.joining(",")) + "]";
     }
 
     private String toJson(VaultEntry entry, int absorptionTime) {
@@ -206,12 +201,12 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                 result += "\"type\": \"normal\",";
                 result += "\"unabsorbed\": 0,";
                 result += "\"carbs\": null,";
-                result += "\"enteredBy\": \"UAMALGO\"";
+                result += "\"enteredBy\": \"UAMALGO\",";
 
                 formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
                 formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
                 timestamp = formatter.format(entry.getTimestamp());
-                result += "\"created_at\": \"" + timestamp + "\"";
+                result += "\"created_at\": \"" + timestamp + "\",";
                 result += "\"timestamp\": \"" + timestamp + "\"";
                 break;
             case BASAL_MANUAL:
@@ -223,12 +218,12 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                 result += "\"absolute\": " + entry.getValue() + ",";
                 result += "\"insulin\": null,";
                 result += "\"carbs\": null,";
-                result += "\"enteredBy\": \"UAMALGO\"";
+                result += "\"enteredBy\": \"UAMALGO\",";
 
                 formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
                 formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
                 timestamp = formatter.format(entry.getTimestamp());
-                result += "\"created_at\": \"" + timestamp + "\"";
+                result += "\"created_at\": \"" + timestamp + "\",";
                 result += "\"timestamp\": \"" + timestamp + "\"";
                 break;
             case MEAL_MANUAL:
@@ -236,13 +231,13 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                 result += "\"carbs\": " + entry.getValue() + ",";
                 result += "\"absorptionTime\": " + absorptionTime + ",";
                 //TODO insulin, enteredBy?
-                result += "\"insulin\": null";
-                result += "\"enteredBy\": \"UAMALGO\"";
+                result += "\"insulin\": null,";
+                result += "\"enteredBy\": \"UAMALGO\",";
 
                 formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
                 formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
                 timestamp = formatter.format(entry.getTimestamp());
-                result += "\"created_at\": \"" + timestamp + "\"";
+                result += "\"created_at\": \"" + timestamp + "\",";
                 result += "\"timestamp\": \"" + timestamp + "\"";
                 break;
             default:
