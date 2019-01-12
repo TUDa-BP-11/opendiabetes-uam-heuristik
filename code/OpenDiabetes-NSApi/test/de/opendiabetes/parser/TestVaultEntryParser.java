@@ -56,6 +56,7 @@ public class TestVaultEntryParser {
             assertEquals(VaultEntryType.GLUCOSE_CGM, entry.getType());
             assertEquals(VaultEntry.VALUE_UNUSED, entry.getValue2());
         }
+        assertEquals(entries, parser.parse(parser.toJson(entries)));
     }
 
     @Test
@@ -120,6 +121,7 @@ public class TestVaultEntryParser {
                 assertEquals(VaultEntry.VALUE_UNUSED, treatment.getValue2());
             }
         }
+        assertEquals(treatments, parser.parse(parser.toJson(treatments)));
     }
 
     @Test
