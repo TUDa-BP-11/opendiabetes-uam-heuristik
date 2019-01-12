@@ -4,10 +4,11 @@ import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
-public class OpenDiabetesAlgo implements Algorithm {
+public class BruteForceAlgo implements Algorithm {
     private double absorptionTime;
     private double insDuration;
     private double carbRatio;
@@ -17,7 +18,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     private List<VaultEntry> mealTreatments;
     private List<TempBasal> basalTratments;
 
-    public OpenDiabetesAlgo() {
+    public BruteForceAlgo() {
         absorptionTime = 120;
         insDuration = 180;
         carbRatio = 10;
@@ -28,7 +29,7 @@ public class OpenDiabetesAlgo implements Algorithm {
         basalTratments = new ArrayList<>();
     }
 
-    public OpenDiabetesAlgo(double absorptionTime, double insDuration, double carbRatio, double insSensitivityFactor) {
+    public BruteForceAlgo(double absorptionTime, double insDuration, double carbRatio, double insSensitivityFactor) {
         this.absorptionTime = absorptionTime;
         this.insDuration = insDuration;
         this.carbRatio = carbRatio;
@@ -93,67 +94,38 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     @Override
     public List<VaultEntry> calculateMeals() {
-        mealTreatments = new ArrayList<>();
+        glucose.sort(Comparator.comparing(VaultEntry::getTimestamp));
+        List<VaultEntry> meals = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
-
         while (!glucose.isEmpty()) {
-            VaultEntry next = glucose.get(0);
-            long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
+            VaultEntry next;
+            long deltaTime;
+            double deltaBG;
+            do {
+                next = glucose.remove(0);
+                deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000D);
+                deltaBG = next.getValue() - current.getValue();
+            } while (!glucose.isEmpty() && deltaTime < 10 && Math.abs(deltaBG) < 1);
 
-            for (int i = 1; i < glucose.size() && deltaTime < 30; i++) {
-                next = glucose.get(i);
-                deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-
+            if (deltaTime < 10 && Math.abs(deltaBG) < 1) {
+                double find = findBruteForce(deltaTime, deltaBG, 20);
+                meals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, current.getTimestamp(), find));
             }
-
-            double currentPrediction = predict(0, current.getTimestamp().getTime());
-            double nextPrediction = predict(0, next.getTimestamp().getTime());
-            double deltaBg = next.getValue() - current.getValue();
-            double deltaPrediction = (nextPrediction - currentPrediction);
-
-            if (deltaBg - deltaPrediction > 0) {
-                createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
-            }
-            current = glucose.remove(0);
+            current = next;
         }
-
-        return mealTreatments;
+        return meals;
     }
 
-    private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
-        double value = deltaBg * carbRatio / (insSensitivityFactor * cob(deltaTime, absorptionTime));
-        mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
+    private double findBruteForce(long deltaT, double deltaBG, double carbsAmount) {
+        double test = deltaBGC(deltaT, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
+        if (Math.abs(test - deltaBG) <= 0.1)
+            return carbsAmount;
+        if (test < deltaBG)
+            return findBruteForce(deltaT, deltaBG, carbsAmount * 1.5);
+        return findBruteForce(deltaT, deltaBG, carbsAmount * 0.75);
     }
 
-    private double predict(double startValue, long time) {
-        double result = startValue;
-        for (VaultEntry meal : mealTreatments) {
-            long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);//Time in minutes
-            if (deltaTime <= 0) {
-                break;
-            }
-            result += deltaBGC(deltaTime, insSensitivityFactor, carbRatio, meal.getValue(), absorptionTime);
-        }
-        for (VaultEntry bolus : bolusTreatments) {
-            long deltaTime = Math.round((time - bolus.getTimestamp().getTime()) / 60000.0);//Time in minutes
-            if (deltaTime <= 0) {
-                break;
-            }
-            result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
-        }
-        for (TempBasal basal : basalTratments) {
-            long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);//Time in minutes
-            if (deltaTime <= 0) {
-                break;
-            }
-            double unitsPerMin = basal.getValue() / basal.getDuration();
-            result += deltatempBGI(deltaTime, unitsPerMin, insSensitivityFactor, insDuration, 0, basal.getDuration());
-        }
-
-        return result;
-    }
-
-    private double fastActingIob(double timeFromEvent, double insDuration) {
+    public double fastActingIob(double timeFromEvent, double insDuration) {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
@@ -177,28 +149,6 @@ public class OpenDiabetesAlgo implements Algorithm {
         }
         return IOBWeight;
     }
-
-    /*
-    //function iob(g,idur)
-    public int getIOBWeight(double timeFromEvent, int insDuration) {
-        int IOBWeight;
-        if (timeFromEvent <= 0) {
-            IOBWeight = 100;
-        } else if (timeFromEvent >= insDuration) {
-            IOBWeight = 0;
-        } else {
-            IOBWeight = (int) (-3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951);
-        }
-        return IOBWeight;
-    }
-
-    //deltaBG(g,sensf,cratio,camount,ct,bolus,idur)
-    public double deltaBG(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime, double insBolus, double insDuration) {
-        return deltaBGI(timeFromEvent, insBolus, insSensitivityFactor, insDuration) +
-                deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
-    }
-    */
-
 
     /**
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
@@ -235,7 +185,7 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     //g is time in minutes,gt is carb type
     //function cob(g,ct)
-    private double cob(double timeFromEvent, double absorptionTime) {
+    public double cob(double timeFromEvent, double absorptionTime) {
         double total;
 
         if (timeFromEvent <= 0) {
@@ -252,19 +202,20 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     //tempInsAmount in U/min
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
-    private double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double t1, double t2) {
+    public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double t1, double t2) {
         return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIOB(t1, t2, insDuration, timeFromEvent));
         //return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIOB(t1, t2, insDuration, timeFromEvent));
     }
 
     //function deltaBGC(g,sensf,cratio,camount,ct)
-    private double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
+    public double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
         return insSensitivityFactor / carbRatio * carbsAmount * cob(timeFromEvent, absorptionTime);
     }
 
     //function deltaBGI(g,bolus,sensf,idur)
-    private double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration) {
+    public double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration) {
         return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration));
         //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
+
 }

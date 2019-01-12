@@ -1,7 +1,7 @@
 package de.opendiabetes.main;
 
 import de.opendiabetes.algo.Algorithm;
-import de.opendiabetes.algo.OpenDiabetesAlgo;
+import de.opendiabetes.algo.BruteForceAlgo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.main.dataprovider.NightscoutDataProvider;
@@ -109,7 +109,7 @@ public class Main {
         Algorithm algorithm;
         switch (algorithmName.toLowerCase()) {
             case "demo":
-                algorithm = new OpenDiabetesAlgo();
+                algorithm = new BruteForceAlgo();
                 break;
             default:
                 Log.logError("Unknown algorithm " + algorithmName);
