@@ -9,6 +9,7 @@ import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -64,6 +65,8 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
         if (batchSize == null)
             this.batchSize = 100;
         else this.batchSize = batchSize;
+        if (this.batchSize < 1)
+            throw new DataProviderException(this, "Invalid argument: batch size has to be a positive number");
 
         this.api = new NSApi(host, apiSecret);
 
@@ -100,6 +103,8 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
         } catch (UnirestException e) {
             throw new DataProviderException(this, "Exception while reading data from Nightscout: " + e.getMessage(), e);
         }
+        if (entries.isEmpty())
+            throw new DataProviderException(this, "No entries found in Nightscout instance");
     }
 
     @Override
@@ -129,7 +134,11 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
 
     @Override
     public void close() {
-        api.close();
+        try {
+            api.close();
+        } catch (IOException e) {
+            throw new DataProviderException(this, "IOException while closing connection: " + e.getMessage(), e);
+        }
     }
 
     public String getHost() {

@@ -121,7 +121,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     }
 
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
-        double value = deltaBg * carbRatio / (insSensitivityFactor * cob(deltaTime, absorptionTime));
+        double value = deltaBg * carbRatio / (insSensitivityFactor * Algorithm.carbsOnBoard(deltaTime, absorptionTime));
         mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
     }
 
@@ -153,7 +153,7 @@ public class OpenDiabetesAlgo implements Algorithm {
         return result;
     }
 
-    private double fastActingIob(double timeFromEvent, double insDuration) {
+    public double fastActingIob(double timeFromEvent, double insDuration) {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
@@ -210,7 +210,7 @@ public class OpenDiabetesAlgo implements Algorithm {
      * @param insDuration   //Insulin decomposition rate in minutes
      * @return
      */
-    private double integrateIOB(double t1, double t2, double insDuration, double timeFromEvent) {
+    public double integrateIOB(double t1, double t2, double insDuration, double timeFromEvent) {
         double integral;
         double dx;
         int nn = 50; //nn needs to be even
@@ -233,37 +233,20 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     }
 
-    //g is time in minutes,gt is carb type
-    //function cob(g,ct)
-    private double cob(double timeFromEvent, double absorptionTime) {
-        double total;
-
-        if (timeFromEvent <= 0) {
-            total = 0.0;
-        } else if (timeFromEvent >= absorptionTime) {
-            total = 1.0;
-        } else if (timeFromEvent <= absorptionTime / 2.0) {
-            total = 2.0 / Math.pow(absorptionTime, 2) * Math.pow(timeFromEvent, 2);
-        } else {
-            total = -1.0 + 4.0 / absorptionTime * (timeFromEvent - Math.pow(timeFromEvent, 2) / (2.0 * absorptionTime));
-        }
-        return total;
-    }
-
     //tempInsAmount in U/min
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
-    private double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double t1, double t2) {
+    public double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double t1, double t2) {
         return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIOB(t1, t2, insDuration, timeFromEvent));
         //return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIOB(t1, t2, insDuration, timeFromEvent));
     }
 
     //function deltaBGC(g,sensf,cratio,camount,ct)
-    private double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
-        return insSensitivityFactor / carbRatio * carbsAmount * cob(timeFromEvent, absorptionTime);
+    public double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
+        return insSensitivityFactor / carbRatio * carbsAmount * Algorithm.carbsOnBoard(timeFromEvent, absorptionTime);
     }
 
     //function deltaBGI(g,bolus,sensf,idur)
-    private double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration) {
+    public double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration) {
         return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration));
         //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }

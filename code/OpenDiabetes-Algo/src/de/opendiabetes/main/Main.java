@@ -172,11 +172,16 @@ public class Main {
         algorithm.setInsulinDuration(insulinDuration);
         algorithm.setDataProvider(dataProvider);
 
+        boolean debugFinal = debug;
         main = new Thread(() -> {
             List<VaultEntry> meals = algorithm.calculateMeals();
             Log.logInfo("Calculated %d meals:", meals.size());
             meals.forEach(e -> Log.logInfo("%s: %.3f", e.getTimestamp().toString(), e.getValue()));
-            dataProvider.close();
+            try {
+                dataProvider.close();
+            } catch (DataProviderException e) {
+                logException("Exception in data provider", e, debugFinal);
+            }
         });
         main.start();
 
