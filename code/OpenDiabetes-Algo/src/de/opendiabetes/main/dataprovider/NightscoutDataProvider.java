@@ -1,54 +1,158 @@
 package de.opendiabetes.main.dataprovider;
 
+import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.algo.TempBasal;
 import de.opendiabetes.main.exception.DataProviderException;
+import de.opendiabetes.nsapi.GetBuilder;
 import de.opendiabetes.nsapi.NSApi;
+import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.engine.container.VaultEntryType;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class NightscoutDataProvider implements AlgorithmDataProvider {
+    private String host;
+    private String apiSecret;
+    private TemporalAccessor latest;
+    private TemporalAccessor oldest;
+    private int batchSize;
+
     private NSApi api;
 
-    public NightscoutDataProvider(String configPath) {
-        try (InputStream input = new FileInputStream(configPath)) {
-            Properties properties = new Properties();
-            properties.load(input);
+    private List<VaultEntry> entries;
 
-            String host = properties.getProperty("host");
-            String secret = properties.getProperty("secret");
-            this.api = new NSApi(host, secret);
-        } catch (FileNotFoundException e) {
-            throw new DataProviderException(this, "Cannot find config file at " + configPath, e);
-        } catch (IOException e) {
-            throw new DataProviderException(this, "Exception while reading config file: " + e.getMessage(), e);
+    /**
+     * Constructs a Nightscout data provider that fetches all entries in the given time span with the given batch size.
+     * All dates are given in ISO-8601 representation. Default values are assumed if arguments are null.
+     *
+     * @param host      host of the Nightscoout instance
+     * @param apiSecret api secret of the Nightscout instance
+     * @param latest    latest point in time. If null, the current time is used
+     * @param oldest    oldest point in time. If null, this is set 30 minutes before latest
+     * @param batchSize amount of entries to fetch at once. If null, a batch size of 100 is used.
+     * @throws DataProviderException if host or apiSecret are null or if oldest is after latest
+     */
+    public NightscoutDataProvider(String host, String apiSecret, TemporalAccessor latest, TemporalAccessor oldest, Integer batchSize) {
+        if (host == null)
+            throw new DataProviderException(this, "No nightscout host specified!");
+        this.host = host;
+
+        if (apiSecret == null)
+            throw new DataProviderException(this, "No nightscout api secret specified!");
+        this.apiSecret = apiSecret;
+
+        if (latest == null)
+            this.latest = LocalDateTime.now();
+        else this.latest = latest;
+
+        if (oldest == null)
+            this.oldest = LocalDateTime.from(this.latest).minus(30, ChronoUnit.MINUTES);
+        else this.oldest = oldest;
+
+        if (LocalDateTime.from(this.oldest).isAfter(LocalDateTime.from(this.latest)))
+            throw new DataProviderException(this, "Invalid arguments: oldest cannot be after latest");
+
+        if (batchSize == null)
+            this.batchSize = 100;
+        else this.batchSize = batchSize;
+
+        this.api = new NSApi(host, apiSecret);
+
+        try {
+            Status status = api.getStatus();
+            if (!status.isStatusOk())
+                throw new DataProviderException(this, "Nightscout server returned status " + status.getStatus());
+            if (!status.isApiEnabled())
+                throw new DataProviderException(this, "Nightscout server returned api is not enabled");
+        } catch (UnirestException e) {
+            throw new DataProviderException(this, "Exception while reading status from Nightscout: " + e.getMessage(), e);
         }
-        
+    }
 
+    private void fetchAll() {
+        entries = new ArrayList<>();
+        List<VaultEntry> fetched = null;
+        GetBuilder getBuilder;
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        String latest = formatter.format(this.latest);
+        String oldest = formatter.format(this.oldest);
+        try {
+            do {
+                getBuilder = api.getEntries().count(batchSize).find("dateString").gte(oldest);
+                if (fetched == null)    // first fetch: lte, following fetches: lt
+                    getBuilder.find("dateString").lte(latest);
+                else getBuilder.find("dateString").lt(latest);
+                fetched = getBuilder.getVaultEntries();
+                if (!fetched.isEmpty()) {
+                    entries.addAll(fetched);
+                    latest = fetched.get(fetched.size() - 1).getTimestamp().toInstant().toString();
+                }
+            } while (!fetched.isEmpty());
+        } catch (UnirestException e) {
+            throw new DataProviderException(this, "Exception while reading data from Nightscout: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public List<VaultEntry> getGlucoseMeasurements() {
-        return null;
+        return getEntries(VaultEntryType.GLUCOSE_CGM);
     }
 
     @Override
     public List<VaultEntry> getBolusTreatments() {
-        return null;
+        return getEntries(VaultEntryType.BOLUS_NORMAL);
     }
 
     @Override
     public List<TempBasal> getBasalTratments() {
-        return null;
+        //TODO
+        return Collections.emptyList();
+    }
+
+    private List<VaultEntry> getEntries(VaultEntryType type) {
+        if (entries == null)
+            fetchAll();
+        return entries.stream()
+                .filter(e -> e.getType().equals(type))
+                .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                .collect(Collectors.toList());
     }
 
     @Override
     public void close() {
         api.close();
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public String getApiSecret() {
+        return apiSecret;
+    }
+
+    public TemporalAccessor getLatest() {
+        return latest;
+    }
+
+    public TemporalAccessor getOldest() {
+        return oldest;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public NSApi getApi() {
+        return api;
     }
 }

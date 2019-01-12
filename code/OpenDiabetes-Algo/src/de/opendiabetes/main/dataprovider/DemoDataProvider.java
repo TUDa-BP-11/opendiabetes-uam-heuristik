@@ -1,6 +1,7 @@
 package de.opendiabetes.main.dataprovider;
 
 import de.opendiabetes.algo.TempBasal;
+import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
@@ -16,7 +17,7 @@ import java.util.List;
  * 10 glucose measurements are given (every 5 minutes from 0 to 45)
  */
 public class DemoDataProvider implements AlgorithmDataProvider {
-    private Date start = new Date(System.currentTimeMillis());
+    private Date start = new Date(System.currentTimeMillis() - 45 * 60 * 1000);
 
     @Override
     public List<VaultEntry> getGlucoseMeasurements() {
@@ -46,5 +47,11 @@ public class DemoDataProvider implements AlgorithmDataProvider {
     @Override
     public List<TempBasal> getBasalTratments() {
         return Collections.emptyList();
+    }
+
+    public static void main(String[] args) {
+        VaultEntryParser parser = new VaultEntryParser();
+        DemoDataProvider provider = new DemoDataProvider();
+        System.out.println(parser.toJson(provider.getGlucoseMeasurements()));
     }
 }
