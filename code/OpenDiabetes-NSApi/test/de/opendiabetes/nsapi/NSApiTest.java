@@ -10,6 +10,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -37,7 +38,7 @@ class NSApiTest {
     }
 
     @AfterAll
-    static void tearDown() {
+    static void tearDown() throws IOException {
         api.close();
     }
 

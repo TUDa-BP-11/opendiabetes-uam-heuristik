@@ -17,6 +17,7 @@
 package de.opendiabetes.vault.engine.container.csv;
 
 import de.opendiabetes.vault.engine.container.VaultEntry;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,7 +31,7 @@ import static de.opendiabetes.vault.engine.util.TimestampUtils.copyTimestamp;
  *
  * @author Jens Heuschkel
  */
-public class VaultCSVEntry extends CSVEntry {
+public class VaultCsvEntry extends CsvEntry {
     /**
      * The version of the VaultCSVEntry.
      */
@@ -919,10 +920,10 @@ public class VaultCSVEntry extends CSVEntry {
      *
      * @return The converted VaultCSVEntry.
      */
-    public String toCSVString() {
+    public String toCsvString() {
         StringBuilder sb = new StringBuilder();
 
-        String[] record = this.toCSVRecord();
+        String[] record = this.toCsvRecord();
         for (String item : record) {
             sb.append(item).append(CSV_DELIMITER);
         }
@@ -937,8 +938,8 @@ public class VaultCSVEntry extends CSVEntry {
      * @return The converted VaultCSVEntry.
      */
     @Override
-    public String[] toCSVRecord() {
-        return toCSVRecord(DECIMAL_FORMAT);
+    public String[] toCsvRecord() {
+        return toCsvRecord(DECIMAL_FORMAT);
     }
 
     /**
@@ -947,7 +948,7 @@ public class VaultCSVEntry extends CSVEntry {
      * @param decimalFormat Format of decimals to be used in the CSV record.
      * @return The converted VaultCSVEntry.
      */
-    public String[] toCSVRecord(final String decimalFormat) {
+    public String[] toCsvRecord(final String decimalFormat) {
         ArrayList<String> csvRecord = new ArrayList<>();
 
         csvRecord.add(new SimpleDateFormat("dd.MM.yy").format(timestamp));
@@ -1198,10 +1199,10 @@ public class VaultCSVEntry extends CSVEntry {
      *
      * @return The VaultCSVEntry as CSV header.
      */
-    public String getCSVHeaderString() {
+    public String getCsvHeaderString() {
         StringBuilder sb = new StringBuilder();
 
-        String[] header = getCSVHeaderRecord();
+        String[] header = getCsvHeaderRecord();
         for (String item : header) {
             sb.append(item).append(CSV_DELIMITER);
         }
@@ -1216,7 +1217,7 @@ public class VaultCSVEntry extends CSVEntry {
      * @return The VaultCSVEntry as CSV header.
      */
     @Override
-    public String[] getCSVHeaderRecord() {
+    public String[] getCsvHeaderRecord() {
         return new String[] {
                 "date",
                 "time",

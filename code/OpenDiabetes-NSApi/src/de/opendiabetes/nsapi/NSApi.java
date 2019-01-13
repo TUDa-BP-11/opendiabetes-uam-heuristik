@@ -148,11 +148,7 @@ public class NSApi {
     /**
      * Closes the connection to the NightScout API
      */
-    public void close() {
-        try {
-            Unirest.shutdown();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void close() throws IOException {
+        Unirest.shutdown();
     }
 }
