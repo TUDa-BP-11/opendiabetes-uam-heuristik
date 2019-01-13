@@ -1,6 +1,42 @@
 package de.opendiabetes.main.math;
 
+import de.opendiabetes.main.algo.TempBasal;
+import de.opendiabetes.vault.engine.container.VaultEntry;
+
+import java.util.List;
+
 public class Predictions {
+    
+    public static double predict(long time, List<VaultEntry> mealTreatments,  List<VaultEntry> bolusTreatments,  List<TempBasal> basalTreatments,
+                          double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
+
+        double result = 0;
+        for (VaultEntry meal : mealTreatments) {
+            long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);  //Time in minutes
+            if (deltaTime <= 0) {
+                break;
+            }
+            result += deltaBGC(deltaTime, insSensitivityFactor, carbRatio, meal.getValue(), absorptionTime);
+        }
+        for (VaultEntry bolus : bolusTreatments) {
+            long deltaTime = Math.round((time - bolus.getTimestamp().getTime()) / 60000.0); //Time in minutes
+            if (deltaTime <= 0) {
+                break;
+            }
+            result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
+        }
+        for (TempBasal basal : basalTreatments) {
+            long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);      //Time in minutes
+            if (deltaTime <= 0) {
+                break;
+            }
+            double unitsPerMin = basal.getValue() / basal.getDuration();
+            result += deltatempBGI(deltaTime, unitsPerMin, insSensitivityFactor, insDuration, 0, basal.getDuration());
+        }
+
+        return result;
+    }
+
     /**
      * Calculates the percentage of carbs on board
      *

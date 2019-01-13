@@ -90,7 +90,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     public void setBasalTratments(List<TempBasal> basalTratments) {
         this.basalTratments = basalTratments;
     }
-    
+
     @Override
     public List<VaultEntry> calculateMeals() {
         mealTreatments = new ArrayList<>();
@@ -106,8 +106,8 @@ public class OpenDiabetesAlgo implements Algorithm {
 
             }
 
-            double currentPrediction = predict(0, current.getTimestamp().getTime());
-            double nextPrediction = predict(0, next.getTimestamp().getTime());
+            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTratments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
+            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTratments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
             double deltaBg = next.getValue() - current.getValue();
             double deltaPrediction = (nextPrediction - currentPrediction);
 
@@ -123,33 +123,5 @@ public class OpenDiabetesAlgo implements Algorithm {
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
         double value = deltaBg * carbRatio / (insSensitivityFactor * Predictions.carbsOnBoard(deltaTime, absorptionTime));
         mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
-    }
-
-    private double predict(double startValue, long time) {
-        double result = startValue;
-        for (VaultEntry meal : mealTreatments) {
-            long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);  //Time in minutes
-            if (deltaTime <= 0) {
-                break;
-            }
-            result += Predictions.deltaBGC(deltaTime, insSensitivityFactor, carbRatio, meal.getValue(), absorptionTime);
-        }
-        for (VaultEntry bolus : bolusTreatments) {
-            long deltaTime = Math.round((time - bolus.getTimestamp().getTime()) / 60000.0); //Time in minutes
-            if (deltaTime <= 0) {
-                break;
-            }
-            result += Predictions.deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
-        }
-        for (TempBasal basal : basalTratments) {
-            long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);      //Time in minutes
-            if (deltaTime <= 0) {
-                break;
-            }
-            double unitsPerMin = basal.getValue() / basal.getDuration();
-            result += Predictions.deltatempBGI(deltaTime, unitsPerMin, insSensitivityFactor, insDuration, 0, basal.getDuration());
-        }
-
-        return result;
     }
 }
