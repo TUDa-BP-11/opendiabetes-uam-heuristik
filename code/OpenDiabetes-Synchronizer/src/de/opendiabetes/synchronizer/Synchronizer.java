@@ -6,6 +6,7 @@ import de.opendiabetes.nsapi.NSApi;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 
 public class Synchronizer {
@@ -144,8 +145,12 @@ public class Synchronizer {
     }
 
     public void close() {
-        read.close();
-        write.close();
+        try {
+            read.close();
+            write.close();
+        } catch (IOException e) {
+            throw new SynchronizerException("Exception while trying to close connection to Nightscout apis!", e);
+        }
     }
 
     public void setDebug(boolean debug) {
