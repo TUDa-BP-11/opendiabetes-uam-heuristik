@@ -5,10 +5,21 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
+import de.opendiabetes.parser.Profile;
+import de.opendiabetes.parser.ProfileParser;
+import de.opendiabetes.parser.Status;
+import de.opendiabetes.parser.StatusParser;
+import de.opendiabetes.vault.engine.container.VaultEntry;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.json.JSONObject;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class NSApi {
@@ -35,10 +46,12 @@ public class NSApi {
      * Sends a GET request for the status
      *
      * @return the status as a JSON formatted String
+     * @throws UnirestException if an exception occurs during the request
      */
-    public JSONObject getStatus() throws UnirestException {
-        HttpResponse<JsonNode> response = get("status").asJson();
-        return response.getBody().getObject();
+    public Status getStatus() throws UnirestException {
+        HttpResponse<String> response = get("status").asString();
+        StatusParser parser = new StatusParser();
+        return parser.parse(response.getBody());
     }
 
     /**
@@ -50,6 +63,20 @@ public class NSApi {
         return new GetBuilder(get("entries"));
     }
 
+    /**
+     * Fetches all entries from Nightscout that are in between the given latest and oldest time (inclusive).
+     * Entries are fetched in batches with the given batch size until Nightscout returns no more results.
+     *
+     * @param latest    latest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+     * @param oldest    oldest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+     * @param batchSize amount of entries fetched at once
+     * @return list of fetched entries
+     * @throws UnirestException            if an exception occurs during the request
+     * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
+     */
+    public List<VaultEntry> getEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws UnirestException {
+        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString");
+    }
 
     /**
      * Creates a {@link GetBuilder} for slices
@@ -120,6 +147,7 @@ public class NSApi {
      *
      * @param entries entries as JSON String.
      * @return whatever the NightScout API returns, as JSON String
+     * @throws UnirestException if an exception occurs during the request
      */
     public JsonNode postEntries(String entries) throws UnirestException {
         return post("entries", entries);
@@ -135,24 +163,77 @@ public class NSApi {
     }
 
     /**
+     * Fetches all treatments from Nightscout that are in between the given latest and oldest time (inclusive).
+     * Treatments are fetched in batches with the given batch size until Nightscout returns no more results.
+     *
+     * @param latest    latest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+     * @param oldest    oldest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+     * @param batchSize amount of entries fetched at once
+     * @return list of fetched entries
+     * @throws UnirestException            if an exception occurs during the request
+     * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
+     */
+    public List<VaultEntry> getTreatments(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws UnirestException {
+        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at");
+    }
+
+    /**
      * Sends a POST request with the given treatments as its payload. Inserts all entries into the database
      *
      * @param treatments treatments as JSON String.
      * @return whatever the NightScout API returns, as JSON String
+     * @throws UnirestException if an exception occurs during the request
      */
     public JsonNode postTreatments(String treatments) throws UnirestException {
         return post("treatments", treatments);
     }
 
+    /**
+     * Fetches and parses the profile from Nightscout
+     *
+     * @return the fetched Profile
+     * @throws UnirestException if an exception occurs during the request
+     */
+    public Profile getProfile() throws UnirestException {
+        String profile = get("profile").asString().getBody();
+        ProfileParser parser = new ProfileParser();
+        return parser.parse(profile);
+    }
+
+    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField) throws UnirestException {
+        List<VaultEntry> entries = new ArrayList<>();
+        List<VaultEntry> fetched = null;
+        GetBuilder getBuilder;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        String latestString = formatter.format(latest);
+        String oldestString = formatter.format(oldest);
+        do {
+            getBuilder = new GetBuilder(get(path)).count(batchSize).find(dateField).gte(oldestString);
+            if (fetched == null)    // first fetch: lte, following fetches: lt
+                getBuilder.find(dateField).lte(latestString);
+            else getBuilder.find(dateField).lt(latestString);
+            fetched = getBuilder.getVaultEntries();
+            if (!fetched.isEmpty()) {
+                entries.addAll(fetched);
+                latestString = fetched.get(fetched.size() - 1).getTimestamp().toInstant().toString();
+            }
+        } while (!fetched.isEmpty());
+        return entries;
+    }
 
     /**
      * Closes the connection to the NightScout API
+     *
+     * @throws IOException if an exception occurs while closing the connection
      */
-    public void close() {
-        try {
-            Unirest.shutdown();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void close() throws IOException {
+        Unirest.shutdown();
+    }
+
+    public static void main(String[] args) {
+        System.out.println("System.currentTimeMillis()  " + System.currentTimeMillis());
+        System.out.println("Instant.now()               " + Instant.now().toString());
+        System.out.println("LocalDateTime.now()         " + LocalDateTime.now().toString());
+        System.out.println("ZonedDateTime.now()         " + ZonedDateTime.now().toString());
     }
 }

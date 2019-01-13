@@ -2,6 +2,8 @@ package de.opendiabetes.nsapi;
 
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.opendiabetes.parser.Profile;
+import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 import org.json.JSONObject;
@@ -9,14 +11,15 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Timestamp;
+import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NSApiTest {
     private static NSApi api;
@@ -36,17 +39,17 @@ class NSApiTest {
     }
 
     @AfterAll
-    static void tearDown() {
+    static void tearDown() throws IOException {
         api.close();
     }
 
 
     @Test
     void testStatus() throws UnirestException {
-        JSONObject status = api.getStatus();
+        Status status = api.getStatus();
         assertNotNull(status);
-        assertEquals("ok", status.getString("status"));        // tests should break if status is not ok
-        assertTrue(status.getBoolean("apiEnabled"));    // test should break if api is not enabled
+        assertTrue(status.isStatusOk());      // tests should break if status is not ok
+        assertTrue(status.isApiEnabled());    // tests should break if api is not enabled
     }
 
     @Test
@@ -54,9 +57,9 @@ class NSApiTest {
         String id = getRandomId(24);
         int sgv = 70 + new Random().nextInt(60);
 
-        LocalDateTime time = LocalDateTime.now();
-        long date = Timestamp.valueOf(time).getTime();
-        String dateString = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(time);
+        Instant time = Instant.now();
+        long date = time.toEpochMilli();
+        String dateString = time.toString();
 
         JsonNode result = api.postEntries("[{" +
                 "\"direction\": \"Flat\"," +
@@ -79,8 +82,7 @@ class NSApiTest {
         String id = getRandomId(24);
         int carbs = 80 + new Random().nextInt(100);
 
-        LocalDateTime time = LocalDateTime.now();
-        String createdAt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(time);
+        String createdAt = Instant.now().toString();
 
         JsonNode result = api.postTreatments("[{" +
                 "\"_id\": \"" + id + "\"," +
@@ -109,10 +111,37 @@ class NSApiTest {
 
     @Test
     void testTimes() throws UnirestException {
-        List<VaultEntry> entries = api.getTimes("2018", "T{15..17}:.*").getVaultEntries();
+        List<VaultEntry> entries = api.getTimes("2019", "T{15..17}:.*").getVaultEntries();
         entries.stream()
-                .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.of("Europe/Berlin"))) //TODO: does not work for Nightscout instances outside of this zone
+                .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.of("UTC")))
                 .forEach(t -> assertTrue(t.getHour() >= 15 && t.getHour() <= 17));
+    }
+
+    @Test
+    void testProfile() throws UnirestException {
+        Profile profile = api.getProfile();
+        assertNotNull(profile);
+        assertTrue(profile.getCarbratio() >= 0);
+        assertTrue(profile.getSensitivity() >= 0);
+        assertNotNull(profile.getBasalProfiles());
+        assertFalse(profile.getBasalProfiles().isEmpty());
+        assertNotNull(profile.getTimezone());
+    }
+
+    @Test
+    void testEntriesBetween() throws UnirestException {
+        List<VaultEntry> entries = api.getEntries().count(20).find("dateString").lt(Instant.now().toString()).getVaultEntries();
+        // assume that there are at least 3 entries
+        assumeTrue(entries.size() > 3);
+
+        // set latest to second entry
+        LocalDateTime latest = LocalDateTime.ofInstant(entries.get(1).getTimestamp().toInstant(), ZoneId.of("UTC"));
+        // set oldest to second to last entry
+        LocalDateTime oldest = LocalDateTime.ofInstant(entries.get(entries.size() - 2).getTimestamp().toInstant(), ZoneId.of("UTC"));
+
+        List<VaultEntry> between = api.getEntries(latest, oldest, 20);
+        // test that exactly 2 entries less are returned (first and last from original request should be missing)
+        assertEquals(entries.size() - 2, between.size());
     }
 
     private final static String ID_RANGE = "0123456789abcdef";

@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * This class implements the pseudo ODV DB Json entry data structure.
  */
-public final class ODVDBJSONPseudoEntry implements ExportEntry {
+public final class OdvDbJsonPseudoEntry implements ExportEntry {
 
     /**
      * The data.
@@ -39,7 +39,7 @@ public final class ODVDBJSONPseudoEntry implements ExportEntry {
      * Constructor for ODVDBJsonPseudo entries.
      * @param data The data to be converted to ODVDBJsonPseudo entries.
      */
-    private ODVDBJSONPseudoEntry(final List<VaultEntry> data) {
+    private OdvDbJsonPseudoEntry(final List<VaultEntry> data) {
         this.data = data;
     }
 
@@ -48,8 +48,8 @@ public final class ODVDBJSONPseudoEntry implements ExportEntry {
      * @param data The VaultEntries.
      * @return The ODVDBJsonPseudoEntry with the data.
      */
-    public static ODVDBJSONPseudoEntry fromVaultEntryList(final List<VaultEntry> data) {
-        return new ODVDBJSONPseudoEntry(data);
+    public static OdvDbJsonPseudoEntry fromVaultEntryList(final List<VaultEntry> data) {
+        return new OdvDbJsonPseudoEntry(data);
     }
 
     /**
