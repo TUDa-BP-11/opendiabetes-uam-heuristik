@@ -1,5 +1,6 @@
-package de.opendiabetes.algo;
+package de.opendiabetes.main.math;
 
+import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 

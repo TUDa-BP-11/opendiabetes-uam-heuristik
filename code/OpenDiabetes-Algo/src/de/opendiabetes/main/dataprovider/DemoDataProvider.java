@@ -1,6 +1,6 @@
 package de.opendiabetes.main.dataprovider;
 
-import de.opendiabetes.algo.TempBasal;
+import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;

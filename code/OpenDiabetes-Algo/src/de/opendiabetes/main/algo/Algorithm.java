@@ -1,4 +1,4 @@
-package de.opendiabetes.algo;
+package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.engine.container.VaultEntry;
@@ -72,26 +72,4 @@ public interface Algorithm {
      * @return a list of VaultEntries with type {@link de.opendiabetes.vault.engine.container.VaultEntryType#MEAL_MANUAL}
      */
     List<VaultEntry> calculateMeals();
-
-    /**
-     * Calculates the percentage of carbs on board
-     *
-     * @param timeFromEvent  time in minutes from last meal
-     * @param absorptionTime time in minutes to absorb a hole meal
-     * @return percentage of carbs absorbed
-     */
-    static double carbsOnBoard(double timeFromEvent, double absorptionTime) {
-        double total;
-
-        if (timeFromEvent <= 0) {
-            total = 0.0;
-        } else if (timeFromEvent >= absorptionTime) {
-            total = 1.0;
-        } else if (timeFromEvent <= absorptionTime / 2.0) {
-            total = 2.0 / Math.pow(absorptionTime, 2) * Math.pow(timeFromEvent, 2);
-        } else {
-            total = -1.0 + 4.0 / absorptionTime * (timeFromEvent - Math.pow(timeFromEvent, 2) / (2.0 * absorptionTime));
-        }
-        return total;
-    }
 }

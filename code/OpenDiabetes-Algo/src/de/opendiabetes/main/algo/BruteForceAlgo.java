@@ -1,5 +1,6 @@
-package de.opendiabetes.algo;
+package de.opendiabetes.main.algo;
 
+import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
@@ -125,6 +126,6 @@ public class BruteForceAlgo implements Algorithm {
     }
 
     private double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
-        return insSensitivityFactor / carbRatio * carbsAmount * Algorithm.carbsOnBoard(timeFromEvent, absorptionTime);
+        return insSensitivityFactor / carbRatio * carbsAmount * Predictions.carbsOnBoard(timeFromEvent, absorptionTime);
     }
 }

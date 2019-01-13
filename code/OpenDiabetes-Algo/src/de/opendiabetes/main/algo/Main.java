@@ -1,5 +1,6 @@
-package de.opendiabetes.algo;
+package de.opendiabetes.main.algo;
 
+import de.opendiabetes.main.math.BasalCalc;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.VaultEntryParser;

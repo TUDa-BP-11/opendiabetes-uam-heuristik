@@ -1,7 +1,7 @@
 package de.opendiabetes.main.dataprovider;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
-import de.opendiabetes.algo.TempBasal;
+import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.nsapi.GetBuilder;
 import de.opendiabetes.nsapi.NSApi;

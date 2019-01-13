@@ -1,5 +1,6 @@
-package de.opendiabetes.algo;
+package de.opendiabetes.main;
 
+import de.opendiabetes.main.algo.BruteForceAlgo;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 import org.junit.jupiter.api.BeforeAll;

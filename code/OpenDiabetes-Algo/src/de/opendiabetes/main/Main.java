@@ -1,8 +1,8 @@
 package de.opendiabetes.main;
 
-import de.opendiabetes.algo.Algorithm;
-import de.opendiabetes.algo.BruteForceAlgo;
-import de.opendiabetes.algo.OpenDiabetesAlgo;
+import de.opendiabetes.main.algo.Algorithm;
+import de.opendiabetes.main.algo.BruteForceAlgo;
+import de.opendiabetes.main.algo.OpenDiabetesAlgo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.main.dataprovider.NightscoutDataProvider;
