@@ -2,6 +2,7 @@ package de.opendiabetes.nsapi;
 
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
@@ -115,6 +116,17 @@ class NSApiTest {
         entries.stream()
                 .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.of("Europe/Berlin"))) //TODO: does not work for Nightscout instances outside of this zone
                 .forEach(t -> assertTrue(t.getHour() >= 15 && t.getHour() <= 17));
+    }
+
+    @Test
+    void testProfile() throws UnirestException {
+        Profile profile = api.getProfile();
+        assertNotNull(profile);
+        assertTrue(profile.getCarbratio() >= 0);
+        assertTrue(profile.getSensitivity() >= 0);
+        assertNotNull(profile.getBasalProfiles());
+        assertFalse(profile.getBasalProfiles().isEmpty());
+        assertNotNull(profile.getTimezone());
     }
 
     private final static String ID_RANGE = "0123456789abcdef";

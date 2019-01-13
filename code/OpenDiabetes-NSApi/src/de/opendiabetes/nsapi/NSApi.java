@@ -5,6 +5,8 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
+import de.opendiabetes.parser.Profile;
+import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.parser.StatusParser;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -144,6 +146,11 @@ public class NSApi {
                 .asJson().getBody();
     }
 
+    public Profile getProfile() throws UnirestException {
+        String profile = get("profile").asString().getBody();
+        ProfileParser parser = new ProfileParser();
+        return parser.parse(profile);
+    }
 
     /**
      * Closes the connection to the NightScout API
