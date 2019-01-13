@@ -55,7 +55,7 @@ public class Main {
         OpenDiabetesAlgo algo = new OpenDiabetesAlgo(120, 180, profile.getCarbratio(), profile.getSensitivity());
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
-        algo.setBasalTratments(basals);
+        algo.setBasalTreatments(basals);
 
         System.out.println("calc :");
         List<VaultEntry> meals = algo.calculateMeals();

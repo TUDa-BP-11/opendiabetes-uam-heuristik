@@ -87,8 +87,8 @@ public class BruteForceAlgo implements Algorithm {
     }
 
     @Override
-    public void setBasalTratments(List<TempBasal> basalTratments) {
-        this.basalTratments = basalTratments;
+    public void setBasalTreatments(List<TempBasal> basalTreatments) {
+        this.basalTratments = basalTreatments;
     }
 
 

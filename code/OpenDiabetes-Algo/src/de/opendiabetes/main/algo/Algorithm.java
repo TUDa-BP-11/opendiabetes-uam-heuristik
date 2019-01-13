@@ -51,19 +51,19 @@ public interface Algorithm {
     /**
      * Provide a list of insulin bolus treatments for calculation
      *
-     * @param basalTratments list of TempBasal treatments
+     * @param basalTreatments list of TempBasal treatments
      */
-    void setBasalTratments(List<TempBasal> basalTratments);
+    void setBasalTreatments(List<TempBasal> basalTreatments);
 
     /**
-     * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)} and {@link #setBasalTratments(List)}
+     * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)} and {@link #setBasalTreatments(List)}
      *
      * @param dataProvider the data provider
      */
     default void setDataProvider(AlgorithmDataProvider dataProvider) {
         this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
         this.setBolusTreatments(dataProvider.getBolusTreatments());
-        this.setBasalTratments(dataProvider.getBasalTratments());
+        this.setBasalTreatments(dataProvider.getBasalTratments());
     }
 
     /**

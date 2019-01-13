@@ -16,7 +16,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
-    private List<TempBasal> basalTratments;
+    private List<TempBasal> basalTreatments;
 
     public OpenDiabetesAlgo() {
         absorptionTime = 120;
@@ -26,7 +26,7 @@ public class OpenDiabetesAlgo implements Algorithm {
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
         mealTreatments = new ArrayList<>();
-        basalTratments = new ArrayList<>();
+        basalTreatments = new ArrayList<>();
     }
 
     public OpenDiabetesAlgo(double absorptionTime, double insDuration, double carbRatio, double insSensitivityFactor) {
@@ -37,7 +37,7 @@ public class OpenDiabetesAlgo implements Algorithm {
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
         mealTreatments = new ArrayList<>();
-        basalTratments = new ArrayList<>();
+        basalTreatments = new ArrayList<>();
     }
 
     @Override
@@ -87,8 +87,8 @@ public class OpenDiabetesAlgo implements Algorithm {
     }
 
     @Override
-    public void setBasalTratments(List<TempBasal> basalTratments) {
-        this.basalTratments = basalTratments;
+    public void setBasalTreatments(List<TempBasal> basalTreatments) {
+        this.basalTreatments = basalTreatments;
     }
 
     @Override
@@ -106,8 +106,8 @@ public class OpenDiabetesAlgo implements Algorithm {
 
             }
 
-            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTratments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
-            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTratments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
+            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
+            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
             double deltaBg = next.getValue() - current.getValue();
             double deltaPrediction = (nextPrediction - currentPrediction);
 

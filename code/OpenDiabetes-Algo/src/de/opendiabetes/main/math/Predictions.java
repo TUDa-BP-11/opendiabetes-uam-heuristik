@@ -6,10 +6,9 @@ import de.opendiabetes.vault.engine.container.VaultEntry;
 import java.util.List;
 
 public class Predictions {
-    
-    public static double predict(long time, List<VaultEntry> mealTreatments,  List<VaultEntry> bolusTreatments,  List<TempBasal> basalTreatments,
-                          double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
 
+    public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<TempBasal> basalTreatments,
+                                 double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
         double result = 0;
         for (VaultEntry meal : mealTreatments) {
             long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);  //Time in minutes
