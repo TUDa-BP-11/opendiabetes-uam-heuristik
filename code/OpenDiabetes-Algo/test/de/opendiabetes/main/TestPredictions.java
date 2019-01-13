@@ -24,10 +24,10 @@ public class TestPredictions {
         assertEquals(1, Predictions.carbsOnBoard(312, 40));
         if (t <= tEnd / 2) {
             double expected = 2 * (t * t) / (tEnd * tEnd);
-            assertEquals(expected, Predictions.carbsOnBoard(t, tEnd), 1e-14);   //TODO delta fix
+            assertEquals(expected, Predictions.carbsOnBoard(t, tEnd), 1e-12);   //TODO delta fix
         } else {
             double expected = -1 + (4 * t / tEnd) - (2 * (t * t) / (tEnd * tEnd));
-            assertEquals(expected, Predictions.carbsOnBoard(t, tEnd));
+            assertEquals(expected, Predictions.carbsOnBoard(t, tEnd), 1e-12);
         }
     }
 
