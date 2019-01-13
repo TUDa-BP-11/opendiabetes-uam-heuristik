@@ -14,21 +14,18 @@ public class TestNightscoutDataProvider {
     public void testArguments() {
         // latest is before oldest
         assertThrows(DataProviderException.class, () ->
-                new NightscoutDataProvider("", "",
+                new NightscoutDataProvider("", "", 1,
                         LocalDateTime.now().minus(1, ChronoUnit.MINUTES),
-                        LocalDateTime.now(),
-                        1));
+                        LocalDateTime.now()));
         // batch size is 0
         assertThrows(DataProviderException.class, () ->
-                new NightscoutDataProvider("", "",
+                new NightscoutDataProvider("", "", 0,
                         LocalDateTime.now(),
-                        LocalDateTime.now().minus(1, ChronoUnit.MINUTES),
-                        0));
+                        LocalDateTime.now().minus(1, ChronoUnit.MINUTES)));
         // host not available
         assertThrows(DataProviderException.class, () ->
-                new NightscoutDataProvider("http://localhost", "mysecret",
+                new NightscoutDataProvider("http://localhost", "mysecret", 1,
                         LocalDateTime.now(),
-                        LocalDateTime.now().minus(1, ChronoUnit.MINUTES),
-                        1));
+                        LocalDateTime.now().minus(1, ChronoUnit.MINUTES)));
     }
 }

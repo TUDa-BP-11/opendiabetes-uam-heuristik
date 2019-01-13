@@ -1,6 +1,7 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.math.Predictions;
+import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
@@ -11,51 +12,25 @@ import java.util.List;
 public class BruteForceAlgo implements Algorithm {
     private double absorptionTime;
     private double insDuration;
-    private double carbRatio;
-    private double insSensitivityFactor;
+    private Profile profile;
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
     private List<TempBasal> basalTratments;
 
     public BruteForceAlgo() {
-        absorptionTime = 120;
-        insDuration = 180;
-        carbRatio = 10;
-        insSensitivityFactor = 35;
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
         mealTreatments = new ArrayList<>();
         basalTratments = new ArrayList<>();
-    }
-
-    public BruteForceAlgo(double absorptionTime, double insDuration, double carbRatio, double insSensitivityFactor) {
-        this.absorptionTime = absorptionTime;
-        this.insDuration = insDuration;
-        this.carbRatio = carbRatio;
-        this.insSensitivityFactor = insSensitivityFactor;
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        mealTreatments = new ArrayList<>();
-        basalTratments = new ArrayList<>();
-    }
-
-    @Override
-    public void setCarbRatio(double carbRatio) {
-        this.carbRatio = carbRatio;
     }
 
     public double getCarbRatio() {
-        return carbRatio;
-    }
-
-    @Override
-    public void setInsulinSensitivity(double insSensitivity) {
-        this.insSensitivityFactor = insSensitivity;
+        return profile.getCarbratio();
     }
 
     public double getInsulinSensitivity() {
-        return insSensitivityFactor;
+        return profile.getSensitivity();
     }
 
     @Override
@@ -77,6 +52,11 @@ public class BruteForceAlgo implements Algorithm {
     }
 
     @Override
+    public void setProfile(Profile profile) {
+        this.profile = profile;
+    }
+
+    @Override
     public void setGlucoseMeasurements(List<VaultEntry> glucose) {
         this.glucose = new ArrayList<>(glucose);
     }
@@ -90,7 +70,6 @@ public class BruteForceAlgo implements Algorithm {
     public void setBasalTreatments(List<TempBasal> basalTreatments) {
         this.basalTratments = basalTreatments;
     }
-
 
     @Override
     public List<VaultEntry> calculateMeals() {
@@ -117,7 +96,7 @@ public class BruteForceAlgo implements Algorithm {
     }
 
     private double findBruteForce(long deltaT, double deltaBG, double carbsAmount) {
-        double test = deltaBGC(deltaT, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
+        double test = deltaBGC(deltaT, profile.getSensitivity(), profile.getCarbratio(), carbsAmount, absorptionTime);
         if (Math.abs(test - deltaBG) <= 0.1)
             return carbsAmount;
         if (test < deltaBG)

@@ -6,6 +6,8 @@ import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -52,12 +54,13 @@ public class DemoDataProvider implements AlgorithmDataProvider {
 
     @Override
     public Profile getProfile() {
-        return null;
+        return new Profile(ZoneId.systemDefault(), 35, 10, Collections.singletonList(new Profile.BasalProfile(LocalTime.of(0, 0), 1)));
     }
 
     public static void main(String[] args) {
         VaultEntryParser parser = new VaultEntryParser();
         DemoDataProvider provider = new DemoDataProvider();
         System.out.println(parser.toJson(provider.getGlucoseMeasurements()));
+        System.out.println(parser.toJson(provider.getBolusTreatments(), 120));
     }
 }

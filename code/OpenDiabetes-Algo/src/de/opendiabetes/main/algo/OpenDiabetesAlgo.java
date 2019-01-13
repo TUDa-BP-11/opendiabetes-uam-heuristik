@@ -1,6 +1,7 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.math.Predictions;
+import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
@@ -11,8 +12,7 @@ import java.util.List;
 public class OpenDiabetesAlgo implements Algorithm {
     private double absorptionTime;
     private double insDuration;
-    private double carbRatio;
-    private double insSensitivityFactor;
+    private Profile profile;
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
     private List<VaultEntry> mealTreatments;
@@ -21,41 +21,28 @@ public class OpenDiabetesAlgo implements Algorithm {
     public OpenDiabetesAlgo() {
         absorptionTime = 120;
         insDuration = 180;
-        carbRatio = 10;
-        insSensitivityFactor = 35;
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
         mealTreatments = new ArrayList<>();
         basalTreatments = new ArrayList<>();
     }
 
-    public OpenDiabetesAlgo(double absorptionTime, double insDuration, double carbRatio, double insSensitivityFactor) {
+    public OpenDiabetesAlgo(double absorptionTime, double insDuration, Profile profile) {
         this.absorptionTime = absorptionTime;
         this.insDuration = insDuration;
-        this.carbRatio = carbRatio;
-        this.insSensitivityFactor = insSensitivityFactor;
+        this.profile = profile;
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
         mealTreatments = new ArrayList<>();
         basalTreatments = new ArrayList<>();
-    }
-
-    @Override
-    public void setCarbRatio(double carbRatio) {
-        this.carbRatio = carbRatio;
     }
 
     public double getCarbRatio() {
-        return carbRatio;
-    }
-
-    @Override
-    public void setInsulinSensitivity(double insSensitivity) {
-        this.insSensitivityFactor = insSensitivity;
+        return profile.getCarbratio();
     }
 
     public double getInsulinSensitivity() {
-        return insSensitivityFactor;
+        return profile.getSensitivity();
     }
 
     @Override
@@ -74,6 +61,11 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     public double getInsulinDuration() {
         return insDuration;
+    }
+
+    @Override
+    public void setProfile(Profile profile) {
+        this.profile = profile;
     }
 
     @Override
@@ -106,8 +98,8 @@ public class OpenDiabetesAlgo implements Algorithm {
 
             }
 
-            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
-            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, insSensitivityFactor, insDuration, carbRatio, absorptionTime);
+            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
             double deltaBg = next.getValue() - current.getValue();
             double deltaPrediction = (nextPrediction - currentPrediction);
 
@@ -121,7 +113,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     }
 
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
-        double value = deltaBg * carbRatio / (insSensitivityFactor * Predictions.carbsOnBoard(deltaTime, absorptionTime));
+        double value = deltaBg * profile.getCarbratio() / (profile.getSensitivity() * Predictions.carbsOnBoard(deltaTime, absorptionTime));
         mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
     }
 }

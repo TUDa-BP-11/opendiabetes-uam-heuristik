@@ -5,6 +5,7 @@ import de.opendiabetes.main.algo.BruteForceAlgo;
 import de.opendiabetes.main.algo.OpenDiabetesAlgo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.dataprovider.DemoDataProvider;
+import de.opendiabetes.main.dataprovider.FileDataProvider;
 import de.opendiabetes.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.vault.engine.container.VaultEntry;
@@ -31,19 +32,31 @@ public class Main {
     private static Input input;
 
     public static void main(String[] args) {
+        // Main control
         Properties config = null;
-        String host = null;
-        String secret = null;
-        TemporalAccessor lastest = null;
-        TemporalAccessor oldest = null;
-        Integer batchSize = null;
         String dataProviderName = "demo";
         String algorithmName = "demo";
-        double carbRatio = 10;
-        double insulinSensitivity = 35;
+
+        // Nightscout data provider
+        String host = null;
+        String secret = null;
+        Integer batchSize = null;
+
+        // Files data provider
+        String base = null;
+        String entries = null;
+        String treatments = null;
+        String profile = null;
+
+        // General
+        TemporalAccessor lastest = null;
+        TemporalAccessor oldest = null;
         double absorptionTime = 120;
         double insulinDuration = 180;
+
         boolean debug = false;
+
+        // Read startup arguments
         try {
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
@@ -52,28 +65,6 @@ public class Main {
                     switch (arg.toLowerCase()) {
                         case "config":
                             config = getPropertiesFileValue(arg, args, i);
-                            i++;
-                            break;
-                        case "host":
-                            host = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "secret":
-                        case "apisecret":
-                            secret = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "latest":
-                            lastest = getDateTimeValue(arg, args, i);
-                            i++;
-                            break;
-                        case "oldest":
-                            oldest = getDateTimeValue(arg, args, i);
-                            i++;
-                            break;
-                        case "batch":
-                        case "batchsize":
-                            batchSize = getIntValue(arg, args, i, 1);
                             i++;
                             break;
                         case "data":
@@ -87,14 +78,49 @@ public class Main {
                             algorithmName = getValue(arg, args, i);
                             i++;
                             break;
-                        case "carbratio":
-                            carbRatio = getDoubleValue(arg, args, i);
+
+
+                        // Nightscout data provider
+                        case "host":
+                            host = getValue(arg, args, i);
                             i++;
                             break;
-                        case "inssens":
-                        case "inssensitivity":
-                        case "insulinsensitivity":
-                            insulinSensitivity = getDoubleValue(arg, args, i);
+                        case "secret":
+                        case "apisecret":
+                            secret = getValue(arg, args, i);
+                            i++;
+                            break;
+                        case "batch":
+                        case "batchsize":
+                            batchSize = getIntValue(arg, args, i, 1);
+                            i++;
+                            break;
+
+                        // Files data provider
+                        case "base":
+                            base = getValue(arg, args, i);
+                            i++;
+                            break;
+                        case "entries":
+                            entries = getValue(arg, args, i);
+                            i++;
+                            break;
+                        case "treatments":
+                            treatments = getValue(arg, args, i);
+                            i++;
+                            break;
+                        case "profile":
+                            profile = getValue(arg, args, i);
+                            i++;
+                            break;
+
+                        // General
+                        case "latest":
+                            lastest = getDateTimeValue(arg, args, i);
+                            i++;
+                            break;
+                        case "oldest":
+                            oldest = getDateTimeValue(arg, args, i);
                             i++;
                             break;
                         case "absorptiontime":
@@ -106,6 +132,7 @@ public class Main {
                             insulinDuration = getDoubleValue(arg, args, i);
                             i++;
                             break;
+
                         case "debug":
                             debug = true;
                             break;
@@ -119,11 +146,33 @@ public class Main {
             return;
         }
 
+        // Set up data provider
+        if (config != null) {
+            if (lastest == null && config.getProperty("latest") != null)
+                lastest = parseDateTime("latest", config.getProperty("latest"));
+            if (oldest == null && config.getProperty("oldest") != null)
+                oldest = parseDateTime("oldest", config.getProperty("oldest"));
+        }
+        
         AlgorithmDataProvider dataProvider;
         try {
             switch (dataProviderName.toLowerCase()) {
                 case "demo":
                     dataProvider = new DemoDataProvider();
+                    break;
+                case "file":
+                case "files":
+                    if (config != null) {
+                        if (base == null && config.getProperty("base") != null)
+                            base = config.getProperty("base");
+                        if (entries == null && config.getProperty("entries") != null)
+                            entries = config.getProperty("entries");
+                        if (treatments == null && config.getProperty("treatments") != null)
+                            treatments = config.getProperty("treatments");
+                        if (profile == null && config.getProperty("profile") != null)
+                            profile = config.getProperty("profile");
+                    }
+                    dataProvider = new FileDataProvider(base, entries, treatments, profile, lastest, oldest);
                     break;
                 case "ns":
                 case "nightscout":
@@ -132,14 +181,10 @@ public class Main {
                             host = config.getProperty("host");
                         if (secret == null && config.getProperty("secret") != null)
                             secret = config.getProperty("secret");
-                        if (lastest == null && config.getProperty("latest") != null)
-                            lastest = parseDateTime("latest", config.getProperty("latest"));
-                        if (oldest == null && config.getProperty("oldest") != null)
-                            oldest = parseDateTime("oldest", config.getProperty("oldest"));
                         if (batchSize == null && config.getProperty("batchsize") != null)
                             batchSize = parseInt("batchsize", config.getProperty("batchsize"), 1);
                     }
-                    dataProvider = new NightscoutDataProvider(host, secret, lastest, oldest, batchSize);
+                    dataProvider = new NightscoutDataProvider(host, secret, batchSize, lastest, oldest);
                     break;
                 default:
                     Log.logError("Unknown dataprovider " + dataProviderName);
@@ -153,6 +198,7 @@ public class Main {
             return;
         }
 
+        // Set up algorithm
         Algorithm algorithm;
         switch (algorithmName.toLowerCase()) {
             case "demo":
@@ -166,12 +212,11 @@ public class Main {
                 return;
         }
 
-        algorithm.setCarbRatio(carbRatio);
-        algorithm.setInsulinSensitivity(insulinSensitivity);
         algorithm.setAbsorptionTime(absorptionTime);
         algorithm.setInsulinDuration(insulinDuration);
         algorithm.setDataProvider(dataProvider);
 
+        // Start
         boolean debugFinal = debug;
         main = new Thread(() -> {
             List<VaultEntry> meals = algorithm.calculateMeals();

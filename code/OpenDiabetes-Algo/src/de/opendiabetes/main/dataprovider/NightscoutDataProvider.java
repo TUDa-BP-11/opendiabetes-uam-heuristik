@@ -22,11 +22,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NightscoutDataProvider implements AlgorithmDataProvider {
-    private String host;
-    private String apiSecret;
+    private int batchSize;
     private TemporalAccessor latest;
     private TemporalAccessor oldest;
-    private int batchSize;
 
     private NSApi api;
     private List<VaultEntry> entries;
@@ -40,19 +38,23 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
      *
      * @param host      host of the Nightscoout instance
      * @param apiSecret api secret of the Nightscout instance
+     * @param batchSize amount of entries to fetch at once. If null, a batch size of 100 is used.
      * @param latest    latest point in time. If null, the current time is used
      * @param oldest    oldest point in time. If null, this is set 30 minutes before latest
-     * @param batchSize amount of entries to fetch at once. If null, a batch size of 100 is used.
      * @throws DataProviderException if host or apiSecret are null or if oldest is after latest
      */
-    public NightscoutDataProvider(String host, String apiSecret, TemporalAccessor latest, TemporalAccessor oldest, Integer batchSize) {
+    public NightscoutDataProvider(String host, String apiSecret, Integer batchSize, TemporalAccessor latest, TemporalAccessor oldest) {
         if (host == null)
             throw new DataProviderException(this, "No nightscout host specified!");
-        this.host = host;
 
         if (apiSecret == null)
             throw new DataProviderException(this, "No nightscout api secret specified!");
-        this.apiSecret = apiSecret;
+
+        if (batchSize == null)
+            this.batchSize = 100;
+        else this.batchSize = batchSize;
+        if (this.batchSize < 1)
+            throw new DataProviderException(this, "Invalid argument: batch size has to be a positive number");
 
         if (latest == null)
             this.latest = LocalDateTime.now();
@@ -64,12 +66,6 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
 
         if (LocalDateTime.from(this.oldest).isAfter(LocalDateTime.from(this.latest)))
             throw new DataProviderException(this, "Invalid arguments: oldest cannot be after latest");
-
-        if (batchSize == null)
-            this.batchSize = 100;
-        else this.batchSize = batchSize;
-        if (this.batchSize < 1)
-            throw new DataProviderException(this, "Invalid argument: batch size has to be a positive number");
 
         this.api = new NSApi(host, apiSecret);
 
@@ -150,7 +146,6 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
     public List<VaultEntry> getBolusTreatments() {
         if (treatments == null)
             fetchTreatments();
-
         return treatments.stream()
                 .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
                 .sorted(Comparator.comparing(VaultEntry::getTimestamp))
@@ -193,27 +188,11 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
         }
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public String getApiSecret() {
-        return apiSecret;
-    }
-
     public TemporalAccessor getLatest() {
         return latest;
     }
 
     public TemporalAccessor getOldest() {
         return oldest;
-    }
-
-    public int getBatchSize() {
-        return batchSize;
-    }
-
-    public NSApi getApi() {
-        return api;
     }
 }

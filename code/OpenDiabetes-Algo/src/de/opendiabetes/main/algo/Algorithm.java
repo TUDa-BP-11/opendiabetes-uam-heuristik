@@ -1,25 +1,12 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 
 import java.util.List;
 
 public interface Algorithm {
-    /**
-     * Set the ratio of carbs to glucose conversion
-     *
-     * @param carbRatio ratio
-     */
-    void setCarbRatio(double carbRatio);
-
-    /**
-     * Set the insulin sensitivity
-     *
-     * @param insSensitivity insulin sensitivity
-     */
-    void setInsulinSensitivity(double insSensitivity);
-
     /**
      * Set the time needed to absorb a meal completely
      *
@@ -33,6 +20,13 @@ public interface Algorithm {
      * @param insulinDuration insulin duration in minutes
      */
     void setInsulinDuration(double insulinDuration);
+
+    /**
+     * Provide a profile
+     *
+     * @param profile profile
+     */
+    void setProfile(Profile profile);
 
     /**
      * Provide a list of glucose measurements for calculation
@@ -56,11 +50,13 @@ public interface Algorithm {
     void setBasalTreatments(List<TempBasal> basalTreatments);
 
     /**
-     * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)} and {@link #setBasalTreatments(List)}
+     * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
+     * {@link #setBasalTreatments(List)} and {@link #setProfile(Profile)}
      *
      * @param dataProvider the data provider
      */
     default void setDataProvider(AlgorithmDataProvider dataProvider) {
+        this.setProfile(dataProvider.getProfile());
         this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
         this.setBolusTreatments(dataProvider.getBolusTreatments());
         this.setBasalTreatments(dataProvider.getBasalTratments());

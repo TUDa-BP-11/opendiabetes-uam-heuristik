@@ -52,7 +52,7 @@ public class Main {
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
-        OpenDiabetesAlgo algo = new OpenDiabetesAlgo(120, 180, profile.getCarbratio(), profile.getSensitivity());
+        OpenDiabetesAlgo algo = new OpenDiabetesAlgo(120, 180, profile);
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
         algo.setBasalTreatments(basals);

@@ -7,7 +7,6 @@ import de.opendiabetes.vault.engine.container.VaultEntry;
 import java.util.List;
 
 public interface AlgorithmDataProvider {
-
     /**
      * Get a list of insulin bolus treatments for calculation
      *
