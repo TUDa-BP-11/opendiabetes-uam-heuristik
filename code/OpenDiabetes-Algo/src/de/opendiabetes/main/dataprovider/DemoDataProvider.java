@@ -1,6 +1,7 @@
 package de.opendiabetes.main.dataprovider;
 
 import de.opendiabetes.main.algo.TempBasal;
+import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
@@ -47,6 +48,11 @@ public class DemoDataProvider implements AlgorithmDataProvider {
     @Override
     public List<TempBasal> getBasalTratments() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Profile getProfile() {
+        return null;
     }
 
     public static void main(String[] args) {

@@ -3,8 +3,10 @@ package de.opendiabetes.main.dataprovider;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.main.exception.DataProviderException;
+import de.opendiabetes.main.math.BasalCalc;
 import de.opendiabetes.nsapi.GetBuilder;
 import de.opendiabetes.nsapi.NSApi;
+import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
@@ -15,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,8 +29,10 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
     private int batchSize;
 
     private NSApi api;
-
     private List<VaultEntry> entries;
+    private List<VaultEntry> treatments;
+    private List<TempBasal> basals;
+    private Profile profile;
 
     /**
      * Constructs a Nightscout data provider that fetches all entries in the given time span with the given batch size.
@@ -81,7 +84,7 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
         }
     }
 
-    private void fetchAll() {
+    private void fetchEntries() {
         entries = new ArrayList<>();
         List<VaultEntry> fetched = null;
         GetBuilder getBuilder;
@@ -101,35 +104,84 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
                 }
             } while (!fetched.isEmpty());
         } catch (UnirestException e) {
-            throw new DataProviderException(this, "Exception while reading data from Nightscout: " + e.getMessage(), e);
+            throw new DataProviderException(this, "Exception while reading entries from Nightscout: " + e.getMessage(), e);
         }
         if (entries.isEmpty())
             throw new DataProviderException(this, "No entries found in Nightscout instance");
     }
 
+    private void fetchTreatments() {
+        treatments = new ArrayList<>();
+        List<VaultEntry> fetched = null;
+        GetBuilder getBuilder;
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        String latest = formatter.format(this.latest);
+        String oldest = formatter.format(this.oldest);
+        try {
+            do {
+                getBuilder = api.getTreatments().count(batchSize).find("created_at").gte(oldest);
+                if (fetched == null)    // first fetch: lte, following fetches: lt
+                    getBuilder.find("created_at").lte(latest);
+                else getBuilder.find("created_at").lt(latest);
+                fetched = getBuilder.getVaultEntries();
+                if (!fetched.isEmpty()) {
+                    treatments.addAll(fetched);
+                    latest = fetched.get(fetched.size() - 1).getTimestamp().toInstant().toString();
+                }
+            } while (!fetched.isEmpty());
+        } catch (UnirestException e) {
+            throw new DataProviderException(this, "Exception while reading treatments from Nightscout: " + e.getMessage(), e);
+        }
+        if (treatments.isEmpty())
+            throw new DataProviderException(this, "No treatments found in Nightscout instance");
+    }
+
     @Override
     public List<VaultEntry> getGlucoseMeasurements() {
-        return getEntries(VaultEntryType.GLUCOSE_CGM);
+        if (entries == null)
+            fetchEntries();
+        return entries.stream()
+                .filter(e -> e.getType().equals(VaultEntryType.GLUCOSE_CGM))
+                .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<VaultEntry> getBolusTreatments() {
-        return getEntries(VaultEntryType.BOLUS_NORMAL);
+        if (treatments == null)
+            fetchTreatments();
+
+        return treatments.stream()
+                .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
+                .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<TempBasal> getBasalTratments() {
-        //TODO
-        return Collections.emptyList();
+        if (treatments == null)
+            fetchTreatments();
+        if (basals == null) {
+            BasalCalc calc = new BasalCalc(getProfile());
+            List<VaultEntry> list = treatments.stream()
+                    .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
+                    .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                    .collect(Collectors.toList());
+            basals = calc.calculateBasal(list);
+        }
+        return basals;
     }
 
-    private List<VaultEntry> getEntries(VaultEntryType type) {
-        if (entries == null)
-            fetchAll();
-        return entries.stream()
-                .filter(e -> e.getType().equals(type))
-                .sorted(Comparator.comparing(VaultEntry::getTimestamp))
-                .collect(Collectors.toList());
+    @Override
+    public Profile getProfile() {
+        if (profile == null) {
+            try {
+                profile = api.getProfile();
+            } catch (UnirestException e) {
+                throw new DataProviderException(this, "Exception while reading profile from Nightscout: " + e.getMessage(), e);
+            }
+        }
+        return profile;
     }
 
     @Override
