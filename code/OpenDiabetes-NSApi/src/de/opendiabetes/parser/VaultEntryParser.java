@@ -38,7 +38,6 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                 VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
                 date = new Date(o.getLong("date"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("sgv")));
-
             }
             if (o.has("insulin") && !o.isNull("insulin")) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
