@@ -42,25 +42,11 @@ public class VaultCsvExporter extends CsvFileExporter {
         this.db = db;
     }
 
-    public List<VaultEntry> queryData() {
-        List<VaultEntry> entrys;
-
-        // query entrys
-        if (options.isImportPeriodRestricted) {
-            entrys = db.queryVaultEntriesBetween(options.exportPeriodFrom,
-                    options.exportPeriodTo);
-        } else {
-            entrys = db.queryAllVaultEntries();
-        }
-
-        return entrys;
-    }
-
     @Override
     protected List<ExportEntry> prepareData(List<VaultEntry> data) {
         List<ExportEntry> returnValues = new ArrayList<>();
 
-        List<VaultEntry> tmpValues = queryData();
+        List<VaultEntry> tmpValues = data;
         if (tmpValues == null || tmpValues.isEmpty()) {
             return null;
         }
