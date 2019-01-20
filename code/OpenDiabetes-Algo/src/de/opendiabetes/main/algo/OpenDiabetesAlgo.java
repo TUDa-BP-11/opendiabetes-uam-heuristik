@@ -4,6 +4,7 @@ import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.engine.util.TimestampUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -114,6 +115,6 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
         double value = deltaBg * profile.getCarbratio() / (profile.getSensitivity() * Predictions.carbsOnBoard(deltaTime, absorptionTime));
-        mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, timestamp, value));
+        mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(timestamp), value));
     }
 }

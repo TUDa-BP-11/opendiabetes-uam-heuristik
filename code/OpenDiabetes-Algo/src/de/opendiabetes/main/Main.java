@@ -247,11 +247,11 @@ public class Main {
         main = new Thread(() -> {
             List<VaultEntry> meals = algorithm.calculateMeals();
             Log.logInfo("Calculated %d meals:", meals.size());
-            meals.forEach(e -> Log.logInfo("%s: %.3f", e.getTimestamp().toString(), e.getValue()));
 
             // export as csv
             data.addAll(meals);
             data.sort(Comparator.comparing(VaultEntry::getTimestamp));
+            data.forEach(e -> Log.logInfo("%s", e.toString()));
             exportCsv(data);
 
             try {
