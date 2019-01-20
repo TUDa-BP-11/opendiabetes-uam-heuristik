@@ -1,141 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-Algo" default="main" basedir=".">
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="OpenDiabetes-Algo" default="default" basedir=".">
     <description>Builds, tests, and runs the project OpenDiabetes-Algo.</description>
-    <property file="build.properties"/>
+    <import file="nbproject/build-impl.xml"/>
+    <!--
 
-    <!-- source, output, build and library directories -->
-    <property name="src.dir" value="${basedir}/src"/>
-    <property name="src.test.dir" value="${basedir}/test"/>
-    <property name="resources.dir" value="${basedir}/resources"/>
-    <property name="output.dir" value="${basedir}/dist"/>
-    <property name="build.dir" value="${basedir}/build"/>
-    <property name="build.classes.dir" value="${build.dir}/classes"/>
-    <property name="build.test.dir" value="${build.dir}/test"/>
-    <property name="lib.dir" value="${basedir}/../../lib"/>
+    There exist several targets which are by default empty and which can be 
+    used for execution of your tasks. These targets are usually executed 
+    before and after some main targets. They are: 
 
-    <property name="run.main" value="de.opendiabetes.main.Main"/>
+      -pre-init:                 called before initialization of project properties
+      -post-init:                called after initialization of project properties
+      -pre-compile:              called before javac compilation
+      -post-compile:             called after javac compilation
+      -pre-compile-single:       called before javac compilation of single file
+      -post-compile-single:      called after javac compilation of single file
+      -pre-compile-test:         called before javac compilation of JUnit tests
+      -post-compile-test:        called after javac compilation of JUnit tests
+      -pre-compile-test-single:  called before javac compilation of single JUnit test
+      -post-compile-test-single: called after javac compilation of single JUunit test
+      -pre-jar:                  called before JAR building
+      -post-jar:                 called after JAR building
+      -post-clean:               called after cleaning build products
 
-    <!-- OpenDiabetes-NSApi properties -->
-    <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
-    <property name="nsapi.jar" value="NSApi.jar"/>
-    <available property="nsapi.available" file="${nsapi.dir}/dist/${nsapi.jar}"/>
+    (Targets beginning with '-' are not intended to be called on their own.)
 
-    <!-- Check if tests can be run -->
-    <condition property="cantest">
-        <and>
-            <antversion atleast="1.10.3"/>
-            <available classname="org.junit.platform.launcher.core.LauncherFactory"/>
-            <available classname="org.junit.platform.commons.util.Preconditions"/>
-            <available classname="org.junit.platform.engine.TestEngine"/>
-        </and>
-    </condition>
+    Example of inserting an obfuscator after compilation could look like this:
 
-    <!-- classpaths for compilation and tests -->
-    <path id="classpath">
-        <fileset dir="${nsapi.dir}/dist" includes="*.jar"/>
-        <fileset dir="${lib.dir}" includes="*.jar"/>
-    </path>
+        <target name="-post-compile">
+            <obfuscate>
+                <fileset dir="${build.classes.dir}"/>
+            </obfuscate>
+        </target>
 
-    <path id="junit.classpath">
-        <fileset dir="${lib.dir}/junit" includes="*.jar"/>
-        <filelist dir="${lib.dir}">
-            <file name="ormlite-core-5.0.jar"/>
-        </filelist>
-    </path>
+    For list of available properties check the imported 
+    nbproject/build-impl.xml file. 
 
-    <path id="test.classpath">
-        <pathelement path="${build.classes.dir}"/>
-        <pathelement path="${build.test.dir}"/>
-    </path>
 
-    <target name="full" depends="clean, unjar, compile, compress, test" description="Clean, build jar with all libraries, run tests"/>
-    <target name="main" depends="unjar, compile, compress" description="Build jar with existing librarys"/>
+    Another way to customize the build is by overriding existing main targets.
+    The targets of interest are: 
 
-    <target name="clean" description="Deletes the build and output directories">
-        <delete dir="${build.dir}" failonerror="false"/>
-        <delete dir="${output.dir}" failonerror="false"/>
-    </target>
+      -init-macrodef-javac:     defines macro for javac compilation
+      -init-macrodef-junit:     defines macro for junit execution
+      -init-macrodef-debug:     defines macro for class debugging
+      -init-macrodef-java:      defines macro for class execution
+      -do-jar:                  JAR building
+      run:                      execution of project 
+      -javadoc-build:           Javadoc generation
+      test-report:              JUnit report generation
 
-    <target name="init" description="Creates the build and output directories">
-        <mkdir dir="${build.classes.dir}"/>
-        <mkdir dir="${build.test.dir}"/>
-        <mkdir dir="${output.dir}"/>
-    </target>
+    An example of overriding the target for project execution could look like this:
 
-    <target name="compile.nsapi" unless="nsapi.available" description="Builds the engine, unless it already exists">
-        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
-        <ant dir="${nsapi.dir}" target="main" usenativebasedir="true" inheritall="false"/>
-    </target>
+        <target name="run" depends="OpenDiabetes-Algo-impl.jar">
+            <exec dir="bin" executable="launcher.exe">
+                <arg file="${dist.jar}"/>
+            </exec>
+        </target>
 
-    <target name="unjar" depends="init, compile.nsapi" description="Unjars all dependencies. Builds the engine if necessary">
-        <unjar dest="${build.classes.dir}" overwrite="false">
-            <filelist dir="${nsapi.dir}/dist">
-                <file name="${nsapi.jar}"/>
-            </filelist>
-        </unjar>
-    </target>
+    Notice that the overridden target depends on the jar target and not only on 
+    the compile target as the regular run target does. Again, for a list of available 
+    properties which you can use, check the target you are overriding in the
+    nbproject/build-impl.xml file. 
 
-    <target name="getversion" description="Sets the build number to the current git revision and time">
-        <tstamp>
-            <format property="TODAY_MY" pattern="dd.MM.yyyy HH.mm" locale="en,UK"/>
-        </tstamp>
-        <exec executable="git" resultproperty="git.revision" failifexecutionfails="false">
-            <arg value="rev-parse"/>
-            <arg value="--short"/>
-            <arg value="HEAD"/>
-        </exec>
-        <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
-    </target>
-
-    <target name="compile" depends="unjar" description="Compiles the project">
-        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false">
-            <classpath refid="classpath"/>
-            <compilerarg line="-encoding utf-8"/>
-        </javac>
-        <copy todir="${build.classes.dir}">
-            <fileset dir="${resources.dir}" erroronmissingdir="false"/>
-        </copy>
-    </target>
-
-    <target name="compress" depends="getversion" description="Creates the jar">
-        <tstamp/>
-        <jar destfile="${output.dir}/${jarname}" basedir="${build.classes.dir}">
-            <manifest>
-                <attribute name="Main-Class" value="${mainclass}"/>
-                <attribute name="Built-By" value="${user.name}"/>
-                <attribute name="Built-Date" value="${TODAY_MY}"/>
-                <attribute name="Version" value="${build.number}"/>
-                <attribute name="Revision" value="${build.number}"/>
-            </manifest>
-        </jar>
-    </target>
-
-    <target name="compile.test" depends="compile" description="Compiles the tests">
-        <javac srcdir="${src.test.dir}" destdir="${build.test.dir}" includeantruntime="false">
-            <classpath refid="test.classpath"/>
-            <classpath refid="junit.classpath"/>
-            <compilerarg line="-encoding utf-8"/>
-        </javac>
-    </target>
-
-    <target name="test.checkversion" unless="cantest" description="Prints a warning if the current version of ant does not support tests">
-        <echo>One of the following conditions to run tests is not met:</echo>
-        <echo>Ant version 1.10.3 or newer</echo>
-        <echo>JUnit Platform Launcher, Commons and Engine need to available in the ant classpath</echo>
-    </target>
-
-    <target name="test" if="cantest" depends="test.checkversion, compile.test" description="Runs the tests. Ant version 1.10.3 or higher required">
-        <junitlauncher haltonfailure="true" printsummary="true">
-            <classpath refid="junit.classpath"/>
-            <classpath refid="test.classpath"/>
-            <testclasses outputdir="${output.dir}">
-                <fileset dir="${build.test.dir}" includes="**"/>
-            </testclasses>
-            <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
-        </junitlauncher>
-    </target>
-
-    <target name="run" depends="compile" description="Runs the algorithm with the demo data provider and demo algorithm">
-        <java classname="${run.main}" classpath="${build.classes.dir}" fork="true" output="${output.dir}/RUN-${run.main}.txt"/>
-    </target>
+    -->
 </project>
