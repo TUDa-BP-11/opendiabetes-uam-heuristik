@@ -81,12 +81,7 @@
         <tstamp>
             <format property="TODAY_MY" pattern="dd.MM.yyyy HH.mm" locale="en,UK"/>
         </tstamp>
-        <exec executable="git" resultproperty="git.revision" failifexecutionfails="false">
-            <arg value="rev-parse"/>
-            <arg value="--short"/>
-            <arg value="HEAD"/>
-        </exec>
-        <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
+        <property name="build.number" value="0.1"/>
     </target>
 
     <target name="compile" depends="unjar" description="Compiles the project">
