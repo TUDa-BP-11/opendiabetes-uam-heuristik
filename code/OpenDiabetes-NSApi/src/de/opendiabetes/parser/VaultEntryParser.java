@@ -2,6 +2,7 @@ package de.opendiabetes.parser;
 
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.engine.util.TimestampUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -37,23 +38,23 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
             if (type != null && type.equals("sgv")) {
                 VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
                 date = new Date(o.getLong("date"));
-                result.add(new VaultEntry(entryType, date, o.getDouble("sgv")));
+                result.add(new VaultEntry(entryType, TimestampUtils.createCleanTimestamp(date), o.getDouble("sgv")));
             }
             if (o.has("insulin") && !o.isNull("insulin")) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
                 date = makeDate(o.getString("timestamp"));
-                result.add(new VaultEntry(entryType, date, o.getDouble("insulin")));
+                result.add(new VaultEntry(entryType, TimestampUtils.createCleanTimestamp(date), o.getDouble("insulin")));
             }
             if (o.has("carbs") && !o.isNull("carbs")) {
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
-                result.add(new VaultEntry(entryType, date, o.getDouble("carbs")));
+                result.add(new VaultEntry(entryType, TimestampUtils.createCleanTimestamp(date), o.getDouble("carbs")));
             }
             String eventType = o.optString("eventType");
             if (eventType != null && eventType.equals("Temp Basal")) {
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
-                result.add(new VaultEntry(entryType, date, o.getDouble("rate"), o.getDouble("duration")));
+                result.add(new VaultEntry(entryType, TimestampUtils.createCleanTimestamp(date), o.getDouble("rate"), o.getDouble("duration")));
             }
         }
         return result;
