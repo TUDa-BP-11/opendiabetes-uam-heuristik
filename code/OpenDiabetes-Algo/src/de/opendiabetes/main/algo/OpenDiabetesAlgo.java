@@ -16,7 +16,6 @@ public class OpenDiabetesAlgo implements Algorithm {
     private Profile profile;
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
-    private List<VaultEntry> mealTreatments;
     private List<TempBasal> basalTreatments;
 
     public OpenDiabetesAlgo() {
@@ -24,7 +23,6 @@ public class OpenDiabetesAlgo implements Algorithm {
         insDuration = 180;
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
-        mealTreatments = new ArrayList<>();
         basalTreatments = new ArrayList<>();
     }
 
@@ -34,7 +32,6 @@ public class OpenDiabetesAlgo implements Algorithm {
         this.profile = profile;
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
-        mealTreatments = new ArrayList<>();
         basalTreatments = new ArrayList<>();
     }
 
@@ -86,7 +83,7 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     @Override
     public List<VaultEntry> calculateMeals() {
-        mealTreatments = new ArrayList<>();
+        List<VaultEntry> mealTreatments = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
 
         while (!glucose.isEmpty()) {
@@ -105,7 +102,7 @@ public class OpenDiabetesAlgo implements Algorithm {
             double deltaPrediction = (nextPrediction - currentPrediction);
 
             if (deltaBg - deltaPrediction > 0) {
-                createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
+                mealTreatments.add(createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp()));
             }
             current = glucose.remove(0);
         }
@@ -113,8 +110,8 @@ public class OpenDiabetesAlgo implements Algorithm {
         return mealTreatments;
     }
 
-    private void createMeal(double deltaBg, double deltaTime, Date timestamp) {
+    private VaultEntry createMeal(double deltaBg, double deltaTime, Date timestamp) {
         double value = deltaBg * profile.getCarbratio() / (profile.getSensitivity() * Predictions.carbsOnBoard(deltaTime, absorptionTime));
-        mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(timestamp), value));
+        return new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(timestamp), value);
     }
 }
