@@ -70,4 +70,18 @@
     nbproject/build-impl.xml file. 
 
     -->
+    <target name="-pre-jar">
+        <unjar dest="${build.classes.dir}" overwrite="false">
+            <filelist dir="../../lib">
+                <file name="gson-2.8.0.jar"/>
+                <file name="hsqldb.jar"/>
+                <file name="javacsv.jar"/>
+                <file name="log4j-api-2.10.0.jar"/>
+                <file name="log4j-core-2.10.0.jar"/>
+                <file name="log4j-slf4j-impl-2.10.0.jar"/>
+                <file name="ormlite-core-5.0.jar"/>
+                <file name="ormlite-jdbc-5.0.jar"/>
+            </filelist>
+        </unjar>
+    </target>
 </project>
