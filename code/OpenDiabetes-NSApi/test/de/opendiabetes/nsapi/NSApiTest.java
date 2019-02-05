@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Random;
 
@@ -134,10 +135,17 @@ class NSApiTest {
         // assume that there are at least 3 entries
         assumeTrue(entries.size() > 3);
 
+        // get profile for timezone
+        Profile profile = api.getProfile();
+
         // set latest to second entry
-        LocalDateTime latest = LocalDateTime.ofInstant(entries.get(1).getTimestamp().toInstant(), ZoneId.of("UTC"));
+        ZonedDateTime latest = ZonedDateTime
+                .ofInstant(entries.get(1).getTimestamp().toInstant(), profile.getTimezone())
+                .withZoneSameInstant(ZoneId.of("UTC"));
         // set oldest to second to last entry
-        LocalDateTime oldest = LocalDateTime.ofInstant(entries.get(entries.size() - 2).getTimestamp().toInstant(), ZoneId.of("UTC"));
+        ZonedDateTime oldest = ZonedDateTime
+                .ofInstant(entries.get(entries.size() - 2).getTimestamp().toInstant(), profile.getTimezone())
+                .withZoneSameInstant(ZoneId.of("UTC"));
 
         List<VaultEntry> between = api.getEntries(latest, oldest, 20);
         // test that exactly 2 entries less are returned (first and last from original request should be missing)
