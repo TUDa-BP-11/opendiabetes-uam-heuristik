@@ -11,14 +11,17 @@
                 <root id="test.src.dir"/>
             </test-roots>
         </data>
+        <libraries xmlns="http://www.netbeans.org/ns/ant-project-libraries/1">
+            <definitions>../../lib\nblibraries.properties</definitions>
+        </libraries>
         <references xmlns="http://www.netbeans.org/ns/ant-project-references/1">
             <reference>
                 <foreign-project>OpenDiabetes-NSApi</foreign-project>
-                <artifact-type>folder</artifact-type>
+                <artifact-type>jar</artifact-type>
                 <script>build.xml</script>
-                <target>main</target>
+                <target>jar</target>
                 <clean-target>clean</clean-target>
-                <id>main</id>
+                <id>jar</id>
             </reference>
             <reference>
                 <foreign-project>OpenDiabetesVault-Engine</foreign-project>

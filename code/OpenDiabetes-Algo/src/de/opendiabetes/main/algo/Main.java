@@ -16,14 +16,14 @@ public class Main {
     public static void main(String[] args) {
         ProfileParser profileParser = new ProfileParser();
 
-        String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
+        String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
         profile.adjustProfile();
 
         BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
 
-        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
+        String treatmentPath = "./treatments_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> treatments = parser.parseFile(treatmentPath);
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
@@ -48,7 +48,7 @@ public class Main {
 
         }*/
 
-        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
+        String entriesPath = "./entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 

@@ -11,7 +11,6 @@
     <description>Builds, tests, and runs the project OpenDiabetes-Algo.</description>
     <import file="nbproject/build-impl.xml"/>
     <!--
-
     There exist several targets which are by default empty and which can be 
     used for execution of your tasks. These targets are usually executed 
     before and after some main targets. They are: 
@@ -29,45 +28,58 @@
       -pre-jar:                  called before JAR building
       -post-jar:                 called after JAR building
       -post-clean:               called after cleaning build products
-
-    (Targets beginning with '-' are not intended to be called on their own.)
-
-    Example of inserting an obfuscator after compilation could look like this:
-
-        <target name="-post-compile">
-            <obfuscate>
-                <fileset dir="${build.classes.dir}"/>
-            </obfuscate>
-        </target>
-
-    For list of available properties check the imported 
-    nbproject/build-impl.xml file. 
-
-
-    Another way to customize the build is by overriding existing main targets.
-    The targets of interest are: 
-
-      -init-macrodef-javac:     defines macro for javac compilation
-      -init-macrodef-junit:     defines macro for junit execution
-      -init-macrodef-debug:     defines macro for class debugging
-      -init-macrodef-java:      defines macro for class execution
-      -do-jar:                  JAR building
-      run:                      execution of project 
-      -javadoc-build:           Javadoc generation
-      test-report:              JUnit report generation
-
-    An example of overriding the target for project execution could look like this:
-
-        <target name="run" depends="OpenDiabetes-Algo-impl.jar">
-            <exec dir="bin" executable="launcher.exe">
-                <arg file="${dist.jar}"/>
-            </exec>
-        </target>
-
-    Notice that the overridden target depends on the jar target and not only on 
-    the compile target as the regular run target does. Again, for a list of available 
-    properties which you can use, check the target you are overriding in the
-    nbproject/build-impl.xml file. 
-
     -->
+    <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
+    <property name="nsapi.jar" value="OpenDiabetes-NSApi.jar"/>
+    <available property="nsapi.available" file="${nsapi.dir}/dist/${nsapi.jar}"/>
+
+    <target name="full" depends="clean, init, compile, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
+
+    <target name="compile-nsapi" unless="nsapi.available" description="Builds the engine, unless it already exists">
+        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
+        <ant dir="${nsapi.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
+    </target>
+
+    <target name="-pre-compile" depends="compile-nsapi" description="Unjars all dependencies. Builds the engine if necessary"/>
+
+    <target name="-pre-jar" depends="init, compile-nsapi">
+        <unjar dest="${build.classes.dir}" overwrite="false">
+            <filelist dir="${nsapi.dir}/dist">
+                <file name="${nsapi.jar}"/>
+            </filelist>
+        </unjar>
+    </target>
+
+    <!-- Tests -->
+    <condition property="junit5.cantest">
+        <and>
+            <antversion atleast="1.10.3"/>
+            <available classname="org.junit.platform.launcher.core.LauncherFactory"/>
+            <available classname="org.junit.platform.commons.util.Preconditions"/>
+            <available classname="org.junit.platform.engine.TestEngine"/>
+        </and>
+    </condition>
+
+    <target name="junit5-test-check" unless="junit5.cantest" description="Prints a warning if the current version of ant does not support tests">
+        <echo>One of the following conditions to run tests is not met:</echo>
+        <echo>Ant version 1.10.3 or newer</echo>
+        <echo>JUnit Platform Launcher, Commons and Engine need to available in the ant classpath</echo>
+    </target>
+
+    <target name="junit5-test" if="junit5.cantest" depends="-pre-pre-jar, junit5-test-check, compile-test"
+            description="Runs the tests. Ant version 1.10.3 or higher required">
+
+        <junitlauncher haltonfailure="true" printsummary="true">
+            <classpath>
+                <pathelement path="${build.classes.dir}"/>
+                <pathelement path="${build.test.classes.dir}"/>
+                <fileset dir="${libraries.dir}" includes="*.jar"/>
+                <fileset dir="${libraries.dir}/junit" includes="*.jar"/>
+            </classpath>
+            <testclasses outputdir="${dist.jar.dir}">
+                <fileset dir="${build.test.classes.dir}" includes="**"/>
+            </testclasses>
+            <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
+        </junitlauncher>
+    </target>
 </project>
