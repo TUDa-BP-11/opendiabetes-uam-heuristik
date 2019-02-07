@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 public class OpenDiabetesAlgo implements Algorithm {
+
     private double absorptionTime;
     private double insDuration;
     private Profile profile;
@@ -68,7 +69,8 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     @Override
     public void setGlucoseMeasurements(List<VaultEntry> glucose) {
-        this.glucose = new ArrayList<>(glucose);
+        this.glucose = glucose;
+//        this.glucose = new ArrayList<>(glucose);
     }
 
     @Override
@@ -85,6 +87,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     public List<VaultEntry> calculateMeals() {
         List<VaultEntry> mealTreatments = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
+        VaultEntry meal;
 
         while (!glucose.isEmpty()) {
             VaultEntry next = glucose.get(0);
@@ -102,7 +105,10 @@ public class OpenDiabetesAlgo implements Algorithm {
             double deltaPrediction = (nextPrediction - currentPrediction);
 
             if (deltaBg - deltaPrediction > 0) {
-                mealTreatments.add(createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp()));
+                meal = createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
+                System.out.println(meal.toString());
+
+                mealTreatments.add(meal);
             }
             current = glucose.remove(0);
         }

@@ -16,14 +16,14 @@ public class Main {
     public static void main(String[] args) {
         ProfileParser profileParser = new ProfileParser();
 
-        String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
+        String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
         profile.adjustProfile();
 
         BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
 
-        String treatmentPath = "./treatments_2017-07-10_to_2017-11-08.json";
+        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> treatments = parser.parseFile(treatmentPath);
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
@@ -48,20 +48,21 @@ public class Main {
 
         }*/
 
-        String entriesPath = "./entries_2017-07-10_to_2017-11-08.json";
+        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
-        OpenDiabetesAlgo algo = new OpenDiabetesAlgo(120, 180, profile);
+//        Algorithm algo = new OpenDiabetesAlgo(120, 180, profile);
+        Algorithm algo = new NewAlgo(120, 180, profile);
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
         algo.setBasalTreatments(basals);
 
         System.out.println("calc :");
         List<VaultEntry> meals = algo.calculateMeals();
-        for (VaultEntry meal : meals) {
-            System.out.println(meal.toString());
-        }
+//        for (VaultEntry meal : meals) {
+//            System.out.println(meal.toString());
+//        }
 
 //        //FOR LATER USE
 //        // query data
