@@ -29,8 +29,7 @@ public class Predictions {
             if (deltaTime <= 0) {
                 break;
             }
-            double unitsPerMin = basal.getValue() / basal.getDuration();
-            result += deltatempBGI(deltaTime, unitsPerMin, insSensitivityFactor, insDuration, 0, basal.getDuration());
+            result += deltatempBGI(deltaTime, basal.getValue(), insSensitivityFactor, insDuration, 0, basal.getDuration());
         }
 
         return result;

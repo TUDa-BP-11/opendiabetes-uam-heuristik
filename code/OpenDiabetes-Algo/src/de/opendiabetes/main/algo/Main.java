@@ -1,8 +1,9 @@
 package de.opendiabetes.main.algo;
 
-import de.opendiabetes.main.math.BasalCalc;
+import de.opendiabetes.main.math.TempBasalCalculator;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
+import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
@@ -20,7 +21,6 @@ public class Main {
         Profile profile = profileParser.parseFile(profilePath);
         profile.toZulu();
 
-        BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
 
         String treatmentPath = "./treatments_2017-07-10_to_2017-11-08.json";
@@ -41,7 +41,7 @@ public class Main {
 
         }
 
-        List<TempBasal> basals = basalCalculator.calculateBasal(basalTreatments);
+        List<TempBasal> basals = TempBasalCalculator.calcTemp(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
         /*
         for (TempBasal b:basals){
             System.out.println(b.toString());

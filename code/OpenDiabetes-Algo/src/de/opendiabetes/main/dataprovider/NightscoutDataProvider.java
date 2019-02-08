@@ -3,11 +3,12 @@ package de.opendiabetes.main.dataprovider;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.main.exception.DataProviderException;
-import de.opendiabetes.main.math.BasalCalc;
+import de.opendiabetes.main.math.TempBasalCalculator;
 import de.opendiabetes.nsapi.GetBuilder;
 import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.Status;
+import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 
@@ -157,12 +158,11 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
         if (treatments == null)
             fetchTreatments();
         if (basals == null) {
-            BasalCalc calc = new BasalCalc(getProfile());
             List<VaultEntry> list = treatments.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
-            basals = calc.calculateBasal(list);
+            basals = TempBasalCalculator.calcTemp(TreatmentMapper.adjustBasalTreatments(list), getProfile());
         }
         return basals;
     }
