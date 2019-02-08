@@ -18,7 +18,7 @@ public class Main {
 
         String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
-        profile.adjustProfile();
+        profile.toZulu();
 
         BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
