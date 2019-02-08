@@ -1,5 +1,8 @@
 package de.opendiabetes.main.algo;
 
+import com.github.sh0nk.matplotlib4j.Plot;
+import com.github.sh0nk.matplotlib4j.PythonExecutionException;
+import com.github.sh0nk.matplotlib4j.builder.HistBuilder;
 import de.opendiabetes.main.math.BasalCalc;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
@@ -7,13 +10,33 @@ import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
 import de.opendiabetes.vault.engine.util.SortVaultEntryByDate;
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Main {
 
     public static void main(String[] args) {
+        Random rand = new Random();
+        List<Double> x = IntStream.range(0, 1000).mapToObj(i -> rand.nextGaussian())
+                .collect(Collectors.toList());
+
+        Plot plt = Plot.create();
+        plt.hist().add(x).orientation(HistBuilder.Orientation.horizontal);
+        plt.ylim(-5, 5);
+        plt.title("histogram");
+        try {
+            plt.show();
+        } catch (IOException | PythonExecutionException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
         ProfileParser profileParser = new ProfileParser();
 
         String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
@@ -48,10 +71,11 @@ public class Main {
 
         }*/
 
-        String entriesPath = "./entries_2017-07-10_to_2017-11-08.json";
+        String entriesPath = "./entries_small.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
+//        Algorithm algo = new OpenDiabetesAlgo(120, 180, profile);
 //        Algorithm algo = new OpenDiabetesAlgo(120, 180, profile);
         Algorithm algo = new NewAlgo(120, 180, profile);
         algo.setGlucoseMeasurements(entries);

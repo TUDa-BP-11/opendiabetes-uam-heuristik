@@ -141,7 +141,7 @@ public class NewAlgo implements Algorithm {
                 }
 //            for (WeightedObservedPoint obs : observations)
 //                System.out.println("x="+obs.getX()+"y="+obs.getY());
-
+                // lsq = [c, b, a]
                 double[] lsq = pcf.fit(observations);
                 assert (lsq[2] > 0);
                 double error = (4*lsq[2]*lsq[0]-pow(lsq[1],2))/(4*lsq[2]);
@@ -150,14 +150,13 @@ public class NewAlgo implements Algorithm {
                 double estimatedCarbs = lsq[2] * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
                 if (estimatedCarbs > 0
 //                        && error < 10 
-                        && current.getTimestamp().getTime() - estimatedTime < absorptionTime/2 
+                        && current.getTimestamp().getTime()/60000 - estimatedTime < absorptionTime/2
                         && estimatedTime < next.getTimestamp().getTime()/60000 
                         ) 
                 {
                     estimatedTimeAccepted = estimatedTime;
                     meal = new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(estimatedTime*60000l)), estimatedCarbs);
                     mealTreatments.add(meal);
-
                     System.out.println(meal.toString());
                 }
 //            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
