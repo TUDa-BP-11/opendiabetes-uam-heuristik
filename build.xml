@@ -12,6 +12,10 @@
     <target name="NSApi" depends="Engine">
         <ant dir="code/OpenDiabetes-NSApi" target="full"/>
     </target>
+    
+    <target name="Matplotlib4j">
+        <ant dir="../matplotlib4j" target="jar"/>
+    </target>
 
     <target name="Algo" depends="NSApi">
         <ant dir="code/OpenDiabetes-Algo" target="full"/>

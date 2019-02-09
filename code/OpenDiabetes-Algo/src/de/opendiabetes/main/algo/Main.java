@@ -23,30 +23,17 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main(String[] args) {
-        Random rand = new Random();
-        List<Double> x = IntStream.range(0, 1000).mapToObj(i -> rand.nextGaussian())
-                .collect(Collectors.toList());
-
-        Plot plt = Plot.create();
-        plt.hist().add(x).orientation(HistBuilder.Orientation.horizontal);
-        plt.ylim(-5, 5);
-        plt.title("histogram");
-        try {
-            plt.show();
-        } catch (IOException | PythonExecutionException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
 
         ProfileParser profileParser = new ProfileParser();
 
-        String profilePath = "./profile_2017-07-10_to_2017-11-08.json";
+        String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
         profile.adjustProfile();
 
         BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
 
-        String treatmentPath = "./treatments_2017-07-10_to_2017-11-08.json";
+        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> treatments = parser.parseFile(treatmentPath);
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
@@ -71,7 +58,7 @@ public class Main {
 
         }*/
 
-        String entriesPath = "./entries_small.json";
+        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_small.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
@@ -84,6 +71,23 @@ public class Main {
 
         System.out.println("calc :");
         List<VaultEntry> meals = algo.calculateMeals();
+        
+        // TODO: List<VaultEntry> interface to ??? List<Double,Double> ???
+        Random rand = new Random();
+        List<Double> x = IntStream.range(0, 1000).mapToObj(i -> rand.nextGaussian())
+                .collect(Collectors.toList());
+
+        Plot plt = Plot.create();
+        // TODO: line plots
+        plt.hist().add(x).orientation(HistBuilder.Orientation.horizontal);
+//        plt.ylim(-5, 5);
+//        plt.title("histogram");
+        try {
+            plt.show();
+        } catch (IOException | PythonExecutionException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
 //        for (VaultEntry meal : meals) {
 //            System.out.println(meal.toString());
 //        }
