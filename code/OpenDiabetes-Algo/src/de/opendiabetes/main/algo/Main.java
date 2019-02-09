@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -58,7 +59,7 @@ public class Main {
 
         }*/
 
-        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_small.json";
+        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
         entries.sort(new SortVaultEntryByDate());
 
@@ -69,19 +70,24 @@ public class Main {
         algo.setBolusTreatments(bolusTreatment);
         algo.setBasalTreatments(basals);
 
+        List<Double> mealTimes = new ArrayList();
+        List<Double> mealValues = new ArrayList();
+        for (VaultEntry ve: mealTreatment) {
+            mealTimes.add(ve.getTimestamp().getTime()/1000.0);
+            mealValues.add(ve.getValue());
+        }
         System.out.println("calc :");
         List<VaultEntry> meals = algo.calculateMeals();
-        
-        // TODO: List<VaultEntry> interface to ??? List<Double,Double> ???
-        Random rand = new Random();
-        List<Double> x = IntStream.range(0, 1000).mapToObj(i -> rand.nextGaussian())
-                .collect(Collectors.toList());
+        List<Double> estMealTimes = new ArrayList();
+        List<Double> estMealValues = new ArrayList();
+        for (VaultEntry ve: meals) {
+            estMealTimes.add(ve.getTimestamp().getTime()/1000.0);
+            estMealValues.add(ve.getValue());
+        } 
 
         Plot plt = Plot.create();
-        // TODO: line plots
-        plt.hist().add(x).orientation(HistBuilder.Orientation.horizontal);
-//        plt.ylim(-5, 5);
-//        plt.title("histogram");
+        plt.plot().addDates(mealTimes).add(mealValues).ls("").marker("x");
+        plt.plot().addDates(estMealTimes).add(estMealValues).ls("").marker("o");
         try {
             plt.show();
         } catch (IOException | PythonExecutionException ex) {
