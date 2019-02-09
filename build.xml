@@ -13,7 +13,7 @@
         <ant dir="code/OpenDiabetes-NSApi" target="full"/>
     </target>
 
-    <target name="Algo" depends="NSApi">
+    <target name="Algo" depends="NSApi, Matplotlib4j">
         <ant dir="code/OpenDiabetes-Algo" target="full"/>
     </target>
 </project>
