@@ -67,18 +67,19 @@ public class Main {
 
         int absorptionTime = 180;
         int insDuration = 180;
-//        Algorithm algo = new OpenDiabetesAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new OpenDiabetesAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo2 = new BruteForceAlgo();
         Algorithm algo2 = new NewAlgo(absorptionTime, insDuration, profile);
-//        algo.setGlucoseMeasurements(entries);
-//        algo.setBolusTreatments(bolusTreatment);
-//        algo.setBasalTreatments(basals);
+        algo.setGlucoseMeasurements(entries);
+        algo.setBolusTreatments(bolusTreatment);
+        algo.setBasalTreatments(basals);
         algo2.setGlucoseMeasurements(entries);
         algo2.setBolusTreatments(bolusTreatment);
         algo2.setBasalTreatments(basals);
 
         System.out.println("calc :");
-//        List<VaultEntry> meals = algo.calculateMeals();
+        List<VaultEntry> noMeals = new ArrayList();
+        List<VaultEntry> meals = algo.calculateMeals();
         List<VaultEntry> meals2 = algo2.calculateMeals();
 
 //        int insSensitivity = 35;
@@ -86,15 +87,20 @@ public class Main {
         List<Double> bgTimes = new ArrayList();
         List<Double> bgValues = new ArrayList();
         List<Double> predValues = new ArrayList();
-//        List<Double> algoValues = new ArrayList();
+        List<Double> noMealValues = new ArrayList();
+        List<Double> algoValues = new ArrayList();
         List<Double> algo2Values = new ArrayList();
         double start = entries.get(0).getValue();
         for (VaultEntry ve : entries) {
-             
-//            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
-//                    meals, bolusTreatment, basals,
-//                    profile.getSensitivity(), insDuration,
-//                    profile.getCarbratio(), absorptionTime);
+
+            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
+                    noMeals, bolusTreatment, basals,
+                    profile.getSensitivity(), insDuration,
+                    profile.getCarbratio(), absorptionTime);
+            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
+                    meals, bolusTreatment, basals,
+                    profile.getSensitivity(), insDuration,
+                    profile.getCarbratio(), absorptionTime);
             double algo2Predict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals2, bolusTreatment, basals,
                     profile.getSensitivity(), insDuration,
@@ -103,24 +109,15 @@ public class Main {
                     mealTreatment, bolusTreatment, basals,
                     profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
-            
 
-//            if (predValues.isEmpty()) {
-                predValues.add(start+dataPredict);
-//                algoValues.add(start+algoPredict);
-                algo2Values.add(start+algo2Predict);
-//                predValues.add(ve.getValue() + dataPredict);
-//                algoValues.add(ve.getValue() + algoPredict);
-//                algo2Values.add(ve.getValue() + algo2Predict);
-//            } else {
-//                predValues.add(predValues.get(predValues.size() - 1) + dataPredict);
-//                algoValues.add(algoValues.get(algoValues.size() - 1) + algoPredict);
-//                algo2Values.add(algo2Values.get(algo2Values.size() - 1) + algo2Predict);
-//            }
+            predValues.add(start + dataPredict);
+            noMealValues.add(start + noMealPredict);
+            algoValues.add(start + algoPredict);
+            algo2Values.add(start + algo2Predict);
             bgTimes.add(ve.getTimestamp().getTime() / 1000.0);
             bgValues.add(ve.getValue());
 
-            if (bgTimes.get(bgTimes.size() - 1) - bgTimes.get(0) > 5 * 24 * 60 * 60) {
+            if (bgTimes.get(bgTimes.size() - 1) - bgTimes.get(0) > 10 * 24 * 60 * 60) {
                 break;
             }
         }
@@ -136,24 +133,12 @@ public class Main {
 //                    +" algo2Time: "+meals2.get(0).getTimestamp().getTime()/1000 +
 //                    " algo2Values: "+meals2.get(0).getValue()
 //                    );
-        
-//        List<Double> mealTimes = new ArrayList();
-//        List<Double> mealValues = new ArrayList();
-//        for (VaultEntry ve: mealTreatment) {
-//            mealTimes.add(ve.getTimestamp().getTime()/1000.0);
-//            mealValues.add(ve.getValue());
-//        }
-//        List<Double> estMealTimes = new ArrayList();
-//        List<Double> estMealValues = new ArrayList();
-//        for (VaultEntry ve: meals) {
-//            estMealTimes.add(ve.getTimestamp().getTime()/1000.0);
-//            estMealValues.add(ve.getValue());
-//        } 
         Plot plt = Plot.create();
         plt.plot().addDates(bgTimes).add(bgValues);
-        plt.plot().addDates(bgTimes).add(predValues).color("red");
-//        plt.plot().addDates(bgTimes).add(algoValues).color("green");
-        plt.plot().addDates(bgTimes).add(algo2Values).color("cyan");
+        plt.plot().addDates(bgTimes).add(predValues).color("green");
+        plt.plot().addDates(bgTimes).add(noMealValues).color("red");
+        plt.plot().addDates(bgTimes).add(algoValues).color("magenta").linestyle("--");
+        plt.plot().addDates(bgTimes).add(algo2Values).color("cyan").linestyle("--");
 //        plt.plot().addDates(mealTimes).add(mealValues).ls("").marker("x");
 //        plt.plot().addDates(estMealTimes).add(estMealValues).ls("").marker("o");
         try {
