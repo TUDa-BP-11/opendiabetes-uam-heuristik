@@ -9,8 +9,8 @@ import java.util.List;
 
 public class Profile {
     private ZoneId timezone;
-    private double sensitivity;
-    private double carbratio;
+    private final double sensitivity;
+    private final double carbratio;
     private List<BasalProfile> basalProfiles;
 
     public Profile(ZoneId timezone, double sensitivity, double carbratio, List<BasalProfile> basalProfiles) {
@@ -78,8 +78,8 @@ public class Profile {
 
 
     public static class BasalProfile {
-        private LocalTime start;
-        private double value;
+        private final LocalTime start;
+        private final double value;
 
         public BasalProfile(LocalTime start, double value) {
             this.start = start;

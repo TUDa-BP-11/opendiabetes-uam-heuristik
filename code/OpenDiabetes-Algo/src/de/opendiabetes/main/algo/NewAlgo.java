@@ -8,7 +8,6 @@ import de.opendiabetes.vault.engine.util.TimestampUtils;
 import static java.lang.Math.pow;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -110,9 +109,10 @@ public class NewAlgo implements Algorithm {
         pcf = pcf.withMaxIterations(100);
         VaultEntry meal;
         VaultEntry current = glucose.remove(0);
+        long firstTime = current.getTimestamp().getTime()/1000;
         long estimatedTime = 0l;
         long estimatedTimeAccepted = 0l;
-        while (!glucose.isEmpty()) {
+        while (!glucose.isEmpty() && current.getTimestamp().getTime()/1000 - firstTime <= 10*24*60*60) {
 
             if (current.getTimestamp().getTime() > estimatedTimeAccepted) {
                 glucoseEvents.add(current);
