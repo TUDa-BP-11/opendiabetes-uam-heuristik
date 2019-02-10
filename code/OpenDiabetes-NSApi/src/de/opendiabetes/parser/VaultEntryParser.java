@@ -42,22 +42,22 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
                 VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
                 date = new Date(o.getLong("date"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("sgv")));
-            } else if (o.has("insulin") && !o.isNull("insulin")) {
+            } 
+            if (o.has("insulin") && !o.isNull("insulin")) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("insulin")));
-            } else if (o.has("carbs") && !o.isNull("carbs")) {
+            } 
+            if (o.has("carbs") && !o.isNull("carbs")) {
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("carbs")));
-            } else if (eventType != null && eventType.equals("Temp Basal")) {
+            } 
+            if (eventType != null && eventType.equals("Temp Basal")) {
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("rate"), o.getDouble("duration")));
-            } 
-//            else {
-//                System.out.println(o.toString());
-//            }
+            }
         }
         return result;
     }
