@@ -43,7 +43,7 @@ public class TempBasalCalculator {
         List<Profile.BasalProfile> profileTime = profile.getBasalProfiles();
         long treatmentTime = (entry.getTimestamp().getTime() / 60000) % (60 * 24); //Time in min from 00:00
 
-        for (int i = 0; i < list.size() - 1; i++) {
+        for (int i = 0; i < profileTime.size() - 1; i++) {
             long firstTime = profileTime.get(i).getStart().getHour() * 60 + profileTime.get(i).getStart().getMinute(); //Time in min from 00:00
             long secTime = profileTime.get(i + 1).getStart().getHour() * 60 + profileTime.get(i + 1).getStart().getMinute();
 
