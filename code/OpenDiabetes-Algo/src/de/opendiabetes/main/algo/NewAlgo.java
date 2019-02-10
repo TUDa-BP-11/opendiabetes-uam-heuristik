@@ -9,6 +9,7 @@ import static java.lang.Math.pow;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
@@ -81,17 +82,17 @@ public class NewAlgo implements Algorithm {
 
     @Override
     public void setGlucoseMeasurements(List<VaultEntry> glucose) {
-        this.glucose = glucose;
+        this.glucose = new ArrayList<>(glucose);
     }
 
     @Override
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
-        this.bolusTreatments = bolusTreatments;
+        this.bolusTreatments = new ArrayList<>(bolusTreatments);
     }
 
     @Override
     public void setBasalTreatments(List<TempBasal> basalTreatments) {
-        this.basalTreatments = basalTreatments;
+        this.basalTreatments = new ArrayList<>(basalTreatments);
     }
 
     @Override
@@ -108,22 +109,24 @@ public class NewAlgo implements Algorithm {
 //        pcf = pcf.withStartPoint(initialValues);
         pcf = pcf.withMaxIterations(100);
         VaultEntry meal;
-        VaultEntry current = glucose.remove(0);
-        long firstTime = current.getTimestamp().getTime()/1000;
+        VaultEntry next;
+        int numBG = glucose.size();
+        VaultEntry current = glucose.get(0);
+        long firstTime = current.getTimestamp().getTime() / 1000;
         long estimatedTime = 0l;
         long estimatedTimeAccepted = 0l;
-        while (!glucose.isEmpty() && current.getTimestamp().getTime()/1000 - firstTime <= 10*24*60*60) {
+        for (int i = 1; i < numBG && current.getTimestamp().getTime() / 1000 - firstTime <= 10 * 24 * 60 * 60; i++) {
+            next = glucose.get(i);
 
             if (current.getTimestamp().getTime() > estimatedTimeAccepted) {
                 glucoseEvents.add(current);
-                VaultEntry next = glucose.get(0);
                 long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-
-                for (int i = 1; i < glucose.size() && deltaTime <= absorptionTime / 2; i++) {
+                for (int j = 1; j < numBG - i && deltaTime <= absorptionTime / 2; j++) {
                     glucoseEvents.add(next);
-                    next = glucose.get(i);
+                    next = glucose.get(i+j);
                     deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-                    if (i == glucose.size()) {
+                    // last one
+                    if (i+j == numBG  && deltaTime <= absorptionTime / 2) {
                         glucoseEvents.add(next);
                     }
                 }
@@ -134,7 +137,7 @@ public class NewAlgo implements Algorithm {
                     currentPrediction = Predictions.predict(event.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                             basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
                     deltaBg = event.getValue() - currentPrediction;
-                    observations.add(new WeightedObservedPoint(weight, event.getTimestamp().getTime() / 60000.0, deltaBg));
+                    observations.add(new WeightedObservedPoint(weight, event.getTimestamp().getTime(), deltaBg));
 //                System.out.println(event.getTimestamp().getTime());
 //                System.out.println(deltaBg);
 
@@ -144,19 +147,17 @@ public class NewAlgo implements Algorithm {
                 // lsq = [c, b, a]
                 double[] lsq = pcf.fit(observations);
                 assert (lsq[2] > 0);
-                double error = (4*lsq[2]*lsq[0]-pow(lsq[1],2))/(4*lsq[2]);
+                double error = (4 * lsq[2] * lsq[0] - pow(lsq[1], 2)) / (4 * lsq[2]);
                 estimatedTime = (long) (-lsq[1] / (2 * lsq[2]));
 //            System.out.println("LSQ: "+Arrays.toString(lsq)+" Num Obs: "+observations.size());
                 double estimatedCarbs = lsq[2] * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
                 if (estimatedCarbs > 0
                         && estimatedCarbs < 200
-//                        && error < 10 
-                        && current.getTimestamp().getTime()/60000 - estimatedTime < absorptionTime/2
-                        && estimatedTime < next.getTimestamp().getTime()/60000 
-                        ) 
-                {
+                        //                        && error < 10 
+                        && Math.round((current.getTimestamp().getTime() - estimatedTime) / 60000.0) < absorptionTime / 2
+                        && estimatedTime < next.getTimestamp().getTime()) {
                     estimatedTimeAccepted = estimatedTime;
-                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(estimatedTime*60000l)), estimatedCarbs);
+                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(estimatedTime)), estimatedCarbs);
                     mealTreatments.add(meal);
 //                    System.out.println(meal.toString());
                 }
@@ -169,7 +170,7 @@ public class NewAlgo implements Algorithm {
 //                mealTreatments.add(createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp()));
 //            }
             }
-            current = glucose.remove(0);
+            current = glucose.get(i);
             glucoseEvents.clear();
             observations.clear();
         }

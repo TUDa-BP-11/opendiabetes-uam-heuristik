@@ -69,18 +69,17 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     @Override
     public void setGlucoseMeasurements(List<VaultEntry> glucose) {
-        this.glucose = glucose;
-//        this.glucose = new ArrayList<>(glucose);
+        this.glucose = new ArrayList<>(glucose);
     }
 
     @Override
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
-        this.bolusTreatments = bolusTreatments;
+        this.bolusTreatments = new ArrayList<>(bolusTreatments);
     }
 
     @Override
     public void setBasalTreatments(List<TempBasal> basalTreatments) {
-        this.basalTreatments = basalTreatments;
+        this.basalTreatments = new ArrayList<>(basalTreatments);
     }
 
     @Override

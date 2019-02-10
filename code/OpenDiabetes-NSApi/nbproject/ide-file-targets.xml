@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir=".." name="OpenDiabetes-NSApi-IDE">
+    <!-- TODO: edit the following target according to your needs -->
+    <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#runsingle) -->
+    <target name="run-selected-file-in-test">
+        <fail unless="run.class">Must set property 'run.class'</fail>
+        <ant antfile="build.xml" inheritall="false">
+            <target name="compile"/>
+            <target name="compress"/>
+        </ant>
+        <java classname="${run.class}" failonerror="true" fork="true">
+            <classpath>
+                <pathelement path="src;../OpenDiabetes-Parser/src;../OpenDiabetesVault-Engine/src;../../lib/unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar;../../lib/junit-platform-commons-1.0.0.jar;../../lib/junit-jupiter-api-5.0.0.jar;../../lib/opentest4j-1.0.0.jar"/>
+            </classpath>
+        </java>
+    </target>
+</project>
