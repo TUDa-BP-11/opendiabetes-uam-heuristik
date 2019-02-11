@@ -28,7 +28,7 @@ public class TempBasal {
     @Override
     public String toString() {
         return "TempBasal{" +
-                "value=" + value + "U/min" +
+                "value=" + value + " U/min" +
                 ", duration=" + duration +
                 ", date=" + date.toString() +
                 '}';
