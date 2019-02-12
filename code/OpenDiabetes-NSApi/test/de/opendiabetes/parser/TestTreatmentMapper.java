@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestTreatmentMapper {
 
     private final long ONE_MINUTE = 60 * 1000;
+    private final double DELTA = 1e-15;
 
     @Test
     public void testSimpleDuration() {
@@ -57,10 +58,10 @@ public class TestTreatmentMapper {
         assertEquals(testList.size(), resultList.size());
         for (int i = 0; i < size - 1; i++) {
             assertEquals(testList.get(i).getValue2() * 20 / 60, resultList.get(i).getValue2());
-            assertEquals(testList.get(i).getValue() * 20 / 60, resultList.get(i).getValue());
+            assertEquals(testList.get(i).getValue() * 20 / 60, resultList.get(i).getValue(), DELTA);
         }
         assertEquals(testList.get(size - 1).getValue2(), resultList.get(size - 1).getValue2());
-        assertEquals(testList.get(size - 1).getValue(), resultList.get(size - 1).getValue());
+        assertEquals(testList.get(size - 1).getValue(), resultList.get(size - 1).getValue(), DELTA);
     }
 
     @Test
@@ -84,14 +85,14 @@ public class TestTreatmentMapper {
             long deltaTime = ((testList.get(i + 1).getTimestamp().getTime() - testList.get(i).getTimestamp().getTime()) / ONE_MINUTE);
             if (testList.get(i).getValue2() > deltaTime) {
                 assertEquals(deltaTime, resultList.get(i).getValue2());
-                assertEquals(testList.get(i).getValue() * resultList.get(i).getValue2() / testList.get(i).getValue2(), resultList.get(i).getValue());
+                assertEquals(testList.get(i).getValue() * resultList.get(i).getValue2() / testList.get(i).getValue2(), resultList.get(i).getValue(), DELTA);
             } else {
                 assertEquals(testList.get(i).getValue2(), resultList.get(i).getValue2());
-                assertEquals(testList.get(i).getValue(), resultList.get(i).getValue());
+                assertEquals(testList.get(i).getValue(), resultList.get(i).getValue(), DELTA);
             }
         }
         assertEquals(testList.get(size - 1).getValue2(), resultList.get(size - 1).getValue2());
-        assertEquals(testList.get(size - 1).getValue(), resultList.get(size - 1).getValue());
+        assertEquals(testList.get(size - 1).getValue(), resultList.get(size - 1).getValue(), DELTA);
 
     }
 }

@@ -53,7 +53,7 @@ public class TestTempBasalCalculator {
             assertEquals(testTreatments.get(i).getTimestamp().getTime(), result.get(i).getDate().getTime());
             assertEquals(testTreatments.get(i).getValue2(), result.get(i).getDuration());
             double expected = (testTreatments.get(i).getValue() / testTreatments.get(i).getValue2()) - (profile.getBasalProfiles().get(0).getValue() / 60);
-            assertEquals(expected, result.get(i).getValue(),DELTA);
+            assertEquals(expected, result.get(i).getValue(), DELTA);
         }
     }
 
@@ -115,24 +115,24 @@ public class TestTempBasalCalculator {
         TempBasal resBasal = result.get(0);
         assertEquals(entry.getValue2(), resBasal.getDuration());
         assertEquals(entry.getTimestamp().getTime(), resBasal.getDate().getTime());
-        assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(),DELTA);
+        assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(), DELTA);
 
         entry = testTreatments.get(1);
         resBasal = result.get(1);
         assertEquals(entry.getValue2() / 2, resBasal.getDuration());
         assertEquals(entry.getTimestamp().getTime(), resBasal.getDate().getTime());
-        assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(),DELTA);
+        assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(), DELTA);
 
         resBasal = result.get(2);
         assertEquals(entry.getValue2() / 2, resBasal.getDuration());
         assertEquals(entry.getTimestamp().getTime() + 10 * ONE_MINUTE, resBasal.getDate().getTime());
-        assertEquals(entry.getValue() / 20 - profileRate2 / 60, resBasal.getValue(),DELTA);
+        assertEquals(entry.getValue() / 20 - profileRate2 / 60, resBasal.getValue(), DELTA);
 
         entry = testTreatments.get(2);
         resBasal = result.get(3);
         assertEquals(entry.getValue2(), resBasal.getDuration());
         assertEquals(entry.getTimestamp().getTime(), resBasal.getDate().getTime());
-        assertEquals(entry.getValue() / 20 - profileRate2 / 60, resBasal.getValue(),DELTA);
+        assertEquals(entry.getValue() / 20 - profileRate2 / 60, resBasal.getValue(), DELTA);
 
         testTreatments = new ArrayList<>();
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(), 0, 0));
@@ -145,13 +145,13 @@ public class TestTempBasalCalculator {
         assertEquals(2, result.size());
         entry = testTreatments.get(0);
         resBasal = result.get(0);
-        assertEquals(entry.getValue2()/2, resBasal.getDuration());
+        assertEquals(entry.getValue2() / 2, resBasal.getDuration());
         assertEquals(entry.getTimestamp().getTime(), resBasal.getDate().getTime());
-        assertEquals(entry.getValue() / 20 - profileRate2 / 60, resBasal.getValue(),DELTA);
+        assertEquals(entry.getValue() / 20 - profileRate2 / 60, resBasal.getValue(), DELTA);
 
         resBasal = result.get(1);
         assertEquals(entry.getValue2() / 2, resBasal.getDuration());
         assertEquals(entry.getTimestamp().getTime() + 10 * ONE_MINUTE, resBasal.getDate().getTime());
-        assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(),DELTA);
+        assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(), DELTA);
     }
 }
