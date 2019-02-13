@@ -40,7 +40,7 @@ public class Profile {
         this.basalProfiles = basalProfiles;
     }
 
-    public void adjustProfile() {
+    public void toZulu() {
 
         int offset = -timezone.getRules().getOffset(Instant.EPOCH).getTotalSeconds() / 60;
         List<Profile.BasalProfile> list = new ArrayList<>();

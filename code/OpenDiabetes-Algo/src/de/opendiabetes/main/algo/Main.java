@@ -1,16 +1,18 @@
 package de.opendiabetes.main.algo;
 
+
 import com.github.sh0nk.matplotlib4j.Plot;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
-import de.opendiabetes.main.math.BasalCalc;
 import de.opendiabetes.main.math.Predictions;
+import de.opendiabetes.main.math.TempBasalCalculator;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
+import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.util.SortVaultEntryByDate;
-import java.io.IOException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,9 +26,8 @@ public class Main {
 
         String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
         Profile profile = profileParser.parseFile(profilePath);
-        profile.adjustProfile();
+        profile.toZulu();
 
-        BasalCalc basalCalculator = new BasalCalc(profile);
         VaultEntryParser parser = new VaultEntryParser();
 
         String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
@@ -54,7 +55,7 @@ public class Main {
 
         }
 
-        List<TempBasal> basals = basalCalculator.calculateBasal(basalTreatments);
+        List<TempBasal> basals = TempBasalCalculator.calcTemp(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
         /*
         for (TempBasal b:basals){
             System.out.println(b.toString());
@@ -68,7 +69,6 @@ public class Main {
         int absorptionTime = 180;
         int insDuration = 180;
         Algorithm algo = new OpenDiabetesAlgo(absorptionTime, insDuration, profile);
-//        Algorithm algo2 = new BruteForceAlgo();
         Algorithm algo2 = new NewAlgo(absorptionTime, insDuration, profile);
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);

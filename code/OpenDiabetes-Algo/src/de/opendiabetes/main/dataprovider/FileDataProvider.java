@@ -2,9 +2,10 @@ package de.opendiabetes.main.dataprovider;
 
 import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.main.exception.DataProviderException;
-import de.opendiabetes.main.math.BasalCalc;
+import de.opendiabetes.main.math.TempBasalCalculator;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
+import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.engine.container.VaultEntry;
 import de.opendiabetes.vault.engine.container.VaultEntryType;
@@ -114,12 +115,11 @@ public class FileDataProvider implements AlgorithmDataProvider {
         if (treatments == null)
             readTreatments();
         if (basals == null) {
-            BasalCalc calc = new BasalCalc(getProfile());
             List<VaultEntry> list = treatments.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
-            basals = calc.calculateBasal(list);
+            basals = TempBasalCalculator.calcTemp(TreatmentMapper.adjustBasalTreatments(list), getProfile());
         }
         return basals;
     }

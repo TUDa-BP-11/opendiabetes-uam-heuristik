@@ -4,11 +4,11 @@ import java.util.Date;
 
 public class TempBasal {
     private double value;
-    private long duration;
+    private double duration;
     private Date date;
 
-    public TempBasal(double value, long duration, Date date) {
-        this.value = value;
+    public TempBasal(double unitPerMin, double duration, Date date) {
+        this.value = unitPerMin;
         this.duration = duration;
         this.date = date;
     }
@@ -17,7 +17,7 @@ public class TempBasal {
         return value;
     }
 
-    public long getDuration() {
+    public double getDuration() {
         return duration;
     }
 
@@ -28,7 +28,7 @@ public class TempBasal {
     @Override
     public String toString() {
         return "TempBasal{" +
-                "value=" + value +
+                "value=" + value + " U/min" +
                 ", duration=" + duration +
                 ", date=" + date.toString() +
                 '}';
