@@ -69,7 +69,6 @@ public class Main {
         int absorptionTime = 180;
         int insDuration = 180;
         Algorithm algo = new OpenDiabetesAlgo(absorptionTime, insDuration, profile);
-//        Algorithm algo2 = new BruteForceAlgo();
         Algorithm algo2 = new NewAlgo(absorptionTime, insDuration, profile);
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
