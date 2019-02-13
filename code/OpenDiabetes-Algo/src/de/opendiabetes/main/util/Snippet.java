@@ -53,11 +53,15 @@ public class Snippet {
         for (Snippet snippet : snippets) {
             String output = parser.toJson(snippet.entries);
             Path file = Paths.get(dist.toString(), snippet.first + ".json");
-            System.out.println(String.format("Writing %d entries (%.1fh) to %s",
-                    snippet.entries.size(),
-                    (snippet.first - snippet.last) / (60 * 60 * 1000D),
-                    file.toAbsolutePath().toString()));
-            Files.write(file, output.getBytes());
+            if (!Files.exists(file)) {
+                System.out.println(String.format("Writing %d entries (%.1fh) to %s",
+                        snippet.entries.size(),
+                        (snippet.first - snippet.last) / (60 * 60 * 1000D),
+                        file.toAbsolutePath().toString()));
+                Files.write(file, output.getBytes());
+            } else {
+                System.out.println(String.format("Skipping %s, file already exists", file.toAbsolutePath().toString()));
+            }
         }
     }
 
