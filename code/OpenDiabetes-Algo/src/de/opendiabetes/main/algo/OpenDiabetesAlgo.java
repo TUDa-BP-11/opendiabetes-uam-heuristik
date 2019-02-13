@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 public class OpenDiabetesAlgo implements Algorithm {
+
     private double absorptionTime;
     private double insDuration;
     private Profile profile;
@@ -73,27 +74,28 @@ public class OpenDiabetesAlgo implements Algorithm {
 
     @Override
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
-        this.bolusTreatments = bolusTreatments;
+        this.bolusTreatments = new ArrayList<>(bolusTreatments);
     }
 
     @Override
     public void setBasalTreatments(List<TempBasal> basalTreatments) {
-        this.basalTreatments = basalTreatments;
+        this.basalTreatments = new ArrayList<>(basalTreatments);
     }
 
     @Override
     public List<VaultEntry> calculateMeals() {
         List<VaultEntry> mealTreatments = new ArrayList<>();
         VaultEntry current = glucose.remove(0);
+        long firstTime = current.getTimestamp().getTime()/1000;
+        VaultEntry meal;
 
-        while (!glucose.isEmpty()) {
+        while (!glucose.isEmpty() && current.getTimestamp().getTime()/1000 - firstTime <= 10*24*60*60) {
             VaultEntry next = glucose.get(0);
             long deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
 
             for (int i = 1; i < glucose.size() && deltaTime < 30; i++) {
                 next = glucose.get(i);
                 deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-
             }
 
             double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
@@ -102,7 +104,10 @@ public class OpenDiabetesAlgo implements Algorithm {
             double deltaPrediction = (nextPrediction - currentPrediction);
 
             if (deltaBg - deltaPrediction > 0) {
-                mealTreatments.add(createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp()));
+                meal = createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
+//                System.out.println(meal.toString());
+
+                mealTreatments.add(meal);
             }
             current = glucose.remove(0);
         }

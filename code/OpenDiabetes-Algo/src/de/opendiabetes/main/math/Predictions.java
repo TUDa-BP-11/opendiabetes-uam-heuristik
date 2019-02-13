@@ -16,6 +16,7 @@ public class Predictions {
                 break;
             }
             result += deltaBGC(deltaTime, insSensitivityFactor, carbRatio, meal.getValue(), absorptionTime);
+//            System.out.println("BGC: "+result);
         }
         for (VaultEntry bolus : bolusTreatments) {
             long deltaTime = Math.round((time - bolus.getTimestamp().getTime()) / 60000.0); //Time in minutes
@@ -23,6 +24,7 @@ public class Predictions {
                 break;
             }
             result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
+//            System.out.println("BGI: "+result);
         }
         for (TempBasal basal : basalTreatments) {
             long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);      //Time in minutes
@@ -30,6 +32,7 @@ public class Predictions {
                 break;
             }
             result += deltatempBGI(deltaTime, basal.getValue(), insSensitivityFactor, insDuration, 0, basal.getDuration());
+//            System.out.println("tempBGI: "+result);
         }
 
         return result;
