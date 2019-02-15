@@ -1,4 +1,4 @@
-package de.opendiabetes.vault.engine.util;
+package de.opendiabetes.vault.util;
 
 /**
  * List of supported languages for Plugin Help files.
