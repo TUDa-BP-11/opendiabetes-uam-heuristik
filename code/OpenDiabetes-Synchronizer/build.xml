@@ -1,151 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-Synchronizer" default="main" basedir=".">
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="OpenDiabetes-Synchronizer" default="default" basedir=".">
     <description>Builds, tests, and runs the project OpenDiabetes-Synchronizer.</description>
-    <property file="build.properties"/>
-
-    <!-- source, output, build and library directories -->
-    <property name="src.dir" value="${basedir}/src"/>
-    <property name="src.test.dir" value="${basedir}/test"/>
-    <property name="resources.dir" value="${basedir}/resources"/>
-    <property name="output.dir" value="${basedir}/dist"/>
-    <property name="build.dir" value="${basedir}/build"/>
-    <property name="build.classes.dir" value="${build.dir}/classes"/>
-    <property name="build.test.dir" value="${build.dir}/test"/>
-    <property name="lib.dir" value="${basedir}/../../lib"/>
-
-    <!-- OpenDiabetes-NSApi properties -->
+    <import file="nbproject/build-impl.xml"/>
+    <!--
+    There exist several targets which are by default empty and which can be 
+    used for execution of your tasks. These targets are usually executed 
+    before and after some main targets. They are: 
+      -pre-init:                 called before initialization of project properties
+      -post-init:                called after initialization of project properties
+      -pre-compile:              called before javac compilation
+      -post-compile:             called after javac compilation
+      -pre-compile-single:       called before javac compilation of single file
+      -post-compile-single:      called after javac compilation of single file
+      -pre-compile-test:         called before javac compilation of JUnit tests
+      -post-compile-test:        called after javac compilation of JUnit tests
+      -pre-compile-test-single:  called before javac compilation of single JUnit test
+      -post-compile-test-single: called after javac compilation of single JUunit test
+      -pre-jar:                  called before JAR building
+      -post-jar:                 called after JAR building
+      -post-clean:               called after cleaning build products
+    -->
     <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
-    <property name="nsapi.jar" value="NSApi.jar"/>
+    <property name="nsapi.jar" value="OpenDiabetes-NSApi.jar"/>
     <available property="nsapi.available" file="${nsapi.dir}/dist/${nsapi.jar}"/>
 
-    <!-- Check if tests can be run -->
-    <condition property="cantest">
+    <target name="full" depends="clean, init, compile, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
+
+    <target name="compile-nsapi" unless="nsapi.available" description="Builds the engine, unless it already exists">
+        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
+        <ant dir="${nsapi.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
+    </target>
+
+    <target name="-pre-compile" depends="compile-nsapi" description="Unjars all dependencies. Builds the engine if necessary"/>
+
+    <target name="-pre-jar" depends="init, compile-nsapi">
+        <unjar dest="${build.classes.dir}" overwrite="false">
+            <filelist dir="${nsapi.dir}/dist">
+                <file name="${nsapi.jar}"/>
+            </filelist>
+        </unjar>
+    </target>
+
+    <!-- Tests -->
+    <condition property="junit5.cantest">
         <and>
             <antversion atleast="1.10.3"/>
             <available classname="org.junit.platform.launcher.core.LauncherFactory"/>
             <available classname="org.junit.platform.commons.util.Preconditions"/>
             <available classname="org.junit.platform.engine.TestEngine"/>
-            <available classname="org.opentest4j.AssertionFailedError"/>
-            <available classname="org.junit.vintage.engine.VintageTestEngine"/>
-            <available classname="org.junit.runners.model.RunnerBuilder"/>
-            <available classname="org.junit.jupiter.engine.JupiterTestEngine"/>
-            <available classname="org.junit.jupiter.api.Test"/>
         </and>
     </condition>
 
-    <!-- classpaths for compilation and tests -->
-    <path id="classpath">
-        <fileset dir="${nsapi.dir}/dist" includes="*.jar"/>
-        <fileset dir="${lib.dir}" includes="*.jar"/>
-    </path>
-
-    <path id="junit.classpath">
-        <fileset dir="${lib.dir}/junit" includes="*.jar"/>
-        <filelist dir="${lib.dir}">
-            <file name="ormlite-core-5.0.jar"/>
-        </filelist>
-    </path>
-
-    <path id="test.classpath">
-        <pathelement path="${build.classes.dir}"/>
-        <pathelement path="${build.test.dir}"/>
-    </path>
-
-    <target name="full" depends="clean, unjar, compile, compress, test" description="Clean, build jar with all libraries, run tests"/>
-    <target name="main" depends="unjar, compile, compress" description="Build jar with existing librarys"/>
-
-    <target name="clean" description="Deletes the build and output directories">
-        <delete dir="${build.dir}" failonerror="false"/>
-        <delete dir="${output.dir}" failonerror="false"/>
-    </target>
-
-    <target name="init" description="Creates the build and output directories">
-        <mkdir dir="${build.classes.dir}"/>
-        <mkdir dir="${build.test.dir}"/>
-        <mkdir dir="${output.dir}"/>
-    </target>
-
-    <target name="compile.nsapi" unless="engine.available" description="Builds the engine, unless it already exists">
-        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
-        <ant dir="${nsapi.dir}" target="main" usenativebasedir="true" inheritall="false"/>
-    </target>
-
-    <target name="unjar" depends="init, compile.nsapi"
-            description="Unjars all dependencies. Builds the engine if necessary">
-        <unjar dest="${build.classes.dir}" overwrite="false">
-            <filelist dir="${nsapi.dir}/dist">
-                <file name="${nsapi.jar}"/>
-            </filelist>
-            <filelist dir="${lib.dir}">
-                <file name="gson-2.8.0.jar"/>
-                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
-            </filelist>
-        </unjar>
-    </target>
-
-    <target name="getversion" description="Sets the build number to the current git revision and time">
-        <tstamp>
-            <format property="TODAY_MY" pattern="dd.MM.yyyy HH.mm" locale="en,UK"/>
-        </tstamp>
-        <exec executable="git" resultproperty="git.revision" failifexecutionfails="false">
-            <arg value="rev-parse"/>
-            <arg value="--short"/>
-            <arg value="HEAD"/>
-        </exec>
-        <property name="build.number" value="git-${git.revision} ${TODAY_MY}"/>
-    </target>
-
-    <target name="compile" depends="unjar" description="Compiles the project">
-        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" includeantruntime="false">
-            <classpath refid="classpath"/>
-            <compilerarg line="-encoding utf-8"/>
-        </javac>
-        <copy todir="${build.classes.dir}">
-            <fileset dir="${resources.dir}" erroronmissingdir="false"/>
-        </copy>
-    </target>
-
-    <target name="compress" depends="getversion" description="Creates the jar">
-        <tstamp/>
-        <jar destfile="${output.dir}/${jarname}" basedir="${build.classes.dir}">
-            <manifest>
-                <attribute name="Main-Class" value="${mainclass}"/>
-                <attribute name="Built-By" value="${user.name}"/>
-                <attribute name="Built-Date" value="${TODAY_MY}"/>
-                <attribute name="Version" value="${build.number}"/>
-                <attribute name="Revision" value="${build.number}"/>
-            </manifest>
-        </jar>
-    </target>
-
-    <target name="compile.test" depends="compile" description="Compiles the tests">
-        <javac srcdir="${src.test.dir}" destdir="${build.test.dir}" includeantruntime="false">
-            <classpath refid="test.classpath"/>
-            <classpath refid="junit.classpath"/>
-            <compilerarg line="-encoding utf-8"/>
-        </javac>
-    </target>
-
-    <target name="test.checkversion" unless="cantest" description="Prints a warning if the current version of ant does not support tests">
+    <target name="junit5-test-check" unless="junit5.cantest" description="Prints a warning if the current version of ant does not support tests">
         <echo>One of the following conditions to run tests is not met:</echo>
         <echo>Ant version 1.10.3 or newer</echo>
-        <echo>All libraries listed below available in the classpath:</echo>
-        <echo>junit-platform-commons.jar</echo>
-        <echo>junit-platform-engine.jar</echo>
-        <echo>junit-platform-launcher.jar</echo>
-        <echo>opentest4j.jar</echo>
-        <echo>junit-vintage-engine.jar</echo>
-        <echo>junit.jar</echo>
-        <echo>junit-jupiter-engine.jar</echo>
-        <echo>junit-jupiter-api.jar</echo>
+        <echo>JUnit Platform Launcher, Commons and Engine need to available in the ant classpath</echo>
     </target>
 
-    <target name="test" if="cantest" depends="test.checkversion, compile.test" description="Runs the tests. Ant version 1.10.3 or higher required">
+    <target name="junit5-test" if="junit5.cantest" depends="-pre-pre-jar, junit5-test-check, compile-test"
+            description="Runs the tests. Ant version 1.10.3 or higher required">
+
         <junitlauncher haltonfailure="true" printsummary="true">
-            <classpath refid="junit.classpath"/>
-            <classpath refid="test.classpath"/>
-            <testclasses outputdir="${output.dir}">
-                <fileset dir="${build.test.dir}" includes="**"/>
+            <classpath>
+                <pathelement path="${build.classes.dir}"/>
+                <pathelement path="${build.test.classes.dir}"/>
+                <fileset dir="${libraries.dir}" includes="*.jar"/>
+                <fileset dir="${libraries.dir}/junit" includes="*.jar"/>
+            </classpath>
+            <testclasses outputdir="${dist.jar.dir}">
+                <fileset dir="${build.test.classes.dir}" includes="**"/>
             </testclasses>
             <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
         </junitlauncher>
