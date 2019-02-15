@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.opendiabetes.vault.engine.util;
+package de.opendiabetes.vault.util;
 
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.Serializable;
 import java.util.Comparator;
@@ -31,12 +31,12 @@ public class SortVaultEntryByDate implements Comparator<VaultEntry>, Serializabl
      *
      * @param entry1 First VaultEntry.
      * @param entry2 Second VaultEntry.
-     * @return -1 when the second VaultEntry is larger, 0 if they are equal, 1 if the first VaultEntry is larger.
+     * @return -1 when the second VaultEntry is larger, 0 if they are equal, 1
+     * if the first VaultEntry is larger.
      */
     @Override
     public int compare(final VaultEntry entry1, final VaultEntry entry2) {
         return entry1.getTimestamp().compareTo(entry2.getTimestamp());
     }
-
 
 }
