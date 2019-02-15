@@ -9,7 +9,7 @@ import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.parser.StatusParser;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
-
 
 public class NSApi {
     private String host;

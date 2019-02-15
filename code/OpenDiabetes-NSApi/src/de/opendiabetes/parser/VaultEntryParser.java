@@ -1,7 +1,7 @@
 package de.opendiabetes.parser;
 
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

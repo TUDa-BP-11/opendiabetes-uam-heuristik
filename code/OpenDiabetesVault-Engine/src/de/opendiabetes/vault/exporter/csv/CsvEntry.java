@@ -14,18 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.opendiabetes.vault.engine.container.csv;
+package de.opendiabetes.vault.exporter.csv;
+
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Abstract class implementing the CSV Entry data structure.
  */
-public abstract class CsvEntry implements ExportEntry {
+public class CsvEntry implements ExportEntry {
 
     /**
      * Declaration of the decimal format.
@@ -39,18 +43,52 @@ public abstract class CsvEntry implements ExportEntry {
      * Declaration of the list delimiter used.
      */
     public static final char CSV_LIST_DELIMITER = ':';
+    /**
+     * Data source for the enty
+     */
+    private final VaultEntry data;
+    private boolean isHeader = false;
+
+    public CsvEntry(VaultEntry data) {
+        this.data = data;
+    }
+
+    public static CsvEntry getHeaderEntry() {
+        CsvEntry header = new CsvEntry(null);
+        header.isHeader = true;
+        return header;
+    }
+
+    public static String[] getCsvHeader() {
+        return new String[]{
+                "timestamp",
+                "type",
+                "value1",
+                "value2"
+        };
+    }
 
     /**
      * Method to convert entries to CSV records.
+     *
      * @return The CSV records.
      */
-    public abstract String[] toCsvRecord();
+    public String[] toCsvRecord() {
+        if (isHeader) {
+            return getCsvHeader();
+        }
 
-    /**
-     * Method to get the CSV header.
-     * @return The CSV header.
-     */
-    public abstract String[] getCsvHeaderRecord();
+        ArrayList<String> csvRecord = new ArrayList<>();
+
+        csvRecord.add(String.valueOf(data.getTimestamp().getTime()));
+        csvRecord.add(data.getType().toString());
+        csvRecord.add(String.format(Locale.ENGLISH, DECIMAL_FORMAT,
+                data.getValue()).replaceAll(",", ""));
+        csvRecord.add(String.format(Locale.ENGLISH, DECIMAL_FORMAT,
+                data.getValue2()).replaceAll(",", ""));
+
+        return csvRecord.toArray(new String[]{});
+    }
 
     /**
      * {@inheritDoc}
@@ -66,6 +104,7 @@ public abstract class CsvEntry implements ExportEntry {
 
     /**
      * Method to write a string array onto an output stream.
+     *
      * @param outputStream The output stream.
      * @param array The string array.
      * @return Output stream as a byte array.
@@ -73,8 +112,8 @@ public abstract class CsvEntry implements ExportEntry {
      */
     private ByteArrayOutputStream writeStringArray(final ByteArrayOutputStream outputStream, final String[] array) throws IOException {
         ByteArrayOutputStream os = outputStream;
-        byte[] delimiterConverted = new String(new char[] {CSV_DELIMITER}).getBytes(Charset.forName("UTF-8"));
-        byte[] delimiter = new byte[] {};
+        byte[] delimiterConverted = new String(new char[]{CSV_DELIMITER}).getBytes(Charset.forName("UTF-8"));
+        byte[] delimiter = new byte[]{};
 
         for (String line : array) {
             try {

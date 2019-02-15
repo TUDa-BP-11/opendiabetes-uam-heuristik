@@ -14,11 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.opendiabetes.vault.engine.container;
+package de.opendiabetes.vault.container;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
@@ -29,7 +26,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import static de.opendiabetes.vault.engine.util.TimestampUtils.copyTimestamp;
+import static de.opendiabetes.vault.util.TimestampUtils.copyTimestamp;
 
 /**
  * This class defines a vault entry.
@@ -38,7 +35,6 @@ import static de.opendiabetes.vault.engine.util.TimestampUtils.copyTimestamp;
  */
 @DatabaseTable(tableName = "VaultEntries")
 public class VaultEntry implements Serializable {
-
     /**
      * Serial version UID for serialization.
      */
@@ -51,9 +47,10 @@ public class VaultEntry implements Serializable {
      * Indicates unused ID field.
      */
     public static final long ID_UNUSED = -5L;
-    // for QueryBuilder to be able to find the fields
+
     /**
      * Name of the ID field.
+     * For QueryBuilder to be able to find the fields
      */
     public static final String ID_FIELD_NAME = "id";
     /**
@@ -80,10 +77,6 @@ public class VaultEntry implements Serializable {
      * Name of the annotation field.
      */
     public static final String ANNOTATION_FIELD_NAME = "annotation";
-    /**
-     * A GSON used in the entry.
-     */
-    private final transient Gson gson;
     /**
      * The ID of the VaultEntry.
      */
@@ -135,10 +128,6 @@ public class VaultEntry implements Serializable {
      * The default constructor of VaultEntry.
      */
     public VaultEntry() {
-        // all persisted classes must define a no-arg constructor with at least package visibility
-        GsonBuilder gb = new GsonBuilder();
-        gb.registerTypeAdapter(VaultEntryAnnotation.class, new VaultEntryAnnotationGSONAdapter());
-        gson = gb.create();
     }
 
     /**
@@ -321,7 +310,6 @@ public class VaultEntry implements Serializable {
      * @return annotations of the VaultEntry.
      */
     public List<VaultEntryAnnotation> getAnnotations() {
-        annotationsFromJason();
         return annotations;
     }
 
@@ -332,7 +320,6 @@ public class VaultEntry implements Serializable {
      */
     public void addAnnotation(final VaultEntryAnnotation annotation) {
         this.annotations.add(annotation);
-        annotationsToJSON();
     }
 
     /**
@@ -342,7 +329,6 @@ public class VaultEntry implements Serializable {
      */
     public void setAnnotation(final ArrayList<VaultEntryAnnotation> annotations) {
         this.annotations = annotations;
-        annotationsToJSON();
     }
 
     /**
@@ -417,37 +403,6 @@ public class VaultEntry implements Serializable {
     public String toString() {
         return "VaultEntry{" + "id=" + id + ", type=" + type + ", timestamp=" + timestamp + ", value=" + value + ", value2=" + value2
                 + ", rawId=" + rawId + ", annotation=" + annotations + '}';
-    }
-
-    /**
-     * Converts the List of VaultEntryAnnotation to JSON and saves it in annotationsAsJSON.
-     */
-    private void annotationsToJSON() {
-        annotationsAsJSON = gson.toJson(annotations);
-    }
-
-    /**
-     * Converts the annotations from JSON to List of VaultEntryAnnotation.
-     */
-    private void annotationsFromJason() {
-        if (!annotationsAsJSON.isEmpty()) {
-            annotations = gson.fromJson(annotationsAsJSON,
-                    new TypeToken<List<VaultEntryAnnotation>>() {
-                    }.getType());
-        }
-        annotationsAsJSON = "";
-    }
-
-    /**
-     * Sets annotationsAsJSON and converts the annotations from JSON to List of VaultEntryAnnotation.
-     *
-     * @param asString The annotation to be set.
-     */
-    public void setAnnotationFromJson(final String asString) {
-        if (asString != null && !asString.isEmpty()) {
-            this.annotationsAsJSON = asString;
-            annotationsFromJason();
-        }
     }
 
 }
