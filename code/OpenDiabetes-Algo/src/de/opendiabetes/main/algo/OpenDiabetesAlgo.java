@@ -2,9 +2,9 @@ package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.VaultEntryType;
-import de.opendiabetes.vault.engine.util.TimestampUtils;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.TimestampUtils;
 
 import java.util.ArrayList;
 import java.util.Date;

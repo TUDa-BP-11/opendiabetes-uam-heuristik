@@ -2,18 +2,17 @@ package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.VaultEntryType;
-import de.opendiabetes.vault.engine.util.TimestampUtils;
-import static java.lang.Math.pow;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.TimestampUtils;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoint;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.math3.linear.*;
-import org.apache.commons.math3.fitting.PolynomialCurveFitter;
-import org.apache.commons.math3.fitting.WeightedObservedPoint;
+import static java.lang.Math.pow;
 
 /**
  *

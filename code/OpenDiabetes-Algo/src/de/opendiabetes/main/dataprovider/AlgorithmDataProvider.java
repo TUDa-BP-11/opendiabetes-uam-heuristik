@@ -2,7 +2,7 @@ package de.opendiabetes.main.dataprovider;
 
 import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.parser.Profile;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
 
@@ -10,14 +10,14 @@ public interface AlgorithmDataProvider {
     /**
      * Get a list of insulin bolus treatments for calculation
      *
-     * @return list of VaultEntries with type {@link de.opendiabetes.vault.engine.container.VaultEntryType#GLUCOSE_CGM}
+     * @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      */
     List<VaultEntry> getGlucoseMeasurements();
 
     /**
      * Get a list of insulin bolus treatments for calculation
      *
-     * @return list of VaultEntries with type {@link de.opendiabetes.vault.engine.container.VaultEntryType#BOLUS_NORMAL}
+     * @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     List<VaultEntry> getBolusTreatments();
 

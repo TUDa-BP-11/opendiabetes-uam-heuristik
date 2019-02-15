@@ -1,7 +1,7 @@
 package de.opendiabetes.main.math;
 
 import de.opendiabetes.main.algo.TempBasal;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
 

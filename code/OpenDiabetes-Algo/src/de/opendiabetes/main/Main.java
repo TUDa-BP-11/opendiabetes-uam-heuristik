@@ -7,28 +7,18 @@ import de.opendiabetes.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.main.dataprovider.FileDataProvider;
 import de.opendiabetes.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.main.exception.DataProviderException;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.csv.VaultCsvEntry;
-import de.opendiabetes.vault.engine.data.VaultDao;
-import de.opendiabetes.vault.engine.exporter.ExporterOptions;
-import de.opendiabetes.vault.engine.exporter.FileExporter;
-import de.opendiabetes.vault.engine.exporter.VaultCsvExporter;
-import java.io.File;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 public class Main {
 
@@ -245,10 +235,10 @@ public class Main {
             Log.logInfo("Calculated %d meals:", meals.size());
 
             // export as csv
-            data.addAll(meals);
-            data.sort(Comparator.comparing(VaultEntry::getTimestamp));
-            data.forEach(e -> Log.logInfo("%s", e.toString()));
-            exportCsv(data);
+            // data.addAll(meals);
+            // data.sort(Comparator.comparing(VaultEntry::getTimestamp));
+            // data.forEach(e -> Log.logInfo("%s", e.toString()));
+            // exportCsv(data);
 
             try {
                 dataProvider.close();
@@ -344,6 +334,7 @@ public class Main {
         return input;
     }
 
+    /*
     public static void exportCsv(List<VaultEntry> data) {
         if (data == null || data.isEmpty()) {
             Logger.getLogger(Main.class.getName()).severe("Database empty after processing");
@@ -378,4 +369,5 @@ public class Main {
             }
         }
     }
+    */
 }

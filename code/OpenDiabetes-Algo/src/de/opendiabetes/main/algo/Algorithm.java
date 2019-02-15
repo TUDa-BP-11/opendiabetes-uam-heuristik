@@ -2,7 +2,7 @@ package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.parser.Profile;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
 
@@ -31,14 +31,14 @@ public interface Algorithm {
     /**
      * Provide a list of glucose measurements for calculation
      *
-     * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.engine.container.VaultEntryType#GLUCOSE_CGM}
+     * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      */
     void setGlucoseMeasurements(List<VaultEntry> entries);
 
     /**
      * Provide a list of insulin bolus treatments for calculation
      *
-     * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.engine.container.VaultEntryType#BOLUS_NORMAL}
+     * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     void setBolusTreatments(List<VaultEntry> bolusTreatments);
 
@@ -65,7 +65,7 @@ public interface Algorithm {
     /**
      * Starts the calculation of predicted meals
      *
-     * @return a list of VaultEntries with type {@link de.opendiabetes.vault.engine.container.VaultEntryType#MEAL_MANUAL}
+     * @return a list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#MEAL_MANUAL}
      */
     List<VaultEntry> calculateMeals();
 }

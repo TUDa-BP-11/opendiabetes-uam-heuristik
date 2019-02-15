@@ -1,7 +1,7 @@
 package de.opendiabetes.main.util;
 
 import de.opendiabetes.parser.VaultEntryParser;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.IOException;
 import java.nio.file.Files;

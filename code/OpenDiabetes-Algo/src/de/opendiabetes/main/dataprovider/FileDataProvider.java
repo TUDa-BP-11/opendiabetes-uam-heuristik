@@ -7,8 +7,8 @@ import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
