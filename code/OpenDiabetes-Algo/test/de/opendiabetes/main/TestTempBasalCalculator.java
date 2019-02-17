@@ -3,8 +3,8 @@ package de.opendiabetes.main;
 import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.main.math.TempBasalCalculator;
 import de.opendiabetes.parser.Profile;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;

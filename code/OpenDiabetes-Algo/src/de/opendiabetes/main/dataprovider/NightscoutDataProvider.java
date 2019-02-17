@@ -9,8 +9,8 @@ import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.parser.TreatmentMapper;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.container.VaultEntryType;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

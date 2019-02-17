@@ -1,7 +1,7 @@
 package de.opendiabetes.main.util;
 
 import de.opendiabetes.main.algo.TempBasal;
-import de.opendiabetes.vault.engine.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.ArrayList;
 import java.util.Comparator;

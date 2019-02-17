@@ -9,8 +9,8 @@ import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
-import de.opendiabetes.vault.engine.container.VaultEntry;
-import de.opendiabetes.vault.engine.util.SortVaultEntryByDate;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.IOException;
 import java.util.ArrayList;
