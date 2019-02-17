@@ -8,7 +8,7 @@ import java.util.List;
 public class Predictions {
 
     public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<TempBasal> basalTreatments,
-                                 double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
+            double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
         double result = 0;
         for (VaultEntry meal : mealTreatments) {
             long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);  //Time in minutes
@@ -41,7 +41,7 @@ public class Predictions {
     /**
      * Calculates the percentage of carbs on board
      *
-     * @param timeFromEvent  time in minutes from last meal
+     * @param timeFromEvent time in minutes from last meal
      * @param absorptionTime time in minutes to absorb a hole meal
      * @return percentage of carbs absorbed
      */
@@ -64,7 +64,7 @@ public class Predictions {
      * Calculates the percentage of insulin on board
      *
      * @param timeFromEvent time in minutes from last meal
-     * @param insDuration   effective time of insulin in minutes
+     * @param insDuration effective time of insulin in minutes
      * @return percentage of insulin still on board
      */
     public static double fastActingIob(double timeFromEvent, double insDuration) {
@@ -79,7 +79,8 @@ public class Predictions {
             //double peak = insDuration * 75 / 180.0;
 
             //Time constant of exp decay
-            double decay = peak * (1 - peak / insDuration) / (1 - 2 * peak / insDuration);
+            double decay = peak * (1 - peak / insDuration)
+                    / (1 - 2 * peak / insDuration);
 
             //Rise time factor
             double growth = 2 * decay / insDuration;
@@ -87,7 +88,12 @@ public class Predictions {
             //Auxiliary scale factor
             double scale = 1 / (1 - growth + (1 + growth) * Math.exp(-insDuration / decay));
 
-            IOBWeight = 1 - scale * (1 - growth) * (((timeFromEvent * timeFromEvent) / (decay * insDuration * (1 - growth)) - timeFromEvent / decay - 1) * Math.exp(-timeFromEvent / decay) + 1);
+            IOBWeight = 1 - scale * (1 - growth)
+                    * (((timeFromEvent * timeFromEvent)
+                    / (decay * insDuration * (1 - growth))
+                    - timeFromEvent / decay - 1)
+                    * Math.exp(-timeFromEvent / decay) + 1);
+
         }
         return IOBWeight;
     }
@@ -96,30 +102,53 @@ public class Predictions {
      * simpsons rule to integrate insulin on board.
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
-     * @param t1            left border of integral    - 0
-     * @param t2            right border of integral   - duration of insulin event
-     * @param insDuration   effective time of insulin in minutes
+     * @param t1 left border of integral - 0
+     * @param t2 right border of integral - duration of insulin event
+     * @param insDuration effective time of insulin in minutes
      * @param timeFromEvent time in minutes since insulin event
      * @return
      */
     public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent) {
         double integral;
         double dx;
-        int nn = 50; //nn needs to be even
-        int ii = 1;
+        int N = 25;
+        int nn = 2 * N; //nn needs to be even
 
         //initialize with first and last terms of simpson series
         //t1 & t2 Grenzen des Intervalls das betrachtet wird
         dx = (t2 - t1) / nn;
         //integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
-        integral = fastActingIob((timeFromEvent - t1), insDuration) + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
 
-        while (ii < nn - 2) {
-            //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
-            integral = integral + 4 * fastActingIob(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * fastActingIob(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
-            ii = ii + 2;
+        // Orig:
+//        integral = fastActingIob((timeFromEvent - t1), insDuration)
+//                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
+//
+//        while (ii < nn - 2) {
+//            //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
+//            integral = integral
+//                    + 4 * fastActingIob(timeFromEvent
+//                            - (t1 + ii * dx), insDuration)
+//                    + 2 * fastActingIob(timeFromEvent
+//                            - (t1 + (ii + 1) * dx), insDuration);
+//            ii = ii + 2;
+//        }
+//
+//        integral = integral * dx / 3.0;
+// Ende - orig
+
+        integral = fastActingIob((timeFromEvent + t1), insDuration)
+                + fastActingIob(timeFromEvent + (t1 + nn * dx), insDuration);
+
+        for (int i = 1; i < N; i++) {
+           integral = integral
+                    + 4 * fastActingIob(timeFromEvent
+                            + (t1 + (2 * i - 1) * dx), insDuration)
+                    + 2 * fastActingIob(timeFromEvent
+                            + (t1 + (2 * i) * dx), insDuration);
         }
-
+        integral = integral
+                + 4 * fastActingIob(timeFromEvent
+                        + (t1 + (nn-1) * dx), insDuration);
         integral = integral * dx / 3.0;
         return integral;
     }
@@ -161,5 +190,5 @@ public class Predictions {
         return deltaBGI(timeFromEvent, insBolus, insSensitivityFactor, insDuration) +
                 deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
     }
-    */
+     */
 }
