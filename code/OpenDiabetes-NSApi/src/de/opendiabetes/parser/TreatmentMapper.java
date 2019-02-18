@@ -35,6 +35,9 @@ public class TreatmentMapper {
                 current = next;
             }
             //last one
+            if (!current.getType().equals(VaultEntryType.BASAL_MANUAL)) {
+                throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL");
+            }
             result.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, current.getTimestamp(), current.getValue(), current.getValue2()));
         }
         return result;
