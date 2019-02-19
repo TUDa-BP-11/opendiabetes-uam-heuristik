@@ -53,9 +53,9 @@ public class Predictions {
         } else if (timeFromEvent >= absorptionTime) {
             total = 1.0;
         } else if (timeFromEvent <= absorptionTime / 2.0) {
-            total = 2.0 / (absorptionTime * absorptionTime) * (timeFromEvent * timeFromEvent);
+            total = 2.0 * (timeFromEvent * timeFromEvent) / (absorptionTime * absorptionTime);
         } else {
-            total = -1.0 + 4.0 / absorptionTime * (timeFromEvent - (timeFromEvent * timeFromEvent) / (2.0 * absorptionTime));
+            total = -1.0 + 4.0 * timeFromEvent / absorptionTime - 2 * timeFromEvent * timeFromEvent / (absorptionTime * absorptionTime);
         }
         return total;
     }
@@ -71,7 +71,7 @@ public class Predictions {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
-        } else if (timeFromEvent >= insDuration) {
+        } else if ( timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
             IOBWeight = 0;
         } else {
 
@@ -96,6 +96,7 @@ public class Predictions {
 
         }
         return IOBWeight;
+        
     }
 
     /**
@@ -109,6 +110,8 @@ public class Predictions {
      * @return
      */
     public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent) {
+        // timeFromEvent - scale*(1-growth) *(Math.exp(-timeFromEvent/decay) * (2*decay+timeFromEvent-(2*decay^2+2*decay*timeFromEvent+timeFromEvent^2)/((1-growth) * insDuration))+timeFromEvent)
+
         double integral;
         double dx;
         int N = 25;
@@ -120,36 +123,35 @@ public class Predictions {
         //integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
 
         // Orig:
+        integral = fastActingIob((timeFromEvent - t1), insDuration)
+                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
+        int ii = 1;
+        while (ii < nn - 2) {
+            //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
+            integral = integral
+                    + 4 * fastActingIob(timeFromEvent
+                            - (t1 + ii * dx), insDuration)
+                    + 2 * fastActingIob(timeFromEvent
+                            - (t1 + (ii + 1) * dx), insDuration);
+            ii = ii + 2;
+        }
+
+        integral = integral * dx / 3.0;
+// Ende - orig
 //        integral = fastActingIob((timeFromEvent - t1), insDuration)
 //                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
 //
-//        while (ii < nn - 2) {
-//            //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
+//        for (int i = 1; i < N; i++) {
 //            integral = integral
 //                    + 4 * fastActingIob(timeFromEvent
-//                            - (t1 + ii * dx), insDuration)
+//                            - (t1 + (2 * i - 1) * dx), insDuration)
 //                    + 2 * fastActingIob(timeFromEvent
-//                            - (t1 + (ii + 1) * dx), insDuration);
-//            ii = ii + 2;
+//                            - (t1 + (2 * i) * dx), insDuration);
 //        }
-//
+//        integral = integral
+//                + 4 * fastActingIob(timeFromEvent
+//                        - (t1 + (nn - 1) * dx), insDuration);
 //        integral = integral * dx / 3.0;
-// Ende - orig
-
-        integral = fastActingIob((timeFromEvent + t1), insDuration)
-                + fastActingIob(timeFromEvent + (t1 + nn * dx), insDuration);
-
-        for (int i = 1; i < N; i++) {
-           integral = integral
-                    + 4 * fastActingIob(timeFromEvent
-                            + (t1 + (2 * i - 1) * dx), insDuration)
-                    + 2 * fastActingIob(timeFromEvent
-                            + (t1 + (2 * i) * dx), insDuration);
-        }
-        integral = integral
-                + 4 * fastActingIob(timeFromEvent
-                        + (t1 + (nn-1) * dx), insDuration);
-        integral = integral * dx / 3.0;
         return integral;
     }
 

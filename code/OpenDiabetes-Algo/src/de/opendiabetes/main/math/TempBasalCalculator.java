@@ -23,7 +23,7 @@ public class TempBasalCalculator {
                     throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL");
                 }
                 if (entry.getValue2() <= 0) continue;
-                double value = (entry.getValue() / entry.getValue2()) - (basalRate / 60);
+                double value = (entry.getValue() / entry.getValue2());// - (basalRate / 60);
                 result.add(new TempBasal(value, entry.getValue2(), entry.getTimestamp()));
             }
         } else {
@@ -49,14 +49,14 @@ public class TempBasalCalculator {
 
             if (firstTime <= treatmentTime && treatmentTime < secTime) {
                 if (treatmentTime + entry.getValue2() <= secTime) {
-                    double value = (entry.getValue() / entry.getValue2()) - (profileTime.get(i).getValue() / 60);
+                    double value = (entry.getValue() / entry.getValue2()); // - (profileTime.get(i).getValue() / 60);
                     list.add(new TempBasal(value, entry.getValue2(), entry.getTimestamp()));
                     return;
                 } else {
 
                     long deltadur = secTime - treatmentTime;
                     double deltaValue = entry.getValue() * deltadur / entry.getValue2();
-                    double newTempValue = (deltaValue / deltadur) - (profileTime.get(i).getValue() / 60);
+                    double newTempValue = (deltaValue / deltadur);// - (profileTime.get(i).getValue() / 60);
 
                     list.add(new TempBasal(newTempValue, deltadur, entry.getTimestamp()));
                     addTemp(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);

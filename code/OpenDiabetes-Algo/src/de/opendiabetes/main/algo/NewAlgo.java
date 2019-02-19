@@ -123,10 +123,6 @@ public class NewAlgo implements Algorithm {
         int numBG = glucose.size();
         VaultEntry current;
 
-        // debugging: break after 10 days
-        current = glucose.get(0);
-        long firstTime = current.getTimestamp().getTime() / 1000;
-
         long estimatedTime;
         long currentTime;
         long nextTime;
@@ -134,50 +130,49 @@ public class NewAlgo implements Algorithm {
         double currentLimit;
         long estimatedTimeAccepted = 0l;
         double currentPrediction;
+        double nextPrediction;
         double deltaBg;
 
+        double startValue;
         for (int i = 0; i < numBG; i++) {
             current = glucose.get(i);
-
-            // debugging: break after 10 days
-            if (current.getTimestamp().getTime() / 1000 - firstTime > 10 * 24 * 60 * 60) {
-                break;
-            }
 
             currentTime = current.getTimestamp().getTime() / 60000;
             currentLimit = currentTime + absorptionTime / 4;
             if (currentTime > estimatedTimeAccepted) {
+                startValue = current.getValue();
+                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
+                        basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
 
                 for (int j = 0; j < numBG - i; j++) {
                     next = glucose.get(i + j);
                     nextTime = next.getTimestamp().getTime() / 60000;
                     if (nextTime <= currentLimit) {
-                        currentPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                                 basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
-                        deltaBg = next.getValue() - currentPrediction;
+                        deltaBg = next.getValue() - startValue - (nextPrediction - currentPrediction);
                         lastTime = nextTime;
-                        weight = 1 - (nextTime - currentTime) / (absorptionTime / 2);
-                        observations.add(new WeightedObservedPoint(weight, lastTime, deltaBg));
+//                        weight = 1 - (nextTime - currentTime) / (absorptionTime / 2);
+                        observations.add(new WeightedObservedPoint(weight, nextTime, deltaBg));
                     }
                 }
                 // lsq = [c, b, a]
                 double[] lsq = pcf.fit(observations);
                 assert (lsq[2] > 0);
-                double error = lsq[0] - pow(lsq[1], 2) / (4 * lsq[2]);
+//                double error = lsq[0] - pow(lsq[1], 2) / (4 * lsq[2]);
                 estimatedTime = (long) (-lsq[1] / (2 * lsq[2]));
                 double estimatedCarbs = lsq[2] * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
                 if (currentTime - estimatedTime < absorptionTime / 2
                         && estimatedTime < lastTime) {
-//                    System.out.println("estimatedCarbs: " + estimatedCarbs + " estimatedTime: " + new Date(estimatedTime*60000).toString() + " Num Obs: " + observations.size());
-                    if (estimatedCarbs > 0
-                            && estimatedCarbs < 200 //                            && error < 10
-                            ) {
-                        estimatedTimeAccepted = estimatedTime;
-//                        System.out.println(new Date(estimatedTime * 60000));
-                        meal = new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)), estimatedCarbs);
-                        mealTreatments.add(meal);
-//                    System.out.println(meal.toString());
-                    }
+//                    if (estimatedCarbs > 0
+//                            && estimatedCarbs < 200 // && error < 10
+//                            ) {
+                    estimatedTimeAccepted = estimatedTime;
+                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                            estimatedCarbs);
+                    mealTreatments.add(meal);
+//                    }
                 }
             }
             observations.clear();
@@ -204,7 +199,7 @@ public class NewAlgo implements Algorithm {
 
         // debugging: break after 10 days
         current = glucose.get(0);
-        long firstTime = current.getTimestamp().getTime();
+//        long firstTime = current.getTimestamp().getTime();
 
         long estimatedTime;
         long currentTime;
@@ -212,12 +207,12 @@ public class NewAlgo implements Algorithm {
         long lastTime = 0;
         double currentLimit;
         long estimatedTimeAccepted = 0l;
-//        double currentPrediction;
-//        double correction;
+        double currentPrediction;
+        double currentValue;
         double nextPrediction;
         double deltaBg;
 
-        Plot plt = Plot.create();
+//        Plot plt = Plot.create();
         for (int i = 0; i < numBG; i++) {
 
             nkbg = new ArrayRealVector();
@@ -228,18 +223,24 @@ public class NewAlgo implements Algorithm {
             alTimes = new ArrayList();
 
             current = glucose.get(i);
-//            currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-//                    basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
-//            correction = current.getValue() - currentPrediction;
 
             // debugging: break after 1 day
-            if (current.getTimestamp().getTime() - firstTime > 1 * 24 * 60 * 60 * 1000) {
-                break;
-            }
+//            if (current.getTimestamp().getTime() - firstTime > 1 * 24 * 60 * 60 * 1000) {
+//                break;
+//            }
             currentTime = current.getTimestamp().getTime() / 60000;
-            currentLimit = currentTime + absorptionTime/6;
+
             if (currentTime > estimatedTimeAccepted) {
-                for (int j = 0; j < numBG - i; j++) {
+
+                currentLimit = currentTime + absorptionTime / 6;
+                currentValue = current.getValue();
+                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
+                        basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+                int j = 0;
+//                while (j < numBG - i) {
+
+                for (; j < numBG - i; j++) {
+
                     next = glucose.get(i + j);
                     nextTime = next.getTimestamp().getTime() / 60000;
                     if (nextTime <= currentLimit) {
@@ -247,23 +248,23 @@ public class NewAlgo implements Algorithm {
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                                 basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
 
-                        deltaBg = next.getValue() - nextPrediction;
+                        deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
+//                        deltaBg = next.getValue() - nextPrediction;
 //                        System.out.println("calculateMeals2(): " + deltaBg + " time: " + next.getTimestamp());
                         times = times.append(nextTime - currentTime);
                         lastTime = nextTime;
                         nkbg = nkbg.append(deltaBg);
-                        alTimes.add(nextTime*60);
-                        alNkbg.add(deltaBg+i);
+                        alTimes.add(nextTime * 60);
+                        alNkbg.add(deltaBg + i);
                         alPred.add(nextPrediction);
                         albg.add(next.getValue());
                     }
                 }
 
-                plt.plot().addDates(alTimes).add(alNkbg);
-                plt.plot().addDates(alTimes).add(albg).linestyle("dashed");
-                plt.plot().addDates(alTimes).add(alPred).linestyle("dotted");
+//                plt.plot().addDates(alTimes).add(alNkbg);
+//                plt.plot().addDates(alTimes).add(albg).linestyle("dashed");
+//                plt.plot().addDates(alTimes).add(alPred).linestyle("dotted");
 
-//                System.out.println("de.opendiabetes.main.algo.NewAlgo.calculateMeals2(): " + times.getDimension());
                 if (times.getDimension() >= 3) {
                     matrix = new Array2DRowRealMatrix(times.getDimension(), 2); //3
 //                    matrix.setColumnVector(1, times);
@@ -282,31 +283,49 @@ public class NewAlgo implements Algorithm {
 //                    estimatedTime = (long) (currentTime - beta / (2 * alpha));
                     estimatedTime = currentTime;
                     double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
-                    
-                    System.out.println("Date: "+new Date(estimatedTime * 60000)+" Carbs: "+estimatedCarbs);
-//                    System.out.println("Tstart: "+new Date(currentTime*60000)+" Tend: "+new Date(lastTime*60000));
-                    
+
+                    System.out.println("Date: " + new Date(estimatedTime * 60000) + " Carbs: " + estimatedCarbs);
 //                    if (currentTime - estimatedTime < absorptionTime / 2
 //                            && estimatedTime < lastTime) {
-//                    System.out.println("estimatedCarbs: " + estimatedCarbs + " estimatedTime: " + new Date(estimatedTime*60000).toString() + " Num Obs: " + observations.size());
-//                        if (estimatedCarbs >= 0 // && estimatedCarbs < 200 //                            && error < 10
+//                        if (estimatedCarbs > 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
 //                                ) {
-                            estimatedTimeAccepted = estimatedTime;
-                            meal = new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)), estimatedCarbs);
-                            mealTreatments.add(meal);
-//                    System.out.println(meal.toString());
+                    estimatedTimeAccepted = estimatedTime;
+                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                            estimatedCarbs);
+                    mealTreatments.add(meal);
+                    
+//                        } else if (currentLimit < absorptionTime / 2) {
+//                            currentLimit += absorptionTime / 6;
+//                        } else {
+//                            break;
+//                        }
+
+//                        int j_max = mealTreatments.size();
+//                        double tempValue = estimatedCarbs;
+//                        ArrayList<VaultEntry> temps = new ArrayList<>();
+//                        for (int j = 1; j <= j_max; j++) {
+//                            VaultEntry tempMeal = mealTreatments.get(mealTreatments.size() - j);
+//                            tempValue = tempMeal.getValue() + tempValue;
+//                            temps.add(tempMeal);
+//                            if (tempValue >= 0 || j == j_max) {
+//                                mealTreatments.removeAll(temps);
+//                                tempMeal.setValue(tempValue);
+//                                mealTreatments.add(tempMeal);
+//                                break;
+//                            }
+//                        }
+//                    }
 //                        }
 //                    }
                 }
             }
         }
-        try {
-            plt.show();
-//            plt2.show();
-        } catch (IOException | PythonExecutionException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            plt.show();
+//        } catch (IOException | PythonExecutionException ex) {
+//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         return mealTreatments;
     }
-
 }

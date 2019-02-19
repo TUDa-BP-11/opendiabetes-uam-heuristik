@@ -10,7 +10,7 @@ import java.util.List;
 public class Snippet {
 
     public static final long TIME_MAX = 4 * 60 * 60 * 1000;  // 4 hours
-    public static final long TIME_MAX_GAP = 5 * 60 * 1000;   // 5 minutes
+    public static final long TIME_MAX_GAP = 30 * 60 * 1000;   // 5 minutes
     public static final long TIME_MIN = 2 * 60 * 60 * 1000;  // 2 hours
 
     private long first;
@@ -46,7 +46,7 @@ public class Snippet {
         for (VaultEntry e : entries) {
             if (current.isValid(e, snippetLength)) {
                 current.addEntry(e);
-                if (current.isFull()) {
+                if (current.isFull(snippetLength)) {
                     snippets.add(current);
                     if (snippets.size() == n_snippets) {
                         break;
@@ -121,6 +121,10 @@ public class Snippet {
 
     public boolean isFull() {
         return last - first >= TIME_MIN;
+    }
+
+    public boolean isFull(long snippetLength) {
+        return last - first >= snippetLength;
     }
 
 //    public static void main(String[] args) throws IOException {
