@@ -59,7 +59,7 @@ public class TempBasalCalculator {
                     double newTempValue = (deltaValue / deltadur);// - (profileTime.get(i).getValue() / 60);
 
                     list.add(new TempBasal(newTempValue, deltadur, entry.getTimestamp()));
-                    addTemp(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);
+                    addTemp(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);
                     return;
                 }
             }
@@ -78,7 +78,7 @@ public class TempBasalCalculator {
             double newTempValue = (deltaValue / deltadur) - (profileTime.get(profileTime.size() - 1).getValue() / 60);
 
             list.add(new TempBasal(newTempValue, deltadur, entry.getTimestamp()));
-            addTemp(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);
+            addTemp(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);
             return;
         }
     }
