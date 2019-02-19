@@ -10,7 +10,7 @@ import java.util.List;
 public class Snippet {
 
     public static final long TIME_MAX = 4 * 60 * 60 * 1000;  // 4 hours
-    public static final long TIME_MAX_GAP = 30 * 60 * 1000;   // 5 minutes
+    public static final long TIME_MAX_GAP = 5 * 60 * 1000;   // 5 minutes
     public static final long TIME_MIN = 2 * 60 * 60 * 1000;  // 2 hours
 
     private long first;

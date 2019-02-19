@@ -141,7 +141,7 @@ public class Main {
                         profile.getSensitivity(), insDuration,
                         profile.getCarbratio(), absorptionTime);
 
-                errorValues.add((startValue + algoPredict - ve.getValue())); //  / ve.getValue() * 100
+                errorValues.add((startValue + algoPredict - ve.getValue())/ ve.getValue() * 100); //  
                 algo2Values.add(startValue + algoPredict);
                 bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
                 errorTimes.add((ve.getTimestamp().getTime() - startTime) / 1000.0);
