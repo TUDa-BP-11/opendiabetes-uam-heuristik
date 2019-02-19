@@ -3,7 +3,7 @@ package de.opendiabetes.nsapi;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
-import de.opendiabetes.parser.VaultEntryParser;
+import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
@@ -49,14 +49,14 @@ public class GetBuilder {
     }
 
     /**
-     * Completes the request and passes the result to {@link VaultEntryParser} to be parsed as a list of VaultEntries
+     * Completes the request and passes the result to {@link NightscoutImporter} to be parsed as a list of VaultEntries
      *
      * @return a List of VaultEntries corresponding to the result of the request
      * @throws UnirestException if an exception occurs during the request
      */
     public List<VaultEntry> getVaultEntries() throws UnirestException {
-        VaultEntryParser parser = new VaultEntryParser();
-        return parser.parse(get().getArray());
+        NightscoutImporter importer = new NightscoutImporter();
+        return importer.importData(request.asBinary().getBody());
     }
 
     public class Operator {
