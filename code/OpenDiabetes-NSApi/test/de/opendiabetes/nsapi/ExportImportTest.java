@@ -15,7 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -59,7 +62,17 @@ public class ExportImportTest {
 
     @Test
     public void testImport() throws IOException {
-        FileInputStream stream = new FileInputStream(new File("testdata/alltypes.txt"));
+        String data = "[" +
+                "{\"type\":\"sgv\",\"sgv\":80.0,\"date\":1550689782007,\"dateString\":\"2019-02-20T19:09:42.007Z\",\"direction\":\"\",\"trend\":\"\",\"device\":\"\"}," +
+                "{\"type\":\"sgv\",\"sgv\":90.0,\"date\":1550689782008,\"dateString\":\"2019-02-20T19:09:42.008Z\",\"direction\":\"\",\"trend\":\"\",\"device\":\"\"}," +
+                "{\"eventType\":\"Correction Bolus\",\"insulin\":10.0,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"programmed\":10.0,\"duration\":0,\"type\":\"normal\",\"unabsorbed\":0,\"enteredBy\":\"UAMALGO\"}," +
+                "{\"eventType\":\"Correction Bolus\",\"insulin\":20.0,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"programmed\":20.0,\"duration\":0,\"type\":\"normal\",\"unabsorbed\":0,\"enteredBy\":\"UAMALGO\"}," +
+                "{\"eventType\":\"Meal Bolus\",\"carbs\":200.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}," +
+                "{\"eventType\":\"Meal Bolus\",\"carbs\":250.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}," +
+                "{\"eventType\":\"Temp Basal\",\"rate\":0.8,\"duration\":30.0,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"temp\":\"absolute\",\"absolute\":0.8,\"enteredBy\":\"UAMALGO\"}," +
+                "{\"eventType\":\"Temp Basal\",\"rate\":0.6348762378,\"duration\":20.0,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"temp\":\"absolute\",\"absolute\":0.6348762378,\"enteredBy\":\"UAMALGO\"}" +
+                "]";
+        ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
         List<VaultEntry> entries = importer.importData(stream);
         stream.close();
         assertEquals(8, entries.size());
