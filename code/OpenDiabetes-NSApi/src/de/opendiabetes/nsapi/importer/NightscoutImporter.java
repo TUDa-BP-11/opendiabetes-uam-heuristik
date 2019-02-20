@@ -9,6 +9,7 @@ import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.importer.Importer;
 import de.opendiabetes.vault.importer.ImporterOptions;
+import de.opendiabetes.vault.util.TimestampUtils;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -86,7 +87,7 @@ public class NightscoutImporter extends Importer {
                     entries.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, date, o.get("rate").getAsDouble(), o.get("duration").getAsDouble()));
                 }
             }
-        } catch (ClassCastException | UnsupportedOperationException | NullPointerException e) {
+        } catch (ClassCastException | IllegalStateException | NullPointerException e) {
             throw new InvalidDataException("invalid source data", e);
         }
         return entries;
@@ -94,14 +95,20 @@ public class NightscoutImporter extends Importer {
 
 
     /**
-     * get a date object from string with time zone information
+     * Converts a date and time string to a {@link Date} object in local time. Strips seconds and milliseconds
+     *
+     * @param dateString ISO 8601 compliant date time string
+     * @return local Date object representing the input with seconds and milliseconds set to zero
      */
     private Date makeDate(String dateString) {
+        TemporalAccessor t;
         try {
-            TemporalAccessor t = DateTimeFormatter.ISO_DATE_TIME.parse(dateString);
-            return Date.from(ZonedDateTime.from(t).toInstant());
+            t = DateTimeFormatter.ISO_DATE_TIME.parse(dateString);
         } catch (DateTimeParseException e) {
             throw new InvalidDataException("invalid date string: " + dateString, e);
         }
+        // dates are automatically converted to local time by the toInstant() method of ZonedDateTime
+        Date date = Date.from(ZonedDateTime.from(t).toInstant());
+        return TimestampUtils.createCleanTimestamp(date);
     }
 }

@@ -1,17 +1,16 @@
 package de.opendiabetes.nsapi.exporter;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.google.gson.stream.JsonWriter;
 import de.opendiabetes.nsapi.exception.InvalidDataException;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.exporter.Exporter;
 import de.opendiabetes.vault.exporter.ExporterOptions;
 import de.opendiabetes.vault.exporter.csv.ExportEntry;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.DateFormat;
@@ -34,7 +33,7 @@ public class NightscoutExporter extends Exporter {
     }
 
     /**
-     * Formats the data as nightscout json representation.
+     * Formats the data as nightscout json representation. All times are converted to UTC
      * Currently supports the following entries: {@link VaultEntryType#GLUCOSE_CGM}, {@link VaultEntryType#BOLUS_NORMAL},
      * {@link VaultEntryType#MEAL_MANUAL} and {@link VaultEntryType#BASAL_MANUAL}
      *
@@ -118,8 +117,13 @@ public class NightscoutExporter extends Exporter {
             array.add(object);
         }
 
-        JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
-        json.toJson(array, writer);
+        try {
+            JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
+            json.toJson(array, writer);
+            writer.flush();
+        } catch (IOException | JsonIOException e) {
+            throw new NightscoutIOException("Exception while flushing stream", e);
+        }
         //TODO: close the sink?
     }
 
