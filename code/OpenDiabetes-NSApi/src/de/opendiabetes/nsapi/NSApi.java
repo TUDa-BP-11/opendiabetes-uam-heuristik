@@ -13,9 +13,6 @@ import de.opendiabetes.vault.container.VaultEntry;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
@@ -225,12 +222,5 @@ public class NSApi {
      */
     public void close() throws IOException {
         Unirest.shutdown();
-    }
-
-    public static void main(String[] args) {
-        System.out.println("System.currentTimeMillis()  " + System.currentTimeMillis());
-        System.out.println("Instant.now()               " + Instant.now().toString());
-        System.out.println("LocalDateTime.now()         " + LocalDateTime.now().toString());
-        System.out.println("ZonedDateTime.now()         " + ZonedDateTime.now().toString());
     }
 }
