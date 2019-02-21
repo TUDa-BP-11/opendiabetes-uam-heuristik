@@ -35,7 +35,6 @@ class NSApiTest {
             System.err.println("Environment variable NS_APISECRET not found!");
         if (host == null || secret == null)
             fail("");
-
         api = new NSApi(host, secret);
     }
 

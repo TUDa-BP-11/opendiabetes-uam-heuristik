@@ -2,6 +2,7 @@ package de.opendiabetes.main.algo;
 
 import com.github.sh0nk.matplotlib4j.Plot;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
+import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 
@@ -30,80 +31,14 @@ import org.apache.commons.math3.linear.RealVector;
  *
  * @author anna
  */
-public class NewAlgo implements Algorithm {
+public class NewAlgo extends Algorithm {
 
-    private double absorptionTime;
-    private double insDuration;
-    private double insSensitivity;
-    private double carbRate;
-    private Profile profile;
-    private List<VaultEntry> glucose;
-    private List<VaultEntry> bolusTreatments;
-    private List<VaultEntry> basalTreatments;
-
-    public NewAlgo() {
-        absorptionTime = 120;
-        insDuration = 180;
-        insSensitivity = 35;
-        carbRate = 10;
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        basalTreatments = new ArrayList<>();
+    public NewAlgo(double absorptionTime, double insulinDuration, Profile profile) {
+        super(absorptionTime, insulinDuration, profile);
     }
 
-    public NewAlgo(double absorptionTime, double insDuration, Profile profile) {
-        this.absorptionTime = absorptionTime;
-        this.insDuration = insDuration;
-        this.profile = profile;
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        basalTreatments = new ArrayList<>();
-    }
-
-    public double getCarbRatio() {
-        return profile.getCarbratio();
-    }
-
-    public double getInsulinSensitivity() {
-        return profile.getSensitivity();
-    }
-
-    @Override
-    public void setAbsorptionTime(double absorptionTime) {
-        this.absorptionTime = absorptionTime;
-    }
-
-    public double getAbsorptionTime() {
-        return absorptionTime;
-    }
-
-    @Override
-    public void setInsulinDuration(double insulinDuration) {
-        this.insDuration = insulinDuration;
-    }
-
-    public double getInsulinDuration() {
-        return insDuration;
-    }
-
-    @Override
-    public void setProfile(Profile profile) {
-        this.profile = profile;
-    }
-
-    @Override
-    public void setGlucoseMeasurements(List<VaultEntry> glucose) {
-        this.glucose = new ArrayList<>(glucose);
-    }
-
-    @Override
-    public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
-        this.bolusTreatments = new ArrayList<>(bolusTreatments);
-    }
-
-    @Override
-    public void setBasalTreatments(List<VaultEntry> basalTreatments) {
-        this.basalTreatments = new ArrayList<>(basalTreatments);
+    public NewAlgo(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+        super(absorptionTime, insulinDuration, dataProvider);
     }
 
     @Override
@@ -142,14 +77,14 @@ public class NewAlgo implements Algorithm {
             if (currentTime > estimatedTimeAccepted) {
                 startValue = current.getValue();
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                        basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+                        basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
                 for (int j = 0; j < numBG - i; j++) {
                     next = glucose.get(i + j);
                     nextTime = next.getTimestamp().getTime() / 60000;
                     if (nextTime <= currentLimit) {
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                         deltaBg = next.getValue() - startValue - (nextPrediction - currentPrediction);
                         lastTime = nextTime;
 //                        weight = 1 - (nextTime - currentTime) / (absorptionTime / 2);
@@ -235,7 +170,7 @@ public class NewAlgo implements Algorithm {
                 currentLimit = currentTime + absorptionTime / 6;
                 currentValue = current.getValue();
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                        basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+                        basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 int j = 0;
 //                while (j < numBG - i) {
 
@@ -246,7 +181,7 @@ public class NewAlgo implements Algorithm {
                     if (nextTime <= currentLimit) {
 
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
                         deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
 //                        deltaBg = next.getValue() - nextPrediction;

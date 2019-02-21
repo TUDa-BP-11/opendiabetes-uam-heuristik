@@ -1,5 +1,6 @@
 package de.opendiabetes.main.algo;
 
+import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -10,76 +11,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class OpenDiabetesAlgo implements Algorithm {
+public class OpenDiabetesAlgo extends Algorithm {
 
-    private double absorptionTime;
-    private double insDuration;
-    private Profile profile;
-    private List<VaultEntry> glucose;
-    private List<VaultEntry> bolusTreatments;
-    private List<VaultEntry> basalTreatments;
 
-    public OpenDiabetesAlgo() {
-        absorptionTime = 120;
-        insDuration = 180;
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        basalTreatments = new ArrayList<>();
+    public OpenDiabetesAlgo(double absorptionTime, double insulinDuration, Profile profile) {
+        super(absorptionTime, insulinDuration, profile);
     }
 
-    public OpenDiabetesAlgo(double absorptionTime, double insDuration, Profile profile) {
-        this.absorptionTime = absorptionTime;
-        this.insDuration = insDuration;
-        this.profile = profile;
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        basalTreatments = new ArrayList<>();
-    }
-
-    public double getCarbRatio() {
-        return profile.getCarbratio();
-    }
-
-    public double getInsulinSensitivity() {
-        return profile.getSensitivity();
-    }
-
-    @Override
-    public void setAbsorptionTime(double absorptionTime) {
-        this.absorptionTime = absorptionTime;
-    }
-
-    public double getAbsorptionTime() {
-        return absorptionTime;
-    }
-
-    @Override
-    public void setInsulinDuration(double insulinDuration) {
-        this.insDuration = insulinDuration;
-    }
-
-    public double getInsulinDuration() {
-        return insDuration;
-    }
-
-    @Override
-    public void setProfile(Profile profile) {
-        this.profile = profile;
-    }
-
-    @Override
-    public void setGlucoseMeasurements(List<VaultEntry> glucose) {
-        this.glucose = new ArrayList<>(glucose);
-    }
-
-    @Override
-    public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
-        this.bolusTreatments = new ArrayList<>(bolusTreatments);
-    }
-
-    @Override
-    public void setBasalTreatments(List<VaultEntry> basalTreatments) {
-        this.basalTreatments = new ArrayList<>(basalTreatments);
+    public OpenDiabetesAlgo(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+        super(absorptionTime, insulinDuration, dataProvider);
     }
 
     @Override
@@ -98,8 +38,8 @@ public class OpenDiabetesAlgo implements Algorithm {
                 deltaTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
             }
 
-            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
-            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insDuration, profile.getCarbratio(), absorptionTime);
+            double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
             double deltaBg = next.getValue() - current.getValue();
             double deltaPrediction = (nextPrediction - currentPrediction);
 

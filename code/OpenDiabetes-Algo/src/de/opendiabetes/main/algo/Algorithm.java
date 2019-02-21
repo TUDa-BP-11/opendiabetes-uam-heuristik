@@ -4,50 +4,87 @@ import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public interface Algorithm {
+public abstract class Algorithm {
+    protected double absorptionTime;
+    protected double insulinDuration;
+    protected Profile profile;
+    protected List<VaultEntry> glucose;
+    protected List<VaultEntry> bolusTreatments;
+    protected List<VaultEntry> basalTreatments;
+
+
+    public Algorithm(double absorptionTime, double insulinDuration, Profile profile) {
+        this.absorptionTime = absorptionTime;
+        this.insulinDuration = insulinDuration;
+        this.profile = profile;
+        glucose = new ArrayList<>();
+        bolusTreatments = new ArrayList<>();
+        basalTreatments = new ArrayList<>();
+    }
+
+    public Algorithm(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+        this.absorptionTime = absorptionTime;
+        this.insulinDuration = insulinDuration;
+        setDataProvider(dataProvider);
+    }
+
+
     /**
      * Set the time needed to absorb a meal completely
      *
      * @param absorptionTime absoption time in minutes
      */
-    void setAbsorptionTime(double absorptionTime);
+    public void setAbsorptionTime(double absorptionTime) {
+        this.absorptionTime = absorptionTime;
+    }
 
     /**
      * Set the effective time of an insulin treatment
      *
      * @param insulinDuration insulin duration in minutes
      */
-    void setInsulinDuration(double insulinDuration);
+    public void setInsulinDuration(double insulinDuration) {
+        this.insulinDuration = insulinDuration;
+    }
 
     /**
-     * Provide a profile
+     * Set a profile
      *
      * @param profile profile
      */
-    void setProfile(Profile profile);
+    public void setProfile(Profile profile) {
+        this.profile = profile;
+    }
 
     /**
-     * Provide a list of glucose measurements for calculation
+     * Set a list of glucose measurements for calculation
      *
      * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      */
-    void setGlucoseMeasurements(List<VaultEntry> entries);
+    public void setGlucoseMeasurements(List<VaultEntry> entries) {
+        this.glucose = entries;
+    }
 
     /**
-     * Provide a list of insulin bolus treatments for calculation
+     * Set a list of insulin bolus treatments for calculation
      *
      * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
-    void setBolusTreatments(List<VaultEntry> bolusTreatments);
+    public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
+        this.basalTreatments = bolusTreatments;
+    }
 
     /**
-     * Provide a list of insulin bolus treatments for calculation
+     * Set a list of insulin bolus treatments for calculation
      *
      * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
-    void setBasalTreatments(List<VaultEntry> basalTreatments);
+    public void setBasalTreatments(List<VaultEntry> basalTreatments) {
+        this.basalTreatments = basalTreatments;
+    }
 
     /**
      * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
@@ -55,7 +92,7 @@ public interface Algorithm {
      *
      * @param dataProvider the data provider
      */
-    default void setDataProvider(AlgorithmDataProvider dataProvider) {
+    public void setDataProvider(AlgorithmDataProvider dataProvider) {
         this.setProfile(dataProvider.getProfile());
         this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
         this.setBolusTreatments(dataProvider.getBolusTreatments());
@@ -67,5 +104,5 @@ public interface Algorithm {
      *
      * @return a list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#MEAL_MANUAL}
      */
-    List<VaultEntry> calculateMeals();
+    public abstract List<VaultEntry> calculateMeals();
 }

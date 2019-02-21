@@ -213,16 +213,18 @@ public class Main {
         Algorithm algorithm;
         switch (algorithmName.toLowerCase()) {
             case "demo":
-                algorithm = new OpenDiabetesAlgo();
+                algorithm = new OpenDiabetesAlgo(absorptionTime, insulinDuration, dataProvider);
                 break;
             default:
                 Log.logError("Unknown algorithm " + algorithmName);
                 return;
         }
 
+        /*
         algorithm.setAbsorptionTime(absorptionTime);
         algorithm.setInsulinDuration(insulinDuration);
         algorithm.setDataProvider(dataProvider);
+        */
 
         List<VaultEntry> data = new ArrayList<>();
         data.addAll(new ArrayList<>(dataProvider.getBolusTreatments()));
