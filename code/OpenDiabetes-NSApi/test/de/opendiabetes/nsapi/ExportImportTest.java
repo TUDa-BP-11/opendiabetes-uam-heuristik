@@ -14,11 +14,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -112,15 +110,26 @@ public class ExportImportTest {
     }
 
     @Test
-    public void testExportClosed() throws IOException {
+    public void testExportIOError() {
         VaultEntry entry = new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 10);
         assertThrows(NightscoutIOException.class, () -> exporter.exportData(new ExceptionOutputStream(), Collections.singletonList(entry)));
     }
 
     @Test
-    public void testImportDate() throws IOException {
-        String invalid = "[{\"eventType\":\"Meal Bolus\",\"carbs\":200.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"invalid date\",\"enteredBy\":\"UAMALGO\"}]";
-        ByteArrayInputStream stream = new ByteArrayInputStream(invalid.getBytes());
+    public void testImportIOError() {
+        assertThrows(NightscoutIOException.class, () -> importer.importData(new ExceptionInputStream()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "[{}",  // invalid syntax
+            "{}",   // not an array
+            "[{}]", // invalid entry type (no type)
+            "[{\"eventType\":\"Meal Bolus\",\"carbs\":\"invalid\",\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}]" ,    // invalid carbs type (not double)
+            "[{\"eventType\":\"Meal Bolus\",\"carbs\":200.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"invalid date\",\"enteredBy\":\"UAMALGO\"}]"  // invalid timestamp
+    })
+    public void testImportData(String data) throws IOException {
+        ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
         assertThrows(InvalidDataException.class, () -> importer.importData(stream));
         stream.close();
     }
@@ -128,6 +137,13 @@ public class ExportImportTest {
     private static class ExceptionOutputStream extends ByteArrayOutputStream {
         @Override
         public void flush() throws IOException {
+            throw new IOException();
+        }
+    }
+
+    private static class ExceptionInputStream extends InputStream {
+        @Override
+        public int read() throws IOException {
             throw new IOException();
         }
     }

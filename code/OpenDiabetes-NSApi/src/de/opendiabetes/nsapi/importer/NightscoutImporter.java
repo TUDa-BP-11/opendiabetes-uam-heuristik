@@ -1,10 +1,8 @@
 package de.opendiabetes.nsapi.importer;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import de.opendiabetes.nsapi.exception.InvalidDataException;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.importer.Importer;
@@ -50,6 +48,8 @@ public class NightscoutImporter extends Importer {
         JsonElement element;
         try {
             element = json.parse(reader);
+        } catch (JsonIOException e) {
+            throw new NightscoutIOException("exception while reading data", e);
         } catch (JsonSyntaxException e) {
             throw new InvalidDataException("invalid JSON syntax", e);
         }
@@ -62,32 +62,39 @@ public class NightscoutImporter extends Importer {
         try {
             for (JsonElement e : element.getAsJsonArray()) {
                 JsonObject o = e.getAsJsonObject();
+                boolean valid = false;
 
                 // BG measurements
                 if (o.has("type") && o.get("type").getAsString().equals("sgv")) {
                     Date date = new Date(o.get("date").getAsLong());
                     entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, o.get("sgv").getAsDouble()));
+                    valid = true;
                 }
 
                 // insulin bolus
                 if (o.has("insulin") && !o.get("insulin").isJsonNull()) {
                     Date date = makeDate(o.get("timestamp").getAsString());
                     entries.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, o.get("insulin").getAsDouble()));
+                    valid = true;
                 }
 
                 // meals
                 if (o.has("carbs") && !o.get("carbs").isJsonNull()) {
                     Date date = makeDate(o.get("timestamp").getAsString());
                     entries.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, date, o.get("carbs").getAsDouble()));
+                    valid = true;
                 }
 
                 // basal
                 if (o.has("eventType") && o.get("eventType").getAsString().equals("Temp Basal")) {
                     Date date = makeDate(o.get("timestamp").getAsString());
                     entries.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, date, o.get("rate").getAsDouble(), o.get("duration").getAsDouble()));
+                    valid = true;
                 }
+                if (!valid)
+                    throw new InvalidDataException("invalid source data, could not identify vault entry type");
             }
-        } catch (ClassCastException | IllegalStateException | NullPointerException e) {
+        } catch (NumberFormatException | IllegalStateException | NullPointerException e) {
             throw new InvalidDataException("invalid source data", e);
         }
         return entries;
