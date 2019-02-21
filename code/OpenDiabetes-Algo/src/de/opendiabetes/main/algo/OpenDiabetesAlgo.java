@@ -17,7 +17,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     private Profile profile;
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
-    private List<TempBasal> basalTreatments;
+    private List<VaultEntry> basalTreatments;
 
     public OpenDiabetesAlgo() {
         absorptionTime = 120;
@@ -78,7 +78,7 @@ public class OpenDiabetesAlgo implements Algorithm {
     }
 
     @Override
-    public void setBasalTreatments(List<TempBasal> basalTreatments) {
+    public void setBasalTreatments(List<VaultEntry> basalTreatments) {
         this.basalTreatments = new ArrayList<>(basalTreatments);
     }
 
@@ -105,8 +105,6 @@ public class OpenDiabetesAlgo implements Algorithm {
 
             if (deltaBg - deltaPrediction > 0) {
                 meal = createMeal(deltaBg - deltaPrediction, deltaTime, current.getTimestamp());
-//                System.out.println(meal.toString());
-
                 mealTreatments.add(meal);
             }
             current = glucose.remove(0);

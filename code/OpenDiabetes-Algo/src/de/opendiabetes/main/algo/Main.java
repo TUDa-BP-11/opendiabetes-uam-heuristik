@@ -3,7 +3,7 @@ package de.opendiabetes.main.algo;
 import com.github.sh0nk.matplotlib4j.Plot;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import de.opendiabetes.main.math.Predictions;
-import de.opendiabetes.main.math.TempBasalCalculator;
+import de.opendiabetes.main.math.BasalCalculator;
 import de.opendiabetes.main.util.Snippet;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
@@ -59,7 +59,7 @@ public class Main {
 
         }
 
-        List<TempBasal> basals = TempBasalCalculator.calcTemp(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
+        List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
 
         String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = parser.parseFile(entriesPath);
@@ -110,9 +110,9 @@ public class Main {
 
             basalValues = new ArrayList();
             basalTimes = new ArrayList();
-            for (TempBasal a : s.getBasals()) {
+            for (VaultEntry a : s.getBasals()) {
                 basalValues.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
-                basalTimes.add(a.getDate().getTime() / 1000.0);
+                basalTimes.add(a.getTimestamp().getTime() / 1000.0);
             }
             bolusValues = new ArrayList();
             bolusTimes = new ArrayList();

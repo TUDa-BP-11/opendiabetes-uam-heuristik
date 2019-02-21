@@ -39,7 +39,7 @@ public class NewAlgo implements Algorithm {
     private Profile profile;
     private List<VaultEntry> glucose;
     private List<VaultEntry> bolusTreatments;
-    private List<TempBasal> basalTreatments;
+    private List<VaultEntry> basalTreatments;
 
     public NewAlgo() {
         absorptionTime = 120;
@@ -102,7 +102,7 @@ public class NewAlgo implements Algorithm {
     }
 
     @Override
-    public void setBasalTreatments(List<TempBasal> basalTreatments) {
+    public void setBasalTreatments(List<VaultEntry> basalTreatments) {
         this.basalTreatments = new ArrayList<>(basalTreatments);
     }
 

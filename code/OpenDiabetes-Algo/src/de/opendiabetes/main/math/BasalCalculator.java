@@ -1,6 +1,5 @@
 package de.opendiabetes.main.math;
 
-import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -9,10 +8,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class TempBasalCalculator {
+public class BasalCalculator {
 
-    public static List<TempBasal> calcTemp(List<VaultEntry> basalTreatments, Profile profile) {
-        List<TempBasal> result = new ArrayList<>();
+    public static List<VaultEntry> calcBasals(List<VaultEntry> basalTreatments, Profile profile) {
+        List<VaultEntry> result = new ArrayList<>();
         if (profile.getBasalProfiles().size() < 1) {
             throw new IllegalArgumentException("profile must have at least 1 entry in basalProfiles.");
         }
@@ -26,20 +25,20 @@ public class TempBasalCalculator {
                     continue;
                 }
                 double value = entry.getValue() / entry.getValue2() - basalRate / 60;
-                result.add(new TempBasal(value, entry.getValue2(), entry.getTimestamp()));
+                result.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, entry.getTimestamp(), value, entry.getValue2()));
             }
         } else {
             for (VaultEntry entry : basalTreatments) {
                 if (!entry.getType().equals(VaultEntryType.BASAL_MANUAL)) {
                     throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL");
                 }
-                addTemp(entry, result, profile);
+                addBasal(entry, result, profile);
             }
         }
         return result;
     }
 
-    private static void addTemp(VaultEntry entry, List<TempBasal> list, Profile profile) {
+    private static void addBasal(VaultEntry entry, List<VaultEntry> list, Profile profile) {
         if (entry.getValue2() <= 0) {
             return;
         }
@@ -54,16 +53,16 @@ public class TempBasalCalculator {
             if (firstTime <= treatmentTime && treatmentTime < secTime) {
                 if (treatmentTime + entry.getValue2() <= secTime) {
                     double value = (entry.getValue() / entry.getValue2()) - (profileTime.get(i).getValue() / 60);
-                    list.add(new TempBasal(value, entry.getValue2(), entry.getTimestamp()));
+                    list.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, entry.getTimestamp(), value, entry.getValue2()));
                     return;
                 } else {
 
-                    long deltadur = secTime - treatmentTime;
-                    double deltaValue = entry.getValue() * deltadur / entry.getValue2();
-                    double newTempValue = (deltaValue / deltadur) - (profileTime.get(i).getValue() / 60);
+                    long newDuration = secTime - treatmentTime;
+                    double deltaValue = entry.getValue() * newDuration / entry.getValue2();
+                    double newValue = (deltaValue / newDuration) - (profileTime.get(i).getValue() / 60);
 
-                    list.add(new TempBasal(newTempValue, deltadur, entry.getTimestamp()));
-                    addTemp(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);
+                    list.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, entry.getTimestamp(), newValue, newDuration));
+                    addBasal(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(entry.getTimestamp().getTime() + newDuration * 60000), entry.getValue() - deltaValue, entry.getValue2() - newDuration), list, profile);
                     return;
                 }
             }
@@ -73,16 +72,16 @@ public class TempBasalCalculator {
 
         if (treatmentTime + entry.getValue2() <= secTime) {
             double value = entry.getValue() / entry.getValue2() - profileTime.get(profileTime.size() - 1).getValue() / 60;
-            list.add(new TempBasal(value, entry.getValue2(), entry.getTimestamp()));
+            list.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, entry.getTimestamp(), value, entry.getValue2()));
             return;
         } else {
 
-            long deltadur = secTime - treatmentTime;
-            double deltaValue = entry.getValue() * deltadur / entry.getValue2();
-            double newTempValue = deltaValue / deltadur - profileTime.get(profileTime.size() - 1).getValue() / 60;
+            long newDuration = secTime - treatmentTime;
+            double deltaValue = entry.getValue() * newDuration / entry.getValue2();
+            double newValue = deltaValue / newDuration - profileTime.get(profileTime.size() - 1).getValue() / 60;
 
-            list.add(new TempBasal(newTempValue, deltadur, entry.getTimestamp()));
-            addTemp(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(entry.getTimestamp().getTime() + deltadur * 60000), entry.getValue() - deltaValue, entry.getValue2() - deltadur), list, profile);
+            list.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, entry.getTimestamp(), newValue, newDuration));
+            addBasal(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(entry.getTimestamp().getTime() + newDuration * 60000), entry.getValue() - deltaValue, entry.getValue2() - newDuration), list, profile);
         }
     }
 }

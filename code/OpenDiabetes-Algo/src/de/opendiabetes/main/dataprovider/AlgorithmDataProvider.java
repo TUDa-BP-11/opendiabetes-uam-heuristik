@@ -1,6 +1,6 @@
 package de.opendiabetes.main.dataprovider;
 
-import de.opendiabetes.main.algo.TempBasal;
+
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 
@@ -24,9 +24,9 @@ public interface AlgorithmDataProvider {
     /**
      * Get a list of insulin bolus treatments for calculation
      *
-     * @return list of TempBasal entries
+     * @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
-    List<TempBasal> getBasalTratments();
+    List<VaultEntry> getBasalTratments();
 
     /**
      * @return The Nightscout profile to use

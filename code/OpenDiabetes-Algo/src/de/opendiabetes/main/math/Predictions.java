@@ -1,13 +1,13 @@
 package de.opendiabetes.main.math;
 
-import de.opendiabetes.main.algo.TempBasal;
+
 import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
 
 public class Predictions {
 
-    public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<TempBasal> basalTreatments,
+    public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments,
             double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
         double result = 0;
         for (VaultEntry meal : mealTreatments) {
@@ -26,12 +26,12 @@ public class Predictions {
             result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
 //            System.out.println("BGI: "+result);
         }
-        for (TempBasal basal : basalTreatments) {
-            long deltaTime = Math.round((time - basal.getDate().getTime()) / 60000.0);      //Time in minutes
+        for (VaultEntry basal : basalTreatments) {
+            long deltaTime = Math.round((time - basal.getTimestamp().getTime()) / 60000.0);      //Time in minutes
             if (deltaTime <= 0) {
                 break;
             }
-            result += deltatempBGI(deltaTime, basal.getValue(), insSensitivityFactor, insDuration, 0, basal.getDuration());
+            result += deltatempBGI(deltaTime, basal.getValue(), insSensitivityFactor, insDuration, 0, basal.getValue2());
 //            System.out.println("tempBGI: "+result);
         }
 

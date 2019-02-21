@@ -45,9 +45,9 @@ public interface Algorithm {
     /**
      * Provide a list of insulin bolus treatments for calculation
      *
-     * @param basalTreatments list of TempBasal treatments
+     * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
-    void setBasalTreatments(List<TempBasal> basalTreatments);
+    void setBasalTreatments(List<VaultEntry> basalTreatments);
 
     /**
      * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},

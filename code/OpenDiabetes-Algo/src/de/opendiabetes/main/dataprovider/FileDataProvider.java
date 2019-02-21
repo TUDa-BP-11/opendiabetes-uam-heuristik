@@ -1,8 +1,7 @@
 package de.opendiabetes.main.dataprovider;
 
-import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.main.exception.DataProviderException;
-import de.opendiabetes.main.math.TempBasalCalculator;
+import de.opendiabetes.main.math.BasalCalculator;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
@@ -29,7 +28,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
 
     private List<VaultEntry> entries;
     private List<VaultEntry> treatments;
-    private List<TempBasal> basals;
+    private List<VaultEntry> basals;
     private Profile profile;
 
     /**
@@ -111,7 +110,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
     }
 
     @Override
-    public List<TempBasal> getBasalTratments() {
+    public List<VaultEntry> getBasalTratments() {
         if (treatments == null)
             readTreatments();
         if (basals == null) {
@@ -119,7 +118,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
                     .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
-            basals = TempBasalCalculator.calcTemp(TreatmentMapper.adjustBasalTreatments(list), getProfile());
+            basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(list), getProfile());
         }
         return basals;
     }

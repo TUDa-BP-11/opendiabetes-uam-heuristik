@@ -1,6 +1,5 @@
 package de.opendiabetes.main.util;
 
-import de.opendiabetes.main.algo.TempBasal;
 import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.ArrayList;
@@ -18,11 +17,11 @@ public class Snippet {
 
     private final List<VaultEntry> entries = new ArrayList<>();
     private final List<VaultEntry> treatments = new ArrayList<>();
-    private final List<TempBasal> basals = new ArrayList<>();
+    private final List<VaultEntry> basals = new ArrayList<>();
 
     public static List<Snippet> getSnippets(List<VaultEntry> entries,
             List<VaultEntry> bolusTreatments,
-            List<TempBasal> basals,
+            List<VaultEntry> basals,
             long snippetLength,
             long insDuration,
             int n_snippets) {
@@ -33,7 +32,7 @@ public class Snippet {
         }
         entries.sort(Comparator.comparing(VaultEntry::getTimestamp));
         bolusTreatments.sort(Comparator.comparing(VaultEntry::getTimestamp));
-        basals.sort(Comparator.comparing(TempBasal::getDate));
+        basals.sort(Comparator.comparing(VaultEntry::getTimestamp));
 
         System.out.println("Found " + entries.size() + " entries in source");
         System.out.println("Found " + bolusTreatments.size() + " bolusTreatments in source");
@@ -71,7 +70,7 @@ public class Snippet {
                 s.addTreatment(e, insDuration);
             }
         }
-        for (TempBasal e : basals) {
+        for (VaultEntry e : basals) {
             for (Snippet s : snippets) {
                 s.addBasal(e, insDuration);
             }
@@ -89,7 +88,7 @@ public class Snippet {
         return treatments;
     }
 
-    public List<TempBasal> getBasals() {
+    public List<VaultEntry> getBasals() {
         return basals;
     }
 
@@ -101,8 +100,8 @@ public class Snippet {
         last = entry.getTimestamp().getTime();
     }
 
-    public void addBasal(TempBasal entry, long treatmentsInAdvance) {
-        if (entry.getDate().getTime() <= last && first - treatmentsInAdvance <= entry.getDate().getTime()) {
+    public void addBasal(VaultEntry entry, long treatmentsInAdvance) {
+        if (entry.getTimestamp().getTime() <= last && first - treatmentsInAdvance <= entry.getTimestamp().getTime()) {
             basals.add(entry);
         }
     }
