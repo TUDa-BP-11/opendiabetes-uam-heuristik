@@ -35,6 +35,7 @@ public class NSApi {
     }
 
     private HttpRequest get(String path) {
+        Main.logger().fine("Creating HTTP Request for " + path);
         return Unirest.get(host + path);
     }
 
