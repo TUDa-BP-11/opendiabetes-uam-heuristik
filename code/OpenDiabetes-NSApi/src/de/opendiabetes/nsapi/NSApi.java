@@ -18,6 +18,7 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO: UnirestExceptions in eigene Exceptions kapseln
 public class NSApi {
     private String host;
 
