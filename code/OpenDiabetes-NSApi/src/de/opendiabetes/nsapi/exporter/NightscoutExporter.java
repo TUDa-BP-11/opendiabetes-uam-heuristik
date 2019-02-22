@@ -39,6 +39,8 @@ public class NightscoutExporter extends Exporter {
      *
      * @param sink target for export (e.g., a file)
      * @param data data to be exported
+     * @throws InvalidDataException  if invalid entries are exported
+     * @throws NightscoutIOException if an exception occurs while writing to the sink
      */
     @Override
     public void exportData(OutputStream sink, List<VaultEntry> data) {
@@ -120,11 +122,10 @@ public class NightscoutExporter extends Exporter {
         try {
             JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
             json.toJson(array, writer);
-            writer.flush();
+            writer.close();
         } catch (IOException | JsonIOException e) {
             throw new NightscoutIOException("Exception while flushing stream", e);
         }
-        //TODO: close the sink?
     }
 
     @Override

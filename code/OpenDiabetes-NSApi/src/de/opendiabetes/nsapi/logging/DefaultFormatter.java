@@ -4,6 +4,9 @@ import java.util.Date;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+/**
+ * Formats the log records for friendly user output
+ */
 public class DefaultFormatter extends Formatter {
     protected Date date = new Date();
 

@@ -2,10 +2,10 @@ package de.opendiabetes.nsapi;
 
 import com.martiansoftware.jsap.*;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import de.opendiabetes.nsapi.exception.InvalidDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.logging.DebugFormatter;
 import de.opendiabetes.nsapi.logging.DefaultFormatter;
-import de.opendiabetes.nsapi.logging.VerboseFormatter;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -15,11 +15,10 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class Main {
     private static Logger logger;
-    private static boolean debug = false;
-    private static boolean verbose = false;
 
     // All parameters
     // Nightscout
@@ -95,14 +94,17 @@ public class Main {
     }
 
     public static void main(String[] args) throws UnirestException {
-        // parse arguments
+        // setup arguments
         JSAP jsap = new JSAP();
         registerArguments(jsap);
+
+        // send help message if executed without arguments
         if (args.length == 0) {
             logger.info("Argument summary:\n" + jsap.getHelp());
             return;
         }
 
+        // parse arguments
         JSAPResult config = jsap.parse(args);
         if (!config.success()) {
             logger.warning("Invalid arguments:");
@@ -116,9 +118,7 @@ public class Main {
         logger.setLevel(loglevel);
         logger.getHandlers()[0].setLevel(loglevel);
         if (config.getBoolean("debug"))
-            logger.getHandlers()[0].setFormatter(new DebugFormatter(config.getBoolean("verbose")));
-        else if (config.getBoolean("verbose"))
-            logger.getHandlers()[0].setFormatter(new VerboseFormatter());
+            logger.getHandlers()[0].setFormatter(new DebugFormatter());
         List<VaultEntry> data;
 
         // start
@@ -157,12 +157,36 @@ public class Main {
                 String file = config.getString("file");
                 try {
                     data = NSApiTools.loadDataFromFile(file, type, false);
-                } catch (NightscoutIOException e) {
-                    logger.log(Level.SEVERE, e, () -> "Exception while loading data from file.");
+                } catch (NightscoutIOException | InvalidDataException e) {
+                    logger.log(Level.SEVERE, e, e::getMessage);
                     return;
                 }
                 logger.info("Loaded " + data.size() + " entries from file");
-                //TODO: post data
+
+                List<VaultEntry> treatments = data.stream()
+                        .filter(e -> e.getType().equals(VaultEntryType.MEAL_MANUAL) ||
+                                e.getType().equals(VaultEntryType.BOLUS_NORMAL) ||
+                                e.getType().equals(VaultEntryType.BASAL_MANUAL)
+                        ).collect(Collectors.toList());
+                List<VaultEntry> entries = data.stream()
+                        .filter(e -> e.getType().equals(VaultEntryType.GLUCOSE_CGM))
+                        .collect(Collectors.toList());
+
+                try {
+                    if (!treatments.isEmpty())
+                        api.postTreatments(treatments);
+                    if (!entries.isEmpty())
+                        api.postEntries(entries);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, e, e::getMessage);
+                    return;
+                }
+                if (treatments.isEmpty())
+                    logger.info("Successfully uploaded " + entries.size() + " entries to your Nightscout server.");
+                else if (entries.isEmpty())
+                    logger.info("Successfully uploaded " + treatments.size() + " treatments to your Nightscout server.");
+                else
+                    logger.info("Successfully uploaded " + treatments.size() + " treatments and " + entries.size() + " entries to your Nightscout server.");
             }
         }
     }
