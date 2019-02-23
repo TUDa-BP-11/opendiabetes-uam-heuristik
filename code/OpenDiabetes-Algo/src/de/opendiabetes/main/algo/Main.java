@@ -71,11 +71,17 @@ public class Main {
         List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, 0 * insDuration * 60 * 1000, Integer.MAX_VALUE);
 
 //        Algorithm algo = new OpenDiabetesAlgo(absorptionTime, insDuration, profile);
-        NewAlgo algo = new NewAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo2 = new QRAlgo(absorptionTime, insDuration, profile);
 
         algo.setGlucoseMeasurements(entries);
         algo.setBolusTreatments(bolusTreatment);
         algo.setBasalTreatments(basals);
+
+        algo2.setGlucoseMeasurements(entries);
+        algo2.setBolusTreatments(bolusTreatment);
+        algo2.setBasalTreatments(basals);
+
 
         List<VaultEntry> meals;
         List<Double> basalValues;
@@ -104,7 +110,7 @@ public class Main {
             algo.setBasalTreatments(s.getBasals());
 
             System.out.println("calc :" + ++i + " with " + s.getEntries().size() + " entries, " + s.getBasals().size() + " basals, " + s.getTreatments().size() + " bolus");
-            meals = algo.calculateMeals2();
+            meals = algo2.calculateMeals();
 
             System.out.println("Found meals:" + meals.size());
 
