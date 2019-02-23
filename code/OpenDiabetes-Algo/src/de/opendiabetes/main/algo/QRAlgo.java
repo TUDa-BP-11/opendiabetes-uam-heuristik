@@ -56,7 +56,6 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
-//        Plot plt = Plot.create();
         for (int i = 0; i < numBG; i++) {
 
             nkbg = new ArrayRealVector();
@@ -68,10 +67,6 @@ public class QRAlgo extends Algorithm {
 
             current = glucose.get(i);
 
-            // debugging: break after 1 day
-//            if (current.getTimestamp().getTime() - firstTime > 1 * 24 * 60 * 60 * 1000) {
-//                break;
-//            }
             currentTime = current.getTimestamp().getTime() / 60000;
 
             if (currentTime > estimatedTimeAccepted) {
@@ -81,7 +76,6 @@ public class QRAlgo extends Algorithm {
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                         basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 int j = 0;
-//                while (j < numBG - i) {
 
                 for (; j < numBG - i; j++) {
 
@@ -93,8 +87,6 @@ public class QRAlgo extends Algorithm {
                                 basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
                         deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
-//                        deltaBg = next.getValue() - nextPrediction;
-//                        System.out.println("calculateMeals2(): " + deltaBg + " time: " + next.getTimestamp());
                         times = times.append(nextTime - currentTime);
                         lastTime = nextTime;
                         nkbg = nkbg.append(deltaBg);
@@ -104,10 +96,6 @@ public class QRAlgo extends Algorithm {
                         albg.add(next.getValue());
                     }
                 }
-
-//                plt.plot().addDates(alTimes).add(alNkbg);
-//                plt.plot().addDates(alTimes).add(albg).linestyle("dashed");
-//                plt.plot().addDates(alTimes).add(alPred).linestyle("dotted");
 
                 if (times.getDimension() >= 3) {
                     matrix = new Array2DRowRealMatrix(times.getDimension(), 2); //3
@@ -160,16 +148,9 @@ public class QRAlgo extends Algorithm {
 //                            }
 //                        }
 //                    }
-//                        }
-//                    }
                 }
             }
         }
-//        try {
-//            plt.show();
-//        } catch (IOException | PythonExecutionException ex) {
-//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//        }
         return mealTreatments;
     }
 }
