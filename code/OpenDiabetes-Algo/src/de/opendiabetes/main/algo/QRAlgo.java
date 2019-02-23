@@ -38,17 +38,11 @@ public class QRAlgo extends Algorithm {
 
         VaultEntry meal;
         VaultEntry next;
-        int numBG = glucose.size();
         VaultEntry current;
-
-        // debugging: break after 10 days
-        current = glucose.get(0);
-//        long firstTime = current.getTimestamp().getTime();
 
         long estimatedTime;
         long currentTime;
         long nextTime;
-        long lastTime = 0;
         double currentLimit;
         long estimatedTimeAccepted = 0l;
         double currentPrediction;
@@ -56,7 +50,7 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
-        for (int i = 0; i < numBG; i++) {
+        for (int i = 0; i < glucose.size(); i++) {
 
             nkbg = new ArrayRealVector();
             times = new ArrayRealVector();
@@ -75,11 +69,9 @@ public class QRAlgo extends Algorithm {
                 currentValue = current.getValue();
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                         basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                int j = 0;
+                for (int j = i; j < glucose.size(); j++) {
 
-                for (; j < numBG - i; j++) {
-
-                    next = glucose.get(i + j);
+                    next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
                     if (nextTime <= currentLimit) {
 
@@ -88,7 +80,6 @@ public class QRAlgo extends Algorithm {
 
                         deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
                         times = times.append(nextTime - currentTime);
-                        lastTime = nextTime;
                         nkbg = nkbg.append(deltaBg);
                         alTimes.add(nextTime * 60);
                         alNkbg.add(deltaBg + i);

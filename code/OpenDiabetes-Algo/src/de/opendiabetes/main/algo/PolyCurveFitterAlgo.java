@@ -17,7 +17,6 @@ import java.util.List;
 import static java.lang.Math.pow;
 
 /**
- *
  * @author anna
  */
 public class PolyCurveFitterAlgo extends Algorithm {
@@ -44,7 +43,6 @@ public class PolyCurveFitterAlgo extends Algorithm {
         pcf = pcf.withMaxIterations(100);
         VaultEntry meal;
         VaultEntry next;
-        int numBG = glucose.size();
         VaultEntry current;
 
         long estimatedTime;
@@ -58,7 +56,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
         double deltaBg;
 
         double startValue;
-        for (int i = 0; i < numBG; i++) {
+        for (int i = 0; i < glucose.size(); i++) {
             current = glucose.get(i);
 
             currentTime = current.getTimestamp().getTime() / 60000;
@@ -68,8 +66,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                         basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
-                for (int j = 0; j < numBG - i; j++) {
-                    next = glucose.get(i + j);
+                for (int j = i; j < glucose.size(); j++) {
+                    next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
                     if (nextTime <= currentLimit) {
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
