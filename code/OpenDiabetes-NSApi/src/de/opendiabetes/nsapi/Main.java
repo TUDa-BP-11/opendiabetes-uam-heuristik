@@ -9,6 +9,7 @@ import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.logging.ConsoleHandler;
@@ -18,53 +19,54 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Main {
-    private static Logger logger;
+
+    private static final Logger LOGGER;
 
     // All parameters
     // Nightscout
-    private static Parameter pHost = new FlaggedOption("host")
+    private static final Parameter P_HOST = new FlaggedOption("host")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('h')
             .setLongFlag("host")
-            .setHelp("Your Nightscout host URL. Make shure to include the port.");
-    private static Parameter pSecret = new FlaggedOption("secret")
+            .setHelp("Your Nightscout host URL. Make sure to include the port.");
+    private static final Parameter P_SECRET = new FlaggedOption("secret")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('s')
             .setLongFlag("secret")
             .setHelp("Your Nightscout API secret.");
     // Actions
-    private static Parameter pStatus = new Switch("status")
+    private static final Parameter P_STATUS = new Switch("status")
             .setLongFlag("status")
             .setHelp("Prints the Nightscout server status and exists.");
-    private static Parameter pPost = new FlaggedOption("post")
+    private static final Parameter P_POST = new FlaggedOption("post")
             .setStringParser(new PostParser())
             .setLongFlag("post")
             .setShortFlag('p')
             .setHelp("Uploads data to your Nightscout instance. Specify either cgm, bolus, meal, basal or all");
-    private static Parameter pGet = new FlaggedOption("get")
+    private static final Parameter P_GET = new FlaggedOption("get")
             .setStringParser(new PostParser())
             .setLongFlag("get")
             .setShortFlag('g')
             .setHelp("TODO");
-    private static Parameter pFile = new FlaggedOption("file")
+    private static final Parameter P_FILE = new FlaggedOption("file")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('f')
             .setLongFlag("file")
             .setHelp("Loads data from a file");
     // Debugging
-    private static Parameter pVerbose = new Switch("verbose")
+    private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
             .setHelp("Sets logging to verbose");
-    private static Parameter pDebug = new Switch("debug")
+    private static final Parameter P_DEBUG = new Switch("debug")
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
     static {
-        logger = Logger.getLogger(NSApi.class.getName());
+        LOGGER = Logger.getLogger(NSApi.class.getName());
         Handler handler = new ConsoleHandler();
         handler.setFormatter(new DefaultFormatter());
-        logger.addHandler(handler);
-        logger.setUseParentHandlers(false);
+        LOGGER.addHandler(handler);
+        LOGGER.setUseParentHandlers(false);
     }
 
     /**
@@ -75,21 +77,20 @@ public class Main {
     public static void registerArguments(JSAP jsap) {
         try {
             // Nightscout server
-            jsap.registerParameter(pHost);
-            jsap.registerParameter(pSecret);
+            jsap.registerParameter(P_HOST);
+            jsap.registerParameter(P_SECRET);
 
             // Actions
-            jsap.registerParameter(pStatus);
-            jsap.registerParameter(pPost);
-            jsap.registerParameter(pGet);
-            jsap.registerParameter(pFile);
+            jsap.registerParameter(P_STATUS);
+            jsap.registerParameter(P_POST);
+            jsap.registerParameter(P_GET);
+            jsap.registerParameter(P_FILE);
 
             // Debugging
-            jsap.registerParameter(pVerbose);
-            jsap.registerParameter(pDebug);
+            jsap.registerParameter(P_VERBOSE);
+            jsap.registerParameter(P_DEBUG);
         } catch (JSAPException e) {
-            logger.severe("Exception while registering arguments!");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
         }
     }
 
@@ -100,56 +101,57 @@ public class Main {
 
         // send help message if executed without arguments
         if (args.length == 0) {
-            logger.info("Argument summary:\n" + jsap.getHelp());
+            LOGGER.log(Level.INFO, "Argument summary:\n{0}", jsap.getHelp());
             return;
         }
 
         // parse arguments
         JSAPResult config = jsap.parse(args);
         if (!config.success()) {
-            logger.warning("Invalid arguments:");
-            config.getErrorMessageIterator().forEachRemaining(o -> logger.warning(o.toString()));
-            logger.info("For an argument explanation execute without arguments.");
+            LOGGER.log(Level.WARNING, "Invalid arguments:");
+            config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
+            LOGGER.info("For an argument explanation execute without arguments.");
             return;
         }
 
         // init
         Level loglevel = config.getBoolean("verbose") ? Level.ALL : Level.INFO;
-        logger.setLevel(loglevel);
-        logger.getHandlers()[0].setLevel(loglevel);
-        if (config.getBoolean("debug"))
-            logger.getHandlers()[0].setFormatter(new DebugFormatter());
+        LOGGER.setLevel(loglevel);
+        LOGGER.getHandlers()[0].setLevel(loglevel);
+        if (config.getBoolean("debug")) {
+            LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
+        }
         List<VaultEntry> data;
 
         // start
         if (config.contains("host")) {
             if (!config.contains("secret")) {
-                logger.warning("Please specify an API secret: " + pSecret.getSyntax());
+                LOGGER.log(Level.WARNING, "Please specify an API secret: {0}", P_SECRET.getSyntax());
                 return;
             }
             NSApi api = new NSApi(config.getString("host"), config.getString("secret"));
             Status status = api.getStatus();
             if (!status.isStatusOk()) {
-                logger.severe("Nightscout server status is not ok:\n" + getStatus(status));
+                LOGGER.log(Level.SEVERE, "Nightscout server status is not ok:\n{0}", getStatus(status));
                 return;
             }
             if (!status.isApiEnabled()) {
-                logger.severe("Nightscout api is not enabled:\n" + getStatus(status));
+                LOGGER.log(Level.SEVERE, "Nightscout api is not enabled:\n{0}", getStatus(status));
                 return;
             }
 
             if (config.getBoolean("status")) {
-                logger.info("Nightscout server information:\n" + getStatus(status));
+                LOGGER.log(Level.INFO, "Nightscout server information:\n{0}", getStatus(status));
                 return;
             }
 
             if (config.contains("post")) {
                 if (config.contains("get")) {
-                    logger.warning("Cannot post and get at the same time!");
+                    LOGGER.warning("Cannot post and get at the same time!");
                     return;
                 }
                 if (!config.contains("file")) {
-                    logger.warning("Please specify a file as your data source: " + pFile.getSyntax());
+                    LOGGER.log(Level.WARNING, "Please specify a file as your data source: {0}", P_FILE.getSyntax());
                     return;
                 }
                 VaultEntryType type = (VaultEntryType) config.getObject("post");
@@ -158,52 +160,56 @@ public class Main {
                 try {
                     data = NSApiTools.loadDataFromFile(file, type, false);
                 } catch (NightscoutIOException | InvalidDataException e) {
-                    logger.log(Level.SEVERE, e, e::getMessage);
+                    LOGGER.log(Level.SEVERE, e, e::getMessage);
                     return;
                 }
-                logger.info("Loaded " + data.size() + " entries from file");
+                LOGGER.log(Level.INFO, "Loaded {0} entries from file", data.size());
 
                 List<VaultEntry> treatments = data.stream()
-                        .filter(e -> e.getType().equals(VaultEntryType.MEAL_MANUAL) ||
-                                e.getType().equals(VaultEntryType.BOLUS_NORMAL) ||
-                                e.getType().equals(VaultEntryType.BASAL_MANUAL)
+                        .filter(e -> e.getType().equals(VaultEntryType.MEAL_MANUAL)
+                                || e.getType().equals(VaultEntryType.BOLUS_NORMAL)
+                                || e.getType().equals(VaultEntryType.BASAL_MANUAL)
                         ).collect(Collectors.toList());
                 List<VaultEntry> entries = data.stream()
                         .filter(e -> e.getType().equals(VaultEntryType.GLUCOSE_CGM))
                         .collect(Collectors.toList());
 
                 try {
-                    if (!treatments.isEmpty())
+                    if (!treatments.isEmpty()) {
                         api.postTreatments(treatments);
-                    if (!entries.isEmpty())
+                    }
+                    if (!entries.isEmpty()) {
                         api.postEntries(entries);
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e, e::getMessage);
+                    }
+                } catch (NightscoutIOException | InvalidDataException e) {
+                    LOGGER.log(Level.SEVERE, e, e::getMessage);
                     return;
                 }
-                if (treatments.isEmpty())
-                    logger.info("Successfully uploaded " + entries.size() + " entries to your Nightscout server.");
-                else if (entries.isEmpty())
-                    logger.info("Successfully uploaded " + treatments.size() + " treatments to your Nightscout server.");
-                else
-                    logger.info("Successfully uploaded " + treatments.size() + " treatments and " + entries.size() + " entries to your Nightscout server.");
+                if (treatments.isEmpty()) {
+                    LOGGER.log(Level.INFO, "Successfully uploaded {0} entries to your Nightscout server.", entries.size());
+                } else if (entries.isEmpty()) {
+                    LOGGER.log(Level.INFO, "Successfully uploaded {0} treatments to your Nightscout server.", treatments.size());
+                } else {
+                    LOGGER.log(Level.INFO, "Successfully uploaded {0} treatments and {1} entries to your Nightscout server.", new Object[]{treatments.size(), entries.size()});
+                }
             }
         }
     }
 
     private static String getStatus(Status status) {
-        return "name:          " + status.getName() + "\n" +
-                "version:       " + status.getVersion() + "\n" +
-                "server status: " + status.getStatus() + "\n" +
-                "api enabled:   " + status.isApiEnabled() + "\n" +
-                "server time:   " + status.getServerTime();
+        return "name:          " + status.getName() + "\n"
+                + "version:       " + status.getVersion() + "\n"
+                + "server status: " + status.getStatus() + "\n"
+                + "api enabled:   " + status.isApiEnabled() + "\n"
+                + "server time:   " + status.getServerTime();
     }
 
     public static Logger logger() {
-        return logger;
+        return LOGGER;
     }
 
     private static class PostParser extends StringParser {
+
         @Override
         public Object parse(String s) throws ParseException {
             switch (s.toLowerCase()) {
