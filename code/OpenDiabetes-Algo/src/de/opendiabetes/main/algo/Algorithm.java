@@ -74,7 +74,7 @@ public abstract class Algorithm {
      * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
-        this.basalTreatments = bolusTreatments;
+        this.bolusTreatments = bolusTreatments;
     }
 
     /**
