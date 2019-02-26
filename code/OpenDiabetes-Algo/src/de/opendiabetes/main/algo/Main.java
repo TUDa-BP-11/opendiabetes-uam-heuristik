@@ -70,7 +70,7 @@ public class Main {
 
         List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, 0 * insDuration * 60 * 1000, Integer.MAX_VALUE);
 
-//        Algorithm algo = new OpenDiabetesAlgo(absorptionTime, insDuration, profile);
+        //Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
         Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
         Algorithm algo2 = new QRAlgo(absorptionTime, insDuration, profile);
 
