@@ -9,7 +9,12 @@ import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -58,6 +63,16 @@ public class Main {
             .setShortFlag('o')
             .setLongFlag("overwrite")
             .setHelp("Overwrite existing files");
+    private static final Parameter P_LATEST = new FlaggedOption("latest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("latest")
+            .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+            .setHelp("The latest date and time to load data");
+    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("oldest")
+            .setDefault("1970-01-01T00:00:00.000Z")
+            .setHelp("The oldest date and time to load data");
     // Debugging
     private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
@@ -91,6 +106,8 @@ public class Main {
             jsap.registerParameter(P_GET);
             jsap.registerParameter(P_FILE);
             jsap.registerParameter(P_OVERWRITE);
+            jsap.registerParameter(P_LATEST);
+            jsap.registerParameter(P_OLDEST);
 
             // Debugging
             jsap.registerParameter(P_VERBOSE);
@@ -201,7 +218,6 @@ public class Main {
             return;
         }
 
-        //TODO: allow latest and oldest
         if (config.contains("get")) {
             if (!config.contains("file")) {
                 LOGGER.log(Level.WARNING, "Please specify a file as your data target: %s", P_FILE.getSyntax());
@@ -210,18 +226,21 @@ public class Main {
 
             data = new ArrayList<>();
             Set<VaultEntryType> types = (Set<VaultEntryType>) config.getObject("get");
+            TemporalAccessor latest = (TemporalAccessor) config.getObject("latest");
+            TemporalAccessor oldest = (TemporalAccessor) config.getObject("oldest");
             try {
                 if (types.contains(VaultEntryType.GLUCOSE_CGM))
-                    data.addAll(api.getEntries().getVaultEntries());
+                    data.addAll(api.getEntries(latest, oldest, 100));
                 if (types.contains(VaultEntryType.BOLUS_NORMAL)
                         || types.contains(VaultEntryType.MEAL_MANUAL)
                         || types.contains(VaultEntryType.BASAL_MANUAL))
-                    data.addAll(api.getTreatments().getVaultEntries());
+                    data.addAll(api.getTreatments(latest, oldest, 100));
             } catch (NightscoutIOException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
             data = NSApiTools.filterData(data, types);
+            data.sort(new SortVaultEntryByDate().reversed());
             try {
                 NSApiTools.writeDataToFile(config.getString("file"), data, config.getBoolean("overwrite"));
             } catch (NightscoutIOException e) {
@@ -273,6 +292,17 @@ public class Main {
                 }
             }
             return types;
+        }
+    }
+
+    private static class IsoDateTimeParser extends StringParser {
+        @Override
+        public Object parse(String s) throws ParseException {
+            try {
+                return DateTimeFormatter.ISO_DATE_TIME.parse(s);
+            } catch (DateTimeParseException e) {
+                throw new ParseException(e);
+            }
         }
     }
 }
