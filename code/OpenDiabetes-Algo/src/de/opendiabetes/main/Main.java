@@ -1,7 +1,7 @@
 package de.opendiabetes.main;
 
 import de.opendiabetes.main.algo.Algorithm;
-import de.opendiabetes.main.algo.OpenDiabetesAlgo;
+import de.opendiabetes.main.algo.MinimumAlgo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.main.dataprovider.FileDataProvider;
@@ -213,7 +213,7 @@ public class Main {
         Algorithm algorithm;
         switch (algorithmName.toLowerCase()) {
             case "demo":
-                algorithm = new OpenDiabetesAlgo(absorptionTime, insulinDuration, dataProvider);
+                algorithm = new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
                 break;
             default:
                 Log.logError("Unknown algorithm " + algorithmName);
