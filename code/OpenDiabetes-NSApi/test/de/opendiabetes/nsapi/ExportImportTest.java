@@ -136,7 +136,7 @@ public class ExportImportTest {
 
     private static class ExceptionOutputStream extends ByteArrayOutputStream {
         @Override
-        public void flush() throws IOException {
+        public void close() throws IOException {
             throw new IOException();
         }
     }

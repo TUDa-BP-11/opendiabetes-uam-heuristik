@@ -121,6 +121,7 @@ public class NightscoutExporter extends Exporter {
 
         try {
             JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
+            writer.setIndent("  ");
             json.toJson(array, writer);
             writer.close();
         } catch (IOException | JsonIOException e) {
