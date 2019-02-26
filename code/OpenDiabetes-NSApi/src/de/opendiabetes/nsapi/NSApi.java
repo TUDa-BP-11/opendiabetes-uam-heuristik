@@ -5,6 +5,11 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
+import de.opendiabetes.nsapi.exception.InvalidDataException;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.Status;
@@ -12,16 +17,18 @@ import de.opendiabetes.parser.StatusParser;
 import de.opendiabetes.vault.container.VaultEntry;
 import org.apache.commons.codec.digest.DigestUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO: UnirestExceptions in eigene Exceptions kapseln
 public class NSApi {
+    private final static NightscoutExporter EXPORTER = new NightscoutExporter();
+    private final static NightscoutImporter IMPORTER = new NightscoutImporter();
+
     private String host;
 
     /**
@@ -148,8 +155,32 @@ public class NSApi {
      * @return whatever the NightScout API returns, as JSON String
      * @throws UnirestException if an exception occurs during the request
      */
+    //TODO: rewrite
     public JsonNode postEntries(String entries) throws UnirestException {
         return post("entries", entries);
+    }
+
+    /**
+     * Sends a POST request with the given entries as its payload. Inserts all entries into the database.
+     * Uses {@link NightscoutExporter} to export the data.
+     *
+     * @param entries data
+     * @throws NightscoutIOException if an exception occurs while sending the data to the Nightscout server
+     * @throws InvalidDataException  if an exception occurs while exporting the data
+     */
+    public void postEntries(List<VaultEntry> entries) throws NightscoutIOException, InvalidDataException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        EXPORTER.exportData(stream, entries);
+        HttpResponse<String> response;
+        String body = new String(stream.toByteArray());
+        try {
+            response = Unirest.post(host + "entries")
+                    .body(body).asString();
+        } catch (UnirestException e) {
+            throw new NightscoutIOException("Exception occured while sending the request", e);
+        }
+        if (response.getStatus() != 200)
+            throw new NightscoutServerException(response);
     }
 
     /**
@@ -183,8 +214,33 @@ public class NSApi {
      * @return whatever the NightScout API returns, as JSON String
      * @throws UnirestException if an exception occurs during the request
      */
+    //TODO: rewrite
     public JsonNode postTreatments(String treatments) throws UnirestException {
         return post("treatments", treatments);
+    }
+
+    /**
+     * Sends a POST request with the given treatments as its payload. Inserts all treatments into the database.
+     * Uses {@link NightscoutExporter} to export the data.
+     *
+     * @param treatments data
+     * @return the result of this request
+     * @throws InvalidDataException      if an exception occurs while exporting the data
+     * @throws NightscoutIOException     if an exception occurs while sending the data to the Nightscout server
+     * @throws NightscoutServerException if the server returns an unsuccessful HTTP status code
+     */
+    public void postTreatments(List<VaultEntry> treatments) throws NightscoutIOException, InvalidDataException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        EXPORTER.exportData(stream, treatments);
+        HttpResponse<String> response;
+        try {
+            response = Unirest.post(host + "treatments")
+                    .body(stream.toByteArray()).asString();
+        } catch (UnirestException e) {
+            throw new NightscoutIOException("Exception occured while sending the request", e);
+        }
+        if (response.getStatus() != 200)
+            throw new NightscoutServerException(response);
     }
 
     /**
@@ -227,12 +283,5 @@ public class NSApi {
      */
     public void close() throws IOException {
         Unirest.shutdown();
-    }
-
-    public static void main(String[] args) {
-        System.out.println("System.currentTimeMillis()  " + System.currentTimeMillis());
-        System.out.println("Instant.now()               " + Instant.now().toString());
-        System.out.println("LocalDateTime.now()         " + LocalDateTime.now().toString());
-        System.out.println("ZonedDateTime.now()         " + ZonedDateTime.now().toString());
     }
 }
