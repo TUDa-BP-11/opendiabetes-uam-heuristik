@@ -123,7 +123,6 @@ public class QRAlgo extends Algorithm {
 //                        } else {
 //                            break;
 //                        }
-
 //                        int j_max = mealTreatments.size();
 //                        double tempValue = estimatedCarbs;
 //                        ArrayList<VaultEntry> temps = new ArrayList<>();
