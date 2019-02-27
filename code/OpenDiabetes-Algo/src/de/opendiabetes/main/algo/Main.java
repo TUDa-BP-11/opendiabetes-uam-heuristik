@@ -2,12 +2,14 @@ package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.CGMPlotter;
 import de.opendiabetes.main.math.BasalCalculator;
+import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.main.util.Snippet;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.util.ArrayList;
@@ -62,17 +64,49 @@ public class Main {
             e.setValue(e.getValue());
         }
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, 0 * insDuration * 60 * 1000, 1); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, 0 * insDuration * 60 * 1000, 10); //Integer.MAX_VALUE
 
-        //Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
-        Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
+//        Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
 
-
-        List<VaultEntry> meals = new ArrayList<>();
-
+        List<VaultEntry> meals;
         int i = 0;
-        for (Snippet s : snippets) {
+
+        CGMPlotter cgpm = new CGMPlotter(true);
+
+// QR gefiltert
+//Bias: -0.8028490815722585
+//RootMeanSquareError: 9.374997218912611
+//Varianz: 87.24600620683776
+//Standardabweichung: 9.340557060841594
+
+// QR ungefiltert
+//Bias: 0.9211518031116709
+//RootMeanSquareError: 8.38324840630532
+//Varianz: 69.4303331974448
+//Standardabweichung: 8.332486615497489
+
+// PCF time contraint
+//Bias: -1.433234557714322
+//RootMeanSquareError: 21.317030666853903
+//Varianz: 452.36163515416314
+//Standardabweichung: 21.268794868401997
+
+// PCF unconstrained
+//Bias: 0.79567402861145
+//RootMeanSquareError: 41.82931286794456
+//Varianz: 1749.0583178445856
+//Standardabweichung: 41.82174455764113
+
+// Min positive
+//Bias: 118.04564100165312
+//RootMeanSquareError: 259.385428933642
+//Varianz: 53346.02738359828
+//Standardabweichung: 230.96758946570463
+
+
+for (Snippet s : snippets) {
 
             algo.setGlucoseMeasurements(s.getEntries());
             algo.setBolusTreatments(s.getTreatments());
@@ -83,12 +117,14 @@ public class Main {
 
             System.out.println("Found meals:" + meals.size());
 
-            CGMPlotter cgpm = new CGMPlotter();
             cgpm.plot(s, meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
-//            cgpm.plotError(s, meals, profile.getSensitivity(), insDuration,
-//                    profile.getCarbratio(), absorptionTime);
+            cgpm.plotError(s, meals, profile.getSensitivity(), insDuration,
+                    profile.getCarbratio(), absorptionTime);
         }
+
+        cgpm.showAll();
+
 //        //FOR LATER USE
 //        // query data
 //        List<VaultEntry> data = VaultDao.getInstance().queryAllVaultEntries();

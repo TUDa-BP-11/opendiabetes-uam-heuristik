@@ -107,7 +107,7 @@ public class QRAlgo extends Algorithm {
                     estimatedTime = currentTime;
                     double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
 
-                    System.out.println("Date: " + new Date(estimatedTime * 60000) + " Carbs: " + estimatedCarbs);
+//                    System.out.println("Date: " + new Date(estimatedTime * 60000) + " Carbs: " + estimatedCarbs);
 //                    if (currentTime - estimatedTime < absorptionTime / 2
 //                            && estimatedTime < lastTime) {
 //                        if (estimatedCarbs > 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
@@ -142,5 +142,22 @@ public class QRAlgo extends Algorithm {
             }
         }
         return mealTreatments;
+//        ArrayList<VaultEntry> mealsMA = new ArrayList<>();
+//        double mealValue;
+//        double mealValue0 = 0;
+//        double mealValue1 = 0;
+//        double mealValue2 = 0;
+//
+//        for (VaultEntry a : mealTreatments) {
+//            
+//            mealValue0 = mealValue1;
+//            mealValue1 = mealValue2;
+//            mealValue2 = a.getValue();
+//            mealValue = (mealValue0 + mealValue1 + mealValue2) / 3;
+//            mealsMA.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, a.getTimestamp(), mealValue));
+//
+//        }
+//
+//        return mealsMA;
     }
 }

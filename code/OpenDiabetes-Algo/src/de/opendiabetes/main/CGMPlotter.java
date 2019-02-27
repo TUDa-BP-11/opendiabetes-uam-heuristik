@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.opendiabetes.main;
 
 import com.github.sh0nk.matplotlib4j.Plot;
@@ -12,7 +7,6 @@ import de.opendiabetes.main.util.Snippet;
 import de.opendiabetes.vault.container.VaultEntry;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -26,12 +20,27 @@ public class CGMPlotter {
 
     Plot plt;
     Plot errorPlt;
+    Plot histPlt;
+    List<Double> errorValues = new ArrayList<>();
+    boolean plotPlot = false;
+    boolean plotError = false;
+    boolean plotHist = false;
+
+    public CGMPlotter() {
+        plt = Plot.create();
+        errorPlt = Plot.create();
+
+    }
+
+    public CGMPlotter(boolean plotHist) {
+        this();
+        this.plotHist = plotHist;
+    }
 
     public void plot(Snippet s, List<VaultEntry> meals,
             double sensitivity, int insDuration,
             double carbratio, int absorptionTime) {
-        plt = Plot.create();
-
+        plotPlot = true;
         List<Double> basalValues;
         List<Double> basalTimes;
         List<Double> bolusValues;
@@ -47,58 +56,52 @@ public class CGMPlotter {
 
         basalValues = new ArrayList();
         basalTimes = new ArrayList();
-        s.getBasals().stream().map((a) -> {
+        for (VaultEntry a : s.getBasals()) {
             basalValues.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
             basalTimes.add(a.getTimestamp().getTime() / 1000.0);
-            return a;
-        });
+        }
+
         bolusValues = new ArrayList();
         bolusTimes = new ArrayList();
-        s.getTreatments().stream().map((a) -> {
+        for (VaultEntry a : s.getTreatments()) {
             bolusValues.add(a.getValue()); // -a.getValue() * profile.getSensitivity()
             bolusTimes.add(a.getTimestamp().getTime() / 1000.0);
-            return a;
-        });
+        }
 
         mealValues = new ArrayList();
         mealTimes = new ArrayList();
-        meals.stream().map((a) -> {
+        for (VaultEntry a : meals) {
             mealValues.add(a.getValue()); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
             mealTimes.add(a.getTimestamp().getTime() / 1000.0);
-            return a;
-        });
+        }
 
         bgTimes = new ArrayList();
         bgValues = new ArrayList();
         algo2Values = new ArrayList();
         startValue = s.getEntries().get(0).getValue();
-        s.getEntries().stream().map((ve) -> {
-            algo2Values.add(startValue + Predictions.predict(ve.getTimestamp().getTime(),
+        for (VaultEntry ve : s.getEntries()) {
+            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, s.getTreatments(), s.getBasals(),
                     sensitivity, insDuration,
-                    carbratio, absorptionTime));
+                    carbratio, absorptionTime);
+
+            algo2Values.add(startValue + algoPredict);
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
             bgValues.add(ve.getValue());
-            return ve;
-        });
+        }
 
         plt.plot().addDates(bgTimes).add(bgValues).color("blue"); //.label("Testlabel")
         plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").marker("x");
         plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").marker("o");
         plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").marker("o");
         plt.plot().addDates(bgTimes).add(algo2Values).linestyle("--");//.color("cyan").linestyle("--");
-        try {
-            plt.show();
-        } catch (IOException | PythonExecutionException ex) {
-            Logger.getLogger(de.opendiabetes.main.CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
     }
 
     public void plotError(Snippet s, List<VaultEntry> meals,
             double sensitivity, int insDuration,
             double carbratio, int absorptionTime) {
-        errorPlt = Plot.create();
-
+        plotError = true;
         double startTime;
         double startValue;
 
@@ -109,26 +112,57 @@ public class CGMPlotter {
         errorValues = new ArrayList();
         startValue = s.getEntries().get(0).getValue();
         startTime = s.getEntries().get(0).getTimestamp().getTime();
-        s.getEntries().stream().map((ve) -> {
+        for (VaultEntry ve : s.getEntries()) {
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, s.getTreatments(), s.getBasals(),
                     sensitivity, insDuration,
                     carbratio, absorptionTime);
-            errorValues.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100); 
+            errorValues.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
             errorTimes.add((ve.getTimestamp().getTime() - startTime) / 1000.0);
-            return ve;
-        });
+        }
 
         errorPlt.plot().addDates(errorTimes).add(errorValues);//.color("magenta").linestyle("--");
         errorPlt.plot().addDates(errorTimes).add(Collections.nCopies(errorValues.size(), 10)).color("black");//.linestyle("--");
         errorPlt.plot().addDates(errorTimes).add(Collections.nCopies(errorValues.size(), -10)).color("black");
+        if (plotHist) {
+            this.errorValues.addAll(errorValues);
+        }
+    }
 
+    public void plotHist(List<Double> data) {
+    }
+
+    public void showAll() {
         try {
-            errorPlt.show();
+            if (plotPlot) {
+                plt.show();
+            }
+            if (plotError) {
+                errorPlt.show();
+            }
+            if (plotHist) {
+
+                double MeanError = 0;
+                double MeanSquareError = 0;
+                int N = errorValues.size();
+                for (double d : errorValues) {
+                    MeanError += d;
+                    MeanSquareError += d * d;
+                }
+                MeanError /= N;
+                MeanSquareError /= N;
+                double rms = Math.sqrt(MeanSquareError);
+                System.out.println("Bias: " + MeanError);
+                System.out.println("RootMeanSquareError: " + rms);
+                System.out.println("Varianz: " + (MeanSquareError - MeanError * MeanError));
+                System.out.println("Standardabweichung: " + Math.sqrt(MeanSquareError - MeanError * MeanError));
+
+                histPlt = Plot.create();
+                histPlt.hist().add(errorValues).bins(100);
+                histPlt.show();
+            }
         } catch (IOException | PythonExecutionException ex) {
             Logger.getLogger(de.opendiabetes.main.CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
-
 }
