@@ -133,7 +133,7 @@ public class Main {
         if (!config.success()) {
             LOGGER.log(Level.WARNING, "Invalid arguments:");
             config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
-            LOGGER.info("For an argument explanation execute without arguments.");
+            LOGGER.info("For an argument summary execute without arguments.");
             return;
         }
 

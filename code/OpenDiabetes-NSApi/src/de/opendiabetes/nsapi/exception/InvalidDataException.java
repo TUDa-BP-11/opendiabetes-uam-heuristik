@@ -1,7 +1,7 @@
 package de.opendiabetes.nsapi.exception;
 
 /**
- * An exception representing that invalid data was used
+ * Representing that invalid data was provided.
  */
 public class InvalidDataException extends RuntimeException {
     public InvalidDataException(String message) {
