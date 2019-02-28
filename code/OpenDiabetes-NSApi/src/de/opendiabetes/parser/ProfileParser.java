@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ProfileParser implements Parser<Profile> {
     /**
-     * Parsers a profile. The profile has to contain at least the following fields:<br>
+     * Parses a profile. The profile has to contain at least the following fields:<br>
      * - timezone <br>
      * - sens <br>
      * - carbratio <br>
