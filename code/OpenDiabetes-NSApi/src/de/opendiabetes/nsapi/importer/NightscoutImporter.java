@@ -53,7 +53,6 @@ public class NightscoutImporter extends Importer {
         } catch (JsonSyntaxException e) {
             throw new InvalidDataException("invalid JSON syntax", e);
         }
-        //TODO: close the source?
 
         if (!element.isJsonArray())
             throw new InvalidDataException("source is not an array");

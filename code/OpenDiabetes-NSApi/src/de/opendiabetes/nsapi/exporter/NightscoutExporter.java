@@ -42,6 +42,7 @@ public class NightscoutExporter extends Exporter {
      * @throws InvalidDataException  if invalid entries are exported
      * @throws NightscoutIOException if an exception occurs while writing to the sink
      */
+    //TODO: merge entries within x minutes
     @Override
     public void exportData(OutputStream sink, List<VaultEntry> data) {
         JsonArray array = new JsonArray();
