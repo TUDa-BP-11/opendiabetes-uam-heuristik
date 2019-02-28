@@ -66,7 +66,8 @@ public class Main {
 
         List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, 0 * insDuration * 60 * 1000, 10); //Integer.MAX_VALUE
 
-        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
+//        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
 
