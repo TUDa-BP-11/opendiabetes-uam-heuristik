@@ -8,6 +8,7 @@ import de.opendiabetes.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -77,15 +79,43 @@ public class ExportImportTest {
 
     @Test
     public void testExport() throws IOException {
+        Date date = new Date();
         List<VaultEntry> entries = Arrays.asList(
-                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 80),
-                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 90),
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(), 10),
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(), 20),
-                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(), 200),
-                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(), 250),
-                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(), 0.8, 30),
-                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(), 0.6348762378, 20)
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, 80),
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(date.getTime() - 5 * 60 * 1000), 90),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(date.getTime() - 10 * 60 * 1000), 10),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(date.getTime() - 15 * 60 * 1000), 20),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 20 * 60 * 1000), 200),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 25 * 60 * 1000), 250),
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(date.getTime() - 30 * 60 * 1000), 0.8, 30),
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(date.getTime() - 35 * 60 * 1000), 0.6348762378, 20)
+        );
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        // check that order is enforced
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(stream, entries.stream()
+                .sorted(new SortVaultEntryByDate())
+                .collect(Collectors.toList())));
+        exporter.exportData(stream, entries);
+        stream.close();
+
+        InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(stream.toByteArray()));
+        JsonElement element = new JsonParser().parse(reader);
+        reader.close();
+
+        assertTrue(element.isJsonArray());
+        JsonArray array = element.getAsJsonArray();
+        assertEquals(entries.size(), array.size());
+    }
+
+    @Test
+    public void testExportMerge() throws IOException {
+        Date date = new Date();
+        List<VaultEntry> entries = Arrays.asList(
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, 80),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 10),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 200),
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, date, 0.8, 30),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 5 * 60 * 1000), 250)
         );
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         exporter.exportData(stream, entries);
@@ -97,7 +127,19 @@ public class ExportImportTest {
 
         assertTrue(element.isJsonArray());
         JsonArray array = element.getAsJsonArray();
-        assertEquals(entries.size(), array.size());
+        assertEquals(entries.size() - 1, array.size());
+
+        // check that trying to merge two bolus or two meal events triggers an exception
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ByteArrayOutputStream(), Arrays.asList(
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 10),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 12),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 250)
+        )));
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ByteArrayOutputStream(), Arrays.asList(
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 10),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 250),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 180)
+        )));
     }
 
     @Test
@@ -124,7 +166,7 @@ public class ExportImportTest {
             "[{}",  // invalid syntax
             "{}",   // not an array
             "[{}]", // invalid entry type (no type)
-            "[{\"eventType\":\"Meal Bolus\",\"carbs\":\"invalid\",\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}]" ,    // invalid carbs type (not double)
+            "[{\"eventType\":\"Meal Bolus\",\"carbs\":\"invalid\",\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}]",    // invalid carbs type (not double)
             "[{\"eventType\":\"Meal Bolus\",\"carbs\":200.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"invalid date\",\"enteredBy\":\"UAMALGO\"}]"  // invalid timestamp
     })
     public void testImportData(String data) throws IOException {

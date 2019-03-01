@@ -20,6 +20,7 @@ import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.Iterator;
 
 /**
  * This class implements a comparator for VaultEntry timestamp.
@@ -39,4 +40,24 @@ public class SortVaultEntryByDate implements Comparator<VaultEntry>, Serializabl
         return entry1.getTimestamp().compareTo(entry2.getTimestamp());
     }
 
+    /**
+     * Checks whether the given iterable is sorted
+     *
+     * @param iterable an iterable containing VaultEntries
+     * @return true if the iterable is sorted
+     */
+    public boolean isSorted(Iterable<VaultEntry> iterable, boolean reversed) {
+        Iterator<VaultEntry> iterator = iterable.iterator();
+        if (!iterator.hasNext())
+            return true;
+        VaultEntry entry = iterator.next();
+        while (iterator.hasNext()) {
+            VaultEntry next = iterator.next();
+            int compare = this.compare(entry, next);
+            if (reversed && compare < 0 || !reversed && compare > 0)
+                return false;
+            entry = next;
+        }
+        return true;
+    }
 }
