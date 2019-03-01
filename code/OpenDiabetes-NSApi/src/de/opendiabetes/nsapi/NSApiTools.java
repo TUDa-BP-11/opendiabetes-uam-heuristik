@@ -25,7 +25,7 @@ public class NSApiTools {
      * @return the loaded vault entries
      * @throws NightscoutIOException if the file does not exist, is a directory, cannot be read, or any other IOException occurs during execution
      */
-    public static List<VaultEntry> loadDataFromFile(String path) {
+    public static List<VaultEntry> loadDataFromFile(String path) throws NightscoutIOException {
         return loadDataFromFile(path, false);
     }
 
@@ -37,7 +37,7 @@ public class NSApiTools {
      * @return the loaded vault entries
      * @throws NightscoutIOException if the file does not exist, is a directory, cannot be read, or any other IOException occurs during execution
      */
-    public static List<VaultEntry> loadDataFromFile(String path, boolean sort) {
+    public static List<VaultEntry> loadDataFromFile(String path, boolean sort) throws NightscoutIOException {
         return loadDataFromFile(path, null, sort);
     }
 
@@ -50,7 +50,7 @@ public class NSApiTools {
      * @return the loaded vault entries
      * @throws NightscoutIOException if the file does not exist, is a directory, cannot be read, or any other IOException occurs during execution
      */
-    public static List<VaultEntry> loadDataFromFile(String path, VaultEntryType type, boolean sort) {
+    public static List<VaultEntry> loadDataFromFile(String path, VaultEntryType type, boolean sort) throws NightscoutIOException {
         File file = new File(path);
 
         if (!file.exists())
@@ -115,7 +115,7 @@ public class NSApiTools {
      * @throws NightscoutIOException if the file is a directory, or already exists, or the file cannot be
      *                               written to for any reason, or an exception occurs while writing to the file
      */
-    public static void writeDataToFile(String path, List<VaultEntry> data) {
+    public static void writeDataToFile(String path, List<VaultEntry> data) throws NightscoutIOException {
         writeDataToFile(path, data, false);
     }
 
@@ -128,7 +128,7 @@ public class NSApiTools {
      * @throws NightscoutIOException if the file is a directory, or already exists and overwrite is set to false,
      *                               or the file cannot be written to for any reason, or an exception occurs while writing to the file
      */
-    public static void writeDataToFile(String path, List<VaultEntry> data, boolean overwrite) {
+    public static void writeDataToFile(String path, List<VaultEntry> data, boolean overwrite) throws NightscoutIOException {
         File file = new File(path);
 
         if (file.isDirectory())

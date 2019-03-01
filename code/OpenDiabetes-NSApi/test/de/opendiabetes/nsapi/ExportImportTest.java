@@ -3,8 +3,7 @@ package de.opendiabetes.nsapi;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -105,19 +104,19 @@ public class ExportImportTest {
     public void testExportType() throws IOException {
         VaultEntry entry = new VaultEntry(VaultEntryType.STRESS, new Date(), 10);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        assertThrows(InvalidDataException.class, () -> exporter.exportData(stream, Collections.singletonList(entry)));
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(stream, Collections.singletonList(entry)));
         stream.close();
     }
 
     @Test
     public void testExportIOError() {
         VaultEntry entry = new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 10);
-        assertThrows(NightscoutIOException.class, () -> exporter.exportData(new ExceptionOutputStream(), Collections.singletonList(entry)));
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ExceptionOutputStream(), Collections.singletonList(entry)));
     }
 
     @Test
     public void testImportIOError() {
-        assertThrows(NightscoutIOException.class, () -> importer.importData(new ExceptionInputStream()));
+        assertThrows(NightscoutDataException.class, () -> importer.importData(new ExceptionInputStream()));
     }
 
     @ParameterizedTest
@@ -130,7 +129,7 @@ public class ExportImportTest {
     })
     public void testImportData(String data) throws IOException {
         ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
-        assertThrows(InvalidDataException.class, () -> importer.importData(stream));
+        assertThrows(NightscoutDataException.class, () -> importer.importData(stream));
         stream.close();
     }
 

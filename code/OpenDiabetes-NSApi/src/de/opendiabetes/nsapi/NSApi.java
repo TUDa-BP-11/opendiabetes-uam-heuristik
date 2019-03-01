@@ -1,33 +1,32 @@
 package de.opendiabetes.nsapi;
 
 import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
+import com.mashape.unirest.request.HttpRequestWithBody;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
-import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.parser.StatusParser;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.util.IOStreamUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: UnirestExceptions in eigene Exceptions kapseln
 public class NSApi {
     private final static NightscoutExporter EXPORTER = new NightscoutExporter();
-    private final static NightscoutImporter IMPORTER = new NightscoutImporter();
 
     private String host;
 
@@ -44,29 +43,92 @@ public class NSApi {
         Unirest.setDefaultHeader("API-SECRET", DigestUtils.sha1Hex(secret));
     }
 
+    /**
+     * Closes the connection to the NightScout API
+     *
+     * @throws IOException if an exception occurs while closing the connection
+     */
+    public void close() throws IOException {
+        Unirest.shutdown();
+    }
+
+    // utilities
+
+    /**
+     * Reads the stream using {@link IOStreamUtil#readInputStream(InputStream)}. Closes the stream after reading it.
+     *
+     * @param stream stream
+     * @return contents of the stream
+     * @throws NightscoutIOException if an I/O error occurs during the request
+     */
+    private String readInputStream(InputStream stream) throws NightscoutIOException {
+        String content = IOStreamUtil.readInputStream(stream);
+        try {
+            stream.close();
+        } catch (IOException e) {
+            throw new NightscoutIOException("Exception while closing stream", e);
+        }
+        return content;
+    }
+
+    // GET
+
     private HttpRequest get(String path) {
         return Unirest.get(host + path);
+    }
+
+    /**
+     * Sends the request to the server and gets the body of the response as an {@link InputStream}.
+     *
+     * @return the body of the response
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
+    InputStream getRawInputStream(HttpRequest request) throws NightscoutIOException, NightscoutServerException {
+        HttpResponse<InputStream> response;
+        try {
+            response = request.asBinary();
+        } catch (UnirestException e) {
+            throw new NightscoutIOException("Exception while sending request to the server", e);
+        }
+        if (response.getStatus() != 200)
+            throw new NightscoutServerException(response);
+        return response.getBody();
     }
 
     /**
      * Sends a GET request for the status
      *
      * @return the status as a JSON formatted String
-     * @throws UnirestException if an exception occurs during the request
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
-    public Status getStatus() throws UnirestException {
-        HttpResponse<String> response = get("status").asString();
+    public Status getStatus() throws NightscoutIOException, NightscoutServerException {
+        InputStream stream = getRawInputStream(get("status"));
         StatusParser parser = new StatusParser();
-        return parser.parse(response.getBody());
+        return parser.parse(readInputStream(stream));
+    }
+
+    /**
+     * Fetches and parses the profile from Nightscout
+     *
+     * @return the fetched Profile
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
+    public Profile getProfile() throws NightscoutIOException, NightscoutServerException {
+        InputStream stream = getRawInputStream(get("profile"));
+        ProfileParser parser = new ProfileParser();
+        return parser.parse(readInputStream(stream));
     }
 
     /**
      * Creates a {@link GetBuilder} for entries
      *
-     * @return a {@link GetBuilder} with "entries" as its path
+     * @return a {@link GetBuilder} with <code>"entries"</code> as its path
      */
     public GetBuilder getEntries() {
-        return new GetBuilder(get("entries"));
+        return new GetBuilder(this, get("entries"));
     }
 
     /**
@@ -77,10 +139,11 @@ public class NSApi {
      * @param oldest    oldest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
      * @param batchSize amount of entries fetched at once
      * @return list of fetched entries
-     * @throws UnirestException            if an exception occurs during the request
+     * @throws NightscoutIOException       if an I/O error occurs during the request
+     * @throws NightscoutServerException   if the Nightscout server returns a bad response status
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
-    public List<VaultEntry> getEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws UnirestException {
+    public List<VaultEntry> getEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
         return getVaultEntries(latest, oldest, batchSize, "entries", "dateString");
     }
 
@@ -98,7 +161,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getSlice(String storage, String field, String type, String prefix, String regex) {
-        return new GetBuilder(get("slice/" + storage + "/" + field + "/" + type + "/" + prefix + "/" + regex));
+        return new GetBuilder(this, get("slice/" + storage + "/" + field + "/" + type + "/" + prefix + "/" + regex));
     }
 
     /**
@@ -110,7 +173,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getEcho(String storage, String spec) {
-        return new GetBuilder(get("echo/" + storage + "/" + spec));
+        return new GetBuilder(this, get("echo/" + storage + "/" + spec));
     }
 
     /**
@@ -124,12 +187,11 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getTimesEcho(String prefix, String regex) {
-        return new GetBuilder(get("times/echo/" + prefix + "/" + regex));
+        return new GetBuilder(this, get("times/echo/" + prefix + "/" + regex));
     }
 
     /**
      * The Entries endpoint returns information about the Nightscout entries.
-     * //TODO fix this description
      *
      * @param prefix Prefix to use in constructing a prefix-based regex.
      * @param regex  Tail part of regexp to use in expanding/construccting a query object.
@@ -139,44 +201,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with the given parameters as its path
      */
     public GetBuilder getTimes(String prefix, String regex) {
-        return new GetBuilder(get("times/" + prefix + "/" + regex));
-    }
-
-    /**
-     * Sends a POST request with the given entries as its payload. Inserts all entries into the database
-     *
-     * @param entries entries as JSON String.
-     * @return whatever the NightScout API returns, as JSON String
-     * @throws UnirestException if an exception occurs during the request
-     */
-    //TODO: rewrite
-    public JsonNode postEntries(String entries) throws UnirestException {
-        return Unirest.post(host + "entries")
-                .body(entries)
-                .asJson().getBody();
-    }
-
-    /**
-     * Sends a POST request with the given entries as its payload. Inserts all entries into the database.
-     * Uses {@link NightscoutExporter} to export the data.
-     *
-     * @param entries data
-     * @throws NightscoutIOException if an exception occurs while sending the data to the Nightscout server
-     * @throws InvalidDataException  if an exception occurs while exporting the data
-     */
-    public void postEntries(List<VaultEntry> entries) throws NightscoutIOException, InvalidDataException {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EXPORTER.exportData(stream, entries);
-        HttpResponse<String> response;
-        String body = new String(stream.toByteArray());
-        try {
-            response = Unirest.post(host + "entries")
-                    .body(body).asString();
-        } catch (UnirestException e) {
-            throw new NightscoutIOException("Exception occured while sending the request", e);
-        }
-        if (response.getStatus() != 200)
-            throw new NightscoutServerException(response);
+        return new GetBuilder(this, get("times/" + prefix + "/" + regex));
     }
 
     /**
@@ -185,7 +210,7 @@ public class NSApi {
      * @return a {@link GetBuilder} with treatments as its path
      */
     public GetBuilder getTreatments() {
-        return new GetBuilder(get("treatments"));
+        return new GetBuilder(this, get("treatments"));
     }
 
     /**
@@ -196,64 +221,15 @@ public class NSApi {
      * @param oldest    oldest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
      * @param batchSize amount of entries fetched at once
      * @return list of fetched entries
-     * @throws UnirestException            if an exception occurs during the request
+     * @throws NightscoutIOException       if an I/O error occurs during the request
+     * @throws NightscoutServerException   if the Nightscout server returns a bad response status
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
-    public List<VaultEntry> getTreatments(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws UnirestException {
+    public List<VaultEntry> getTreatments(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
         return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at");
     }
 
-    /**
-     * Sends a POST request with the given treatments as its payload. Inserts all entries into the database
-     *
-     * @param treatments treatments as JSON String.
-     * @return whatever the NightScout API returns, as JSON String
-     * @throws UnirestException if an exception occurs during the request
-     */
-    //TODO: rewrite
-    public JsonNode postTreatments(String treatments) throws UnirestException {
-        return Unirest.post(host + "treatments")
-                .body(treatments)
-                .asJson().getBody();
-    }
-
-    /**
-     * Sends a POST request with the given treatments as its payload. Inserts all treatments into the database.
-     * Uses {@link NightscoutExporter} to export the data.
-     *
-     * @param treatments data
-     * @return the result of this request
-     * @throws InvalidDataException      if an exception occurs while exporting the data
-     * @throws NightscoutIOException     if an exception occurs while sending the data to the Nightscout server
-     * @throws NightscoutServerException if the server returns an unsuccessful HTTP status code
-     */
-    public void postTreatments(List<VaultEntry> treatments) throws NightscoutIOException, InvalidDataException {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EXPORTER.exportData(stream, treatments);
-        HttpResponse<String> response;
-        try {
-            response = Unirest.post(host + "treatments")
-                    .body(stream.toByteArray()).asString();
-        } catch (UnirestException e) {
-            throw new NightscoutIOException("Exception occured while sending the request", e);
-        }
-        if (response.getStatus() != 200)
-            throw new NightscoutServerException(response);
-    }
-
-    /**
-     * Fetches and parses the profile from Nightscout
-     *
-     * @return the fetched Profile
-     * @throws UnirestException if an exception occurs during the request
-     */
-    public Profile getProfile() throws UnirestException {
-        String profile = get("profile").asString().getBody();
-        ProfileParser parser = new ProfileParser();
-        return parser.parse(profile);
-    }
-
-    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField) throws UnirestException {
+    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField) throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = new ArrayList<>();
         List<VaultEntry> fetched = null;
         GetBuilder getBuilder;
@@ -261,7 +237,7 @@ public class NSApi {
         String latestString = formatter.format(latest);
         String oldestString = formatter.format(oldest);
         do {
-            getBuilder = new GetBuilder(get(path)).count(batchSize).find(dateField).gte(oldestString);
+            getBuilder = new GetBuilder(this, get(path)).count(batchSize).find(dateField).gte(oldestString);
             if (fetched == null)    // first fetch: lte, following fetches: lt
                 getBuilder.find(dateField).lte(latestString);
             else getBuilder.find(dateField).lt(latestString);
@@ -274,12 +250,54 @@ public class NSApi {
         return entries;
     }
 
+    // POST
+
+    private HttpRequestWithBody post(String path) {
+        return Unirest.post(host + path);
+    }
+
     /**
-     * Closes the connection to the NightScout API
+     * Sends a POST request with the given entries as its payload.
+     * Uses {@link NightscoutExporter} to export the data.
      *
-     * @throws IOException if an exception occurs while closing the connection
+     * @param entries data
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @throws NightscoutDataException   if an exception occurs while exporting the data
      */
-    public void close() throws IOException {
-        Unirest.shutdown();
+    public void postEntries(List<VaultEntry> entries) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        EXPORTER.exportData(stream, entries);
+        HttpResponse<InputStream> response;
+        String body = new String(stream.toByteArray());
+        try {
+            response = post("entries").body(body).asBinary();
+        } catch (UnirestException e) {
+            throw new NightscoutIOException("Exception occured while sending the request", e);
+        }
+        if (response.getStatus() != 200)
+            throw new NightscoutServerException(response);
+    }
+
+    /**
+     * Sends a POST request with the given treatments as its payload.
+     * Uses {@link NightscoutExporter} to export the data.
+     *
+     * @param treatments data
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @throws NightscoutDataException   if an exception occurs while exporting the data
+     */
+    public void postTreatments(List<VaultEntry> treatments) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        EXPORTER.exportData(stream, treatments);
+        HttpResponse<InputStream> response;
+        try {
+            response = post("treatments").body(stream.toByteArray()).asBinary();
+        } catch (UnirestException e) {
+            throw new NightscoutIOException("Exception occured while sending the request", e);
+        }
+        if (response.getStatus() != 200)
+            throw new NightscoutServerException(response);
     }
 }

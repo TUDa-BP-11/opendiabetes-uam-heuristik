@@ -1,22 +1,22 @@
 package de.opendiabetes.nsapi;
 
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.exceptions.UnirestException;
+import com.google.gson.JsonObject;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -45,7 +45,7 @@ class NSApiTest {
 
 
     @Test
-    void testStatus() throws UnirestException {
+    void testStatus() throws NightscoutIOException, NightscoutServerException {
         Status status = api.getStatus();
         assertNotNull(status);
         assertTrue(status.isStatusOk());      // tests should break if status is not ok
@@ -53,64 +53,52 @@ class NSApiTest {
     }
 
     @Test
-    void testEntries() throws UnirestException {
+    void testEntries() throws NightscoutIOException, NightscoutServerException {
         String id = getRandomId(24);
         int sgv = 70 + new Random().nextInt(60);
+        Date date = new Date();
 
-        Instant time = Instant.now();
-        long date = time.toEpochMilli();
-        String dateString = time.toString();
+        VaultEntry entry = new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, sgv);
+        api.postEntries(Collections.singletonList(entry));
 
-        JsonNode result = api.postEntries("[{" +
-                "\"direction\": \"Flat\"," +
-                "\"_id\": \"" + id + "\"," +
-                "\"sgv\": " + sgv + "," +
-                "\"dateString\": \"" + dateString + "\"," +
-                "\"date\": " + date + "," +
-                "\"type\": \"sgv\"" +
-                "}]");
-        assertNotNull(result);
-
-        List<VaultEntry> entries = api.getEntries().find("dateString").eq(dateString).getVaultEntries();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        List<VaultEntry> entries = api.getEntries().find("dateString").eq(formatter.format(date)).getVaultEntries();
         assertEquals(1, entries.size());
         assertEquals(VaultEntryType.GLUCOSE_CGM, entries.get(0).getType());
         assertEquals(sgv, entries.get(0).getValue());
     }
 
     @Test
-    void testTreatments() throws UnirestException {
+    void testTreatments() throws NightscoutIOException, NightscoutServerException {
         String id = getRandomId(24);
         int carbs = 80 + new Random().nextInt(100);
+        Date date = new Date();
 
-        String createdAt = Instant.now().toString();
+        VaultEntry treatment = new VaultEntry(VaultEntryType.MEAL_MANUAL, date, carbs);
+        api.postTreatments(Collections.singletonList(treatment));
 
-        JsonNode result = api.postTreatments("[{" +
-                "\"_id\": \"" + id + "\"," +
-                "\"carbs\": " + carbs + "," +
-                "\"created_at\": \"" + createdAt + "\"," +
-                "\"timestamp\": \"" + createdAt + "\"" +
-                "}]");
-        assertNotNull(result);
-
-        List<VaultEntry> entries = api.getTreatments().find("created_at").eq(createdAt).getVaultEntries();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        List<VaultEntry> entries = api.getTreatments().find("created_at").eq(formatter.format(date)).getVaultEntries();
         assertEquals(1, entries.size());
         assertEquals(VaultEntryType.MEAL_MANUAL, entries.get(0).getType());
         assertEquals(carbs, entries.get(0).getValue());
     }
 
     @Test
-    void testEchoTimes() throws UnirestException {
+    void testEchoTimes() throws NightscoutIOException, NightscoutServerException {
         String prefix = "foo";
         String regex = "bar";
-        JSONObject echo = api.getTimesEcho(prefix, regex).get().getObject();
+        JsonObject echo = api.getTimesEcho(prefix, regex).getRaw().getAsJsonObject();
         assertTrue(echo.has("req"));
-        assertTrue(echo.getJSONObject("req").has("params"));
-        assertEquals(prefix, echo.getJSONObject("req").getJSONObject("params").getString("prefix"));
-        assertEquals(regex, echo.getJSONObject("req").getJSONObject("params").getString("regex"));
+        assertTrue(echo.getAsJsonObject("req").has("params"));
+        assertEquals(prefix, echo.getAsJsonObject("req").getAsJsonObject("params").get("prefix").getAsString());
+        assertEquals(regex, echo.getAsJsonObject("req").getAsJsonObject("params").get("regex").getAsString());
     }
 
     @Test
-    void testTimes() throws UnirestException {
+    void testTimes() throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = api.getTimes("2019", "T{15..17}:.*").getVaultEntries();
         entries.stream()
                 .map(e -> LocalDateTime.ofInstant(e.getTimestamp().toInstant(), ZoneId.of("UTC")))
@@ -118,7 +106,7 @@ class NSApiTest {
     }
 
     @Test
-    void testProfile() throws UnirestException {
+    void testProfile() throws NightscoutIOException, NightscoutServerException {
         Profile profile = api.getProfile();
         assertNotNull(profile);
         assertTrue(profile.getCarbratio() >= 0);
@@ -129,7 +117,7 @@ class NSApiTest {
     }
 
     @Test
-    void testEntriesBetween() throws UnirestException {
+    void testEntriesBetween() throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = api.getEntries().count(20).find("dateString").lt(Instant.now().toString()).getVaultEntries();
         // assume that there are at least 3 entries
         assumeTrue(entries.size() > 3);

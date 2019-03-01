@@ -2,8 +2,7 @@ package de.opendiabetes.nsapi.exporter;
 
 import com.google.gson.*;
 import com.google.gson.stream.JsonWriter;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.exporter.Exporter;
@@ -39,8 +38,7 @@ public class NightscoutExporter extends Exporter {
      *
      * @param sink target for export (e.g., a file)
      * @param data data to be exported
-     * @throws InvalidDataException  if invalid entries are exported
-     * @throws NightscoutIOException if an exception occurs while writing to the sink
+     * @throws NightscoutDataException  if invalid entries are exported
      */
     //TODO: merge entries within x minutes
     @Override
@@ -115,7 +113,7 @@ public class NightscoutExporter extends Exporter {
                     object.addProperty("enteredBy", "UAMALGO");
                     break;
                 default:
-                    throw new InvalidDataException("unknown entry type " + entry.getType());
+                    throw new NightscoutDataException("unknown entry type " + entry.getType());
             }
             array.add(object);
         }
@@ -126,7 +124,7 @@ public class NightscoutExporter extends Exporter {
             json.toJson(array, writer);
             writer.close();
         } catch (IOException | JsonIOException e) {
-            throw new NightscoutIOException("Exception while flushing stream", e);
+            throw new NightscoutDataException("Exception while flushing stream", e);
         }
     }
 

@@ -2,8 +2,9 @@ package de.opendiabetes.nsapi;
 
 import com.martiansoftware.jsap.*;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.nsapi.logging.DebugFormatter;
 import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Status;
@@ -153,7 +154,13 @@ public class Main {
 
         // start
         NSApi api = new NSApi(config.getString("host"), config.getString("secret"));
-        Status status = api.getStatus();
+        Status status;
+        try {
+            status = api.getStatus();
+        } catch (NightscoutIOException | NightscoutServerException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+            return;
+        }
         if (!status.isStatusOk()) {
             LOGGER.log(Level.SEVERE, "Nightscout server status is not ok:\n%s", getStatus(status));
             return;
@@ -181,7 +188,7 @@ public class Main {
 
             try {
                 data = NSApiTools.loadDataFromFile(config.getString("file"), false);
-            } catch (NightscoutIOException | InvalidDataException e) {
+            } catch (NightscoutIOException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
@@ -204,7 +211,7 @@ public class Main {
                 if (!entries.isEmpty()) {
                     api.postEntries(entries);
                 }
-            } catch (NightscoutIOException | InvalidDataException e) {
+            } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
@@ -235,7 +242,7 @@ public class Main {
                         || types.contains(VaultEntryType.MEAL_MANUAL)
                         || types.contains(VaultEntryType.BASAL_MANUAL))
                     data.addAll(api.getTreatments(latest, oldest, 100));
-            } catch (NightscoutIOException e) {
+            } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
@@ -243,7 +250,7 @@ public class Main {
             data.sort(new SortVaultEntryByDate().reversed());
             try {
                 NSApiTools.writeDataToFile(config.getString("file"), data, config.getBoolean("overwrite"));
-            } catch (NightscoutIOException e) {
+            } catch (NightscoutIOException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
