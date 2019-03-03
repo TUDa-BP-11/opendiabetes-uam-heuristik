@@ -107,8 +107,8 @@ public class NSApiTools {
     }
 
     /**
-     * Writes data to a file using the {@link NightscoutExporter}. Does not overwrite existing files.
-     * Use {@link NSApiTools#writeDataToFile(String, List, boolean)} to overwrite existing files.
+     * Writes data to a file using the default {@link NightscoutExporter}. Does not overwrite existing files.
+     * Use {@link NSApiTools#writeDataToFile(String, List, boolean, NightscoutExporter)} to overwrite existing files.
      *
      * @param path the path of the file
      * @param data data
@@ -116,19 +116,20 @@ public class NSApiTools {
      *                               written to for any reason, or an exception occurs while writing to the file
      */
     public static void writeDataToFile(String path, List<VaultEntry> data) throws NightscoutIOException {
-        writeDataToFile(path, data, false);
+        writeDataToFile(path, data, false, new NightscoutExporter());
     }
 
     /**
-     * Writes data to a file using the {@link NightscoutExporter}.
+     * Writes data to a file using the provided {@link NightscoutExporter}.
      *
      * @param path      the path of the file
      * @param data      data
      * @param overwrite whether or not to overwrite an existing file
+     * @param exporter  the exporter to use
      * @throws NightscoutIOException if the file is a directory, or already exists and overwrite is set to false,
      *                               or the file cannot be written to for any reason, or an exception occurs while writing to the file
      */
-    public static void writeDataToFile(String path, List<VaultEntry> data, boolean overwrite) throws NightscoutIOException {
+    public static void writeDataToFile(String path, List<VaultEntry> data, boolean overwrite, NightscoutExporter exporter) throws NightscoutIOException {
         File file = new File(path);
 
         if (file.isDirectory())
@@ -146,7 +147,6 @@ public class NSApiTools {
         } catch (FileNotFoundException e) {
             throw new NightscoutIOException("Could not open file: " + path, e);
         }
-        NightscoutExporter exporter = new NightscoutExporter();
         exporter.exportData(stream, data);
         try {
             stream.close();

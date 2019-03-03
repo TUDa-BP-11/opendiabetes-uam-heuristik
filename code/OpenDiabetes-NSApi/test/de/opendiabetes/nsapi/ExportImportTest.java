@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -112,15 +113,20 @@ public class ExportImportTest {
         Date date = new Date();
         List<VaultEntry> entries = Arrays.asList(
                 new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, 80),
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 10),
-                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 200),
-                new VaultEntry(VaultEntryType.BASAL_MANUAL, date, 0.8, 30),
-                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 5 * 60 * 1000), 250)
+                // first mergeable entry
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(date.getTime() - 10 * 1000), 10),
+                // has to merge with
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 20 * 1000), 200),
+                // not mergeable
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(date.getTime() - 30 * 1000), 0.8, 30),
+                // more then 60 seconds after first mergeable entry
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 71 * 1000), 250)
         );
+
+        // test that merge occurs
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         exporter.exportData(stream, entries);
         stream.close();
-
         InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(stream.toByteArray()));
         JsonElement element = new JsonParser().parse(reader);
         reader.close();
@@ -128,6 +134,19 @@ public class ExportImportTest {
         assertTrue(element.isJsonArray());
         JsonArray array = element.getAsJsonArray();
         assertEquals(entries.size() - 1, array.size());
+
+        // test with smaller merge window
+        NightscoutExporter newExporter = new NightscoutExporter(new NightscoutExporterOptions(5));
+        stream = new ByteArrayOutputStream();
+        newExporter.exportData(stream, entries);
+        stream.close();
+        reader = new InputStreamReader(new ByteArrayInputStream(stream.toByteArray()));
+        element = new JsonParser().parse(reader);
+        reader.close();
+
+        assertTrue(element.isJsonArray());
+        array = element.getAsJsonArray();
+        assertEquals(entries.size(), array.size());
 
         // check that trying to merge two bolus or two meal events triggers an exception
         assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ByteArrayOutputStream(), Arrays.asList(

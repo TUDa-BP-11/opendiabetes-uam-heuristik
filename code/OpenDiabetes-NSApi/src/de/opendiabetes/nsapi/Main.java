@@ -5,6 +5,8 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.nsapi.logging.DebugFormatter;
 import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Status;
@@ -74,6 +76,12 @@ public class Main {
             .setLongFlag("oldest")
             .setDefault("1970-01-01T00:00:00.000Z")
             .setHelp("The oldest date and time to load data");
+    // Tuning
+    private static final Parameter P_MERGEWINDOW = new FlaggedOption("mergewindow")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("merge-window")
+            .setDefault("60")
+            .setHelp("Set the maximum amount of seconds two entries can be apart from on another for them to be considered the same entry.");
     // Debugging
     private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
@@ -109,6 +117,9 @@ public class Main {
             jsap.registerParameter(P_OVERWRITE);
             jsap.registerParameter(P_LATEST);
             jsap.registerParameter(P_OLDEST);
+
+            // Tuning
+            jsap.registerParameter(P_MERGEWINDOW);
 
             // Debugging
             jsap.registerParameter(P_VERBOSE);
@@ -249,7 +260,12 @@ public class Main {
             data = NSApiTools.filterData(data, types);
             data.sort(new SortVaultEntryByDate().reversed());
             try {
-                NSApiTools.writeDataToFile(config.getString("file"), data, config.getBoolean("overwrite"));
+                NSApiTools.writeDataToFile(
+                        config.getString("file"),
+                        data,
+                        config.getBoolean("overwrite"),
+                        new NightscoutExporter(new NightscoutExporterOptions(config.getInt("mergewindow")))
+                );
             } catch (NightscoutIOException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;

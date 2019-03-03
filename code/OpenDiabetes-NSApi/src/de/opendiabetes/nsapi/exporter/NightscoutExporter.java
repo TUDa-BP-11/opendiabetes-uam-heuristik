@@ -6,7 +6,6 @@ import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.exporter.Exporter;
-import de.opendiabetes.vault.exporter.ExporterOptions;
 import de.opendiabetes.vault.exporter.csv.ExportEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
@@ -20,14 +19,16 @@ import java.util.List;
 import java.util.TimeZone;
 
 public class NightscoutExporter extends Exporter {
+    private final NightscoutExporterOptions options;
     private final Gson json;
 
     public NightscoutExporter() {
-        this(new ExporterOptions());
+        this(new NightscoutExporterOptions());
     }
 
-    public NightscoutExporter(ExporterOptions options) {
+    public NightscoutExporter(NightscoutExporterOptions options) {
         super(options);
+        this.options = options;
         this.json = new GsonBuilder()
                 .setPrettyPrinting()
                 .create();
@@ -50,8 +51,7 @@ public class NightscoutExporter extends Exporter {
         JsonArray array = new JsonArray();
 
         // maximum amount of milliseconds for merging entries as one
-        //TODO: configure window
-        long window = 60 * 1000;
+        long window = options.getMergeWindow() * 1000;
         for (int i = 0; i < data.size(); i++) {
             VaultEntry entry = data.get(i);
             // if entry is mergeable check for more entries in given window
