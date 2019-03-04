@@ -81,7 +81,7 @@ public class Main {
             .setStringParser(JSAP.INTEGER_PARSER)
             .setLongFlag("merge-window")
             .setDefault("60")
-            .setHelp("Set the maximum amount of seconds two entries can be apart from on another for them to be considered the same entry.");
+            .setHelp("Set the maximum amount of seconds two entries can be apart from one another for them to be considered the same entry.");
     // Debugging
     private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
