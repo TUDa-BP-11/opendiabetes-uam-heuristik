@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.opendiabetes.vault.engine.container;
+package de.opendiabetes.vault.container;
 
 /**
  * This enum defines different vault entry types.
