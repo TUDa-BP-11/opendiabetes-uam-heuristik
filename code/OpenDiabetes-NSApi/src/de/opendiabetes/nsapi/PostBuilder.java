@@ -25,6 +25,17 @@ public class PostBuilder {
     }
 
     /**
+     * Sets the body of this request.
+     *
+     * @param content the content of the body.
+     * @return this builder
+     */
+    public PostBuilder setBody(byte[] content) {
+        request.body(content);
+        return this;
+    }
+
+    /**
      * Sends the request to the server.
      *
      * @throws NightscoutIOException     if an I/O error occurs during the request

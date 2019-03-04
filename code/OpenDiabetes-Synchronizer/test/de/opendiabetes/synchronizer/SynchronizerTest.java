@@ -37,7 +37,7 @@ public class SynchronizerTest {
 
         NSApi read = new NSApi(readHost, readSecret);
         NSApi write = new NSApi(writeHost, writeSecret);
-        synchronizer = new Synchronizer(read, write, "1970-01-01", null, 20);
+        synchronizer = new Synchronizer(read, write);
         //synchronizer.setDebug(true);
     }
 

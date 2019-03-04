@@ -8,22 +8,33 @@ import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.util.logging.Level;
 
 public class Synchronizer {
     private NSApi read;
     private NSApi write;
-    private String start;
-    private String end;
+    private String oldest;
+    private String latest;
     private int batchSize;
 
-    private boolean debug = false;
+    public Synchronizer(NSApi read, NSApi write) {
+        this(read, write, Instant.EPOCH, Instant.now(), 100);
+    }
 
-    public Synchronizer(NSApi read, NSApi write, String start, String end, int batchSize) {
+    public Synchronizer(NSApi read, NSApi write, TemporalAccessor oldest, TemporalAccessor latest, int batchSize) {
         this.read = read;
         this.write = write;
-        this.start = start;
-        this.end = end;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        this.oldest = formatter.format(oldest);
+        this.latest = formatter.format(latest);
         this.batchSize = batchSize;
     }
 
@@ -35,12 +46,12 @@ public class Synchronizer {
         return write;
     }
 
-    public String getStart() {
-        return start;
+    public String getOldest() {
+        return oldest;
     }
 
-    public String getEnd() {
-        return end;
+    public String getLatest() {
+        return latest;
     }
 
     public int getBatchSize() {
@@ -48,8 +59,8 @@ public class Synchronizer {
     }
 
     /**
-     * Finds all missing entries in the target NS instance. Nightscout returns entries in order from newest to oldest.
-     * Therefore we actually compare in reverse order, from end to start
+     * Finds all missing entries in the target NS instance. Nightscout returns entries in
+     * order from latest to oldest, therefore we actually compare in the same order
      *
      * @param synchronizable The Synchronizable that will be tested.
      */
@@ -64,18 +75,17 @@ public class Synchronizer {
             sourceGetBuilder = read.createGet(synchronizable.getApiPath());
             sourceGetBuilder.count(batchSize);
 
-            if (sourceEntries.size() == 0) {  // first search
-                sourceGetBuilder.find(dateField).lte(end);
-            } else {    // next search, start at oldest found entry
+            if (sourceEntries.size() == 0) {  // first search (include start: lte)
+                sourceGetBuilder.find(dateField).lte(latest);
+            } else {    // next search, start at oldest found entry (excluded: lt)
                 String last = sourceEntries.get(sourceEntries.size() - 1).getAsJsonObject().get(dateField).getAsString();
                 sourceGetBuilder.find(dateField).lt(last);
             }
-            sourceGetBuilder.find(dateField).gte(start);
+            sourceGetBuilder.find(dateField).gte(oldest);
 
             sourceEntries = sourceGetBuilder.getRaw().getAsJsonArray();
             synchronizable.incrFindCount(sourceEntries.size());
-            if (debug)
-                System.out.println("Found " + sourceEntries.size() + " entries in source");
+            Main.logger().log(Level.FINE, "Found %d entries in source", sourceEntries.size());
 
             if (sourceEntries.size() > 0) {
                 int i = 0;
@@ -90,14 +100,12 @@ public class Synchronizer {
                         targetGetBuilder.find(dateField).lte(originalDate);
                     else // next search, start at oldest found entry
                         targetGetBuilder.find(dateField).lt(originalDate);
-                    targetGetBuilder.find(dateField).gte(start);
+                    targetGetBuilder.find(dateField).gte(oldest);
                     targetEntries = targetGetBuilder.getRaw().getAsJsonArray();
-                    if (debug)
-                        System.out.println("Found " + targetEntries.size() + " entries in target");
+                    Main.logger().log(Level.FINE, "Found %d entries in target", targetEntries.size());
 
                     if (targetEntries.size() == 0) {  // if no result in target instance, all entries are missing
-                        if (debug)
-                            System.out.println("Marking remaining " + (sourceEntries.size() - i) + " entries as missing");
+                        Main.logger().log(Level.FINE, "Marking remaining %d entries as missing", sourceEntries.size() - i);
                         for (; i < sourceEntries.size(); i++)
                             synchronizable.putMissing(sourceEntries.get(i).getAsJsonObject());
                     } else {
@@ -108,16 +116,14 @@ public class Synchronizer {
                             originalDate = original.get(dateField).getAsString();
                             String compareDate = targetEntries.get(k).getAsJsonObject().get(dateField).getAsString();
                             if (originalDate.equals(compareDate)) {     // not missing
-                                if (debug)
-                                    System.out.println("- " + originalDate + " IS NOT missing");
+                                Main.logger().log(Level.FINE, "- %s IS NOT missing", originalDate);
                                 k++;
                                 i++;
                             } else {
-                                ZonedDateTime originalZDT = ZonedDateTime.parse(originalDate);
-                                ZonedDateTime compareZDT = ZonedDateTime.parse(compareDate);
+                                ZonedDateTime originalZDT = getZonedDateTime(originalDate);
+                                ZonedDateTime compareZDT = getZonedDateTime(compareDate);
                                 if (originalZDT.isAfter(compareZDT)) {   // original is missing
-                                    if (debug)
-                                        System.out.println("+ " + originalDate + " IS missing");
+                                    Main.logger().log(Level.FINE, "+ %s IS missing", originalDate);
                                     synchronizable.putMissing(original);
                                     i++;
                                 } else {    // original is newer then compare, test next
@@ -133,6 +139,17 @@ public class Synchronizer {
         } while (sourceEntries.size() != 0);  // repeat as long as source returns something
     }
 
+    private ZonedDateTime getZonedDateTime(String value) throws NightscoutIOException {
+        try {
+            TemporalAccessor t = DateTimeFormatter.ISO_DATE_TIME.parse(value);
+            if (t.isSupported(ChronoField.OFFSET_SECONDS))
+                return ZonedDateTime.from(t);
+            else return LocalDateTime.from(t).atZone(ZoneId.of("UTC"));
+        } catch (DateTimeParseException e) {
+            throw new NightscoutIOException("Could not parse date: " + value, e);
+        }
+    }
+
     public void postMissing(Synchronizable synchronizable) throws NightscoutIOException, NightscoutServerException {
         write.createPost(synchronizable.getApiPath())
                 .setBody(synchronizable.getMissing().toString())
@@ -142,9 +159,5 @@ public class Synchronizer {
     public void close() throws IOException {
         read.close();
         write.close();
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
     }
 }

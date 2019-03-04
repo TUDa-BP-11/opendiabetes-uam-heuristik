@@ -1,111 +1,123 @@
 package de.opendiabetes.synchronizer;
 
+import com.martiansoftware.jsap.*;
 import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.nsapi.logging.DebugFormatter;
+import de.opendiabetes.nsapi.logging.DefaultFormatter;
+import de.opendiabetes.vault.container.VaultEntry;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.util.Properties;
-import java.util.regex.Pattern;
+import java.time.temporal.TemporalAccessor;
+import java.util.List;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
-    public static void main(String[] args) {
-        String configpath = "config.properties";
-        String start = null;
-        String end = null;
-        String batchsize = null;
-        int count = 100;
-        boolean debug = false;
+    private static final Logger LOGGER;
+
+    // All parameters
+    // Nightscout
+    private static final Parameter P_HOST_READ = new FlaggedOption("host-read")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('h')
+            .setLongFlag("host-read")
+            .setHelp("URL of the Nightscout server that you want to read data from. Make sure to include the port.");
+    private static final Parameter P_SECRET_READ = new FlaggedOption("secret-read")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('s')
+            .setLongFlag("secret-read")
+            .setHelp("API secret of the read Nightscout server.");
+    private static final Parameter P_HOST_WRITE = new FlaggedOption("host-write")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('H')
+            .setLongFlag("host-write")
+            .setHelp("URL of the Nightscout server that you want to synchronize data to. Make sure to include the port.");
+    private static final Parameter P_SECRET_WRITE = new FlaggedOption("secret-write")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('S')
+            .setLongFlag("secret-write")
+            .setHelp("API secret of the synchronized Nightscout server.");
+
+    static {
+        LOGGER = Logger.getLogger(Synchronizer.class.getName());
+        Handler handler = new ConsoleHandler();
+        handler.setFormatter(new DefaultFormatter());
+        LOGGER.addHandler(handler);
+        LOGGER.setUseParentHandlers(false);
+    }
+
+    /**
+     * Registers all arguments to the given JSAP instance
+     *
+     * @param jsap your JSAP instance
+     */
+    public static void registerArguments(JSAP jsap) {
         try {
-            for (int i = 0; i < args.length; i++) {
-                String arg = args[i];
-                if (arg.startsWith("-")) {
-                    arg = arg.substring(1);
-                    switch (arg) {
-                        case "config":
-                            configpath = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "start":
-                            start = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "end":
-                            end = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "n":
-                        case "batch":
-                        case "batchsize":
-                            batchsize = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "debug":
-                            debug = true;
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unknown argument " + arg);
-                    }
-                } else if (start == null) {
-                    start = arg;
-                } else if (end == null) {
-                    end = arg;
-                } else throw new IllegalArgumentException("Unknown argument " + arg);
-            }
-            Pattern timepattern = Pattern.compile("^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2}(.[0-9]{3})?)?)?$");
-            if (start != null && !timepattern.matcher(start).find())
-                throw new IllegalArgumentException("start date missing or invalid");
-            if (start == null)
-                start = "1970-01-01";
-            if (end != null && !timepattern.matcher(end).find())
-                throw new IllegalArgumentException("end date invalid");
-            if (end == null)
-                end = LocalDateTime.now().toString();
-            if (batchsize != null) {
-                try {
-                    count = Integer.parseInt(batchsize);
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid batchsize " + batchsize);
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error while parsing arguments: " + e.getMessage());
-            if (debug)
-                e.printStackTrace();
+            // Nightscout server
+            jsap.registerParameter(P_HOST_READ);
+            jsap.registerParameter(P_SECRET_READ);
+            jsap.registerParameter(P_HOST_WRITE);
+            jsap.registerParameter(P_SECRET_WRITE);
+
+            // Action
+            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_LATEST);
+            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_OLDEST);
+
+            // Debugging
+            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_VERBOSE);
+            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_DEBUG);
+        } catch (JSAPException e) {
+            LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
+        }
+    }
+
+    public static void main(String[] args) {
+        //TODO: dont duplicate this with NSApi, fix setting LogLevel for NSApi logger and this logger
+        
+        // setup arguments
+        JSAP jsap = new JSAP();
+        registerArguments(jsap);
+
+        // send help message if executed without arguments
+        if (args.length == 0) {
+            LOGGER.log(Level.INFO, "Argument summary:\n%s", jsap.getHelp());
             return;
         }
 
-        String readHost, readSecret, writeHost, writeSecret;
-
-        try (InputStream input = new FileInputStream(configpath)) {
-            Properties properties = new Properties();
-            properties.load(input);
-
-            readHost = properties.getProperty("read.host");
-            readSecret = properties.getProperty("read.secret");
-            writeHost = properties.getProperty("write.host");
-            writeSecret = properties.getProperty("write.secret");
-        } catch (FileNotFoundException e) {
-            System.out.println("Cannot find config file at " + configpath);
-            if (debug)
-                e.printStackTrace();
-            return;
-        } catch (IOException e) {
-            System.out.println("Exception while reading config file: " + e.getMessage());
-            if (debug)
-                e.printStackTrace();
+        // parse arguments
+        JSAPResult config = jsap.parse(args);
+        if (!config.success()) {
+            LOGGER.log(Level.WARNING, "Invalid arguments:");
+            config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
+            LOGGER.info("For an argument summary execute without arguments.");
             return;
         }
 
-        NSApi read = new NSApi(readHost, readSecret);
-        NSApi write = new NSApi(writeHost, writeSecret);
+        // init
+        Level loglevel = config.getBoolean("verbose") ? Level.ALL : Level.INFO;
+        LOGGER.setLevel(loglevel);
+        LOGGER.getHandlers()[0].setLevel(loglevel);
+        if (config.getBoolean("debug")) {
+            LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
+        }
+        List<VaultEntry> data;
 
-        Synchronizer synchronizer = new Synchronizer(read, write, start, end, count);
-        synchronizer.setDebug(debug);
+        NSApi read = new NSApi(config.getString("host-read"), config.getString("secret-read"));
+        NSApi write = new NSApi(config.getString("host-write"), config.getString("secret-write"));
+
+        Synchronizer synchronizer = new Synchronizer(
+                read, write,
+                (TemporalAccessor) config.getObject("oldest"),
+                (TemporalAccessor) config.getObject("latest"),
+                100);
         Synchronizable entries = new Synchronizable("entries", "dateString");
         Synchronizable treatments = new Synchronizable("treatments", "created_at");
         Synchronizable status = new Synchronizable("devicestatus", "created_at");
@@ -124,21 +136,17 @@ public class Main {
             if (status.getMissingCount() > 0)
                 synchronizer.postMissing(status);
         } catch (NightscoutIOException | NightscoutServerException e) {
-            System.out.println(e.getMessage());
-            if (debug)
-                e.printStackTrace();
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
         try {
             synchronizer.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
         System.out.println("Done!");
     }
 
-    private static String getValue(String arg, String[] args, int i) {
-        if (i < args.length - 1)
-            return args[i + 1];
-        throw new IllegalArgumentException("Missing value after argument " + arg);
+    public static Logger logger() {
+        return LOGGER;
     }
 }

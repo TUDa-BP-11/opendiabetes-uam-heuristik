@@ -66,12 +66,12 @@ public class Main {
             .setShortFlag('o')
             .setLongFlag("overwrite")
             .setHelp("Overwrite existing files");
-    private static final Parameter P_LATEST = new FlaggedOption("latest")
+    public static final Parameter P_LATEST = new FlaggedOption("latest")
             .setStringParser(new IsoDateTimeParser())
             .setLongFlag("latest")
             .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
             .setHelp("The latest date and time to load data");
-    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+    public static final Parameter P_OLDEST = new FlaggedOption("oldest")
             .setStringParser(new IsoDateTimeParser())
             .setLongFlag("oldest")
             .setDefault("1970-01-01T00:00:00.000Z")
@@ -83,10 +83,10 @@ public class Main {
             .setDefault("60")
             .setHelp("Set the maximum amount of seconds two entries can be apart from one another for them to be considered the same entry.");
     // Debugging
-    private static final Parameter P_VERBOSE = new Switch("verbose")
+    public static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
             .setHelp("Sets logging to verbose");
-    private static final Parameter P_DEBUG = new Switch("debug")
+    public static final Parameter P_DEBUG = new Switch("debug")
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
@@ -159,7 +159,7 @@ public class Main {
         List<VaultEntry> data;
 
         if (!config.contains("host") || !config.contains("secret")) {
-            LOGGER.log(Level.WARNING, "Please specify your Nigthscout host and API secret:\n%s\n%s", new Object[]{P_HOST.getSyntax(), P_SECRET.getSyntax()});
+            LOGGER.log(Level.WARNING, "Please specify your Nightscout host and API secret:\n%s\n%s", new Object[]{P_HOST.getSyntax(), P_SECRET.getSyntax()});
             return;
         }
 
