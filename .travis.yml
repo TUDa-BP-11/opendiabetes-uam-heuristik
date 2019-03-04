@@ -14,6 +14,9 @@ script:
   - ant -lib lib/junit
   - cat code/*/dist/TEST-*.txt
 
+after_success:
+  - cat cov-int/*.txt
+
 env:
   global:
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
