@@ -3,6 +3,7 @@ package de.opendiabetes.main.algo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +66,19 @@ public abstract class Algorithm {
      * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      */
     public void setGlucoseMeasurements(List<VaultEntry> entries) {
+        if (!entries.isEmpty()) {
+            VaultEntry current = entries.get(0);
+            for (VaultEntry entry : entries){
+                if(entry.getTimestamp().getTime() - current.getTimestamp().getTime() < 0){
+                    throw new IllegalArgumentException("entries have to be sorted by timestamp");
+                }
+                if (entry.getType().equals(VaultEntryType.GLUCOSE_CGM)){
+                    throw new IllegalArgumentException("VaultEntryType should be GLUCOSE_CGM but was" + entry.getType().toString());
+                }
+            }
+        }
+
+
         this.glucose = entries;
     }
 
@@ -74,6 +88,17 @@ public abstract class Algorithm {
      * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
+        if (!bolusTreatments.isEmpty()) {
+            VaultEntry current = bolusTreatments.get(0);
+            for (VaultEntry entry : bolusTreatments){
+                if(entry.getTimestamp().getTime() - current.getTimestamp().getTime() < 0){
+                    throw new IllegalArgumentException("bolusTreatments have to be sorted by timestamp");
+                }
+                if (entry.getType().equals(VaultEntryType.BOLUS_NORMAL)){
+                    throw new IllegalArgumentException("VaultEntryType should be BOLUS_NORMAL but was" + entry.getType().toString());
+                }
+            }
+        }
         this.bolusTreatments = bolusTreatments;
     }
 
@@ -83,6 +108,17 @@ public abstract class Algorithm {
      * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
+        if (!basalTreatments.isEmpty()) {
+            VaultEntry current = basalTreatments.get(0);
+            for (VaultEntry entry : basalTreatments){
+                if(entry.getTimestamp().getTime() - current.getTimestamp().getTime() < 0){
+                    throw new IllegalArgumentException("basalTreatments have to be sorted by timestamp");
+                }
+                if (entry.getType().equals(VaultEntryType.BASAL_PROFILE)){
+                    throw new IllegalArgumentException("VaultEntryType should be BASAL_PROFILE but was" + entry.getType().toString());
+                }
+            }
+        }
         this.basalTreatments = basalTreatments;
     }
 
