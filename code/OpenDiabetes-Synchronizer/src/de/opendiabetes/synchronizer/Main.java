@@ -1,6 +1,8 @@
 package de.opendiabetes.synchronizer;
 
 import de.opendiabetes.nsapi.NSApi;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -121,12 +123,16 @@ public class Main {
             System.out.println("Found " + status.getFindCount() + " devicestatus of which " + status.getMissingCount() + " are missing in the target instance.");
             if (status.getMissingCount() > 0)
                 synchronizer.postMissing(status);
-        } catch (SynchronizerException e) {
+        } catch (NightscoutIOException | NightscoutServerException e) {
             System.out.println(e.getMessage());
             if (debug)
                 e.printStackTrace();
         }
-        synchronizer.close();
+        try {
+            synchronizer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.out.println("Done!");
     }
 

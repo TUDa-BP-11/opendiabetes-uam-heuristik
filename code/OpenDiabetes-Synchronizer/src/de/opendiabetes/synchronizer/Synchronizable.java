@@ -1,21 +1,21 @@
 package de.opendiabetes.synchronizer;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 public class Synchronizable {
     private final String apiPath;
     private final String dateField;
 
     private int findCount;
-    private JSONArray missing;
+    private JsonArray missing;
 
     public Synchronizable(String apiPath, String dateField) {
         this.apiPath = apiPath;
         this.dateField = dateField;
 
         this.findCount = 0;
-        this.missing = new JSONArray();
+        this.missing = new JsonArray();
     }
 
     public String getApiPath() {
@@ -34,20 +34,20 @@ public class Synchronizable {
         findCount += increment;
     }
 
-    public JSONArray getMissing() {
+    public JsonArray getMissing() {
         return missing;
     }
 
     public int getMissingCount() {
-        return missing.length();
+        return missing.size();
     }
 
-    public void putMissing(JSONObject entry) {
-        missing.put(entry);
+    public void putMissing(JsonObject entry) {
+        missing.add(entry);
     }
 
     public void reset() {
         findCount = 0;
-        missing = new JSONArray();
+        missing = new JsonArray();
     }
 }
