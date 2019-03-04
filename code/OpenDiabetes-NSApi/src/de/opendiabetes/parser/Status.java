@@ -14,6 +14,9 @@ public class Status {
         return status;
     }
 
+    /**
+     * @return true if the status equals "ok"
+     */
     public boolean isStatusOk() {
         return "ok".equals(status);
     }

@@ -14,9 +14,17 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated use {@link de.opendiabetes.nsapi.importer.NightscoutImporter} and {@link de.opendiabetes.nsapi.exporter.NightscoutExporter}
+ */
+@Deprecated
 public class VaultEntryParser implements Parser<List<VaultEntry>> {
 
+    /**
+     * @deprecated use {@link de.opendiabetes.nsapi.importer.NightscoutImporter}
+     */
     @Override
+    @Deprecated
     public List<VaultEntry> parse(String vaultEntries) {
         return parse(new JSONArray(vaultEntries));
     }
@@ -26,7 +34,9 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
      *
      * @param entries The array to parse. All entries in the array have to be JSON Objects
      * @return a list of VaultEntry representing the given input
+     * @deprecated use {@link de.opendiabetes.nsapi.importer.NightscoutImporter}
      */
+    @Deprecated
     public List<VaultEntry> parse(JSONArray entries) {
         List<VaultEntry> result = new ArrayList<>();
         for (int i = 0; i < entries.length(); i++) {
@@ -61,7 +71,7 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
     }
 
     /**
-     * get a date object from string with time zone information
+     * getRaw a date object from string with time zone information
      */
     private Date makeDate(String dateString) {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
@@ -161,10 +171,19 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
 
     // "Correction Bolus", "duration", "unabsorbed", "type", "programmed", "insulin"
     // "Meal Bolus", "carbs", "absorptionTime"
+
+    /**
+     * @deprecated use {@link de.opendiabetes.nsapi.exporter.NightscoutExporter}
+     */
+    @Deprecated
     public String toJson(List<VaultEntry> vaultEntries) {
         return toJson(vaultEntries, 120);
     }
 
+    /**
+     * @deprecated use {@link de.opendiabetes.nsapi.exporter.NightscoutExporter}
+     */
+    @Deprecated
     public String toJson(List<VaultEntry> vaultEntries, int absorptionTime) {
         return "[" + vaultEntries.stream()
                 .map(e -> toJson(e, absorptionTime))
