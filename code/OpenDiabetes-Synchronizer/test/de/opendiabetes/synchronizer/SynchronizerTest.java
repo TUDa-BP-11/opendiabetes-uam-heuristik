@@ -3,10 +3,14 @@ package de.opendiabetes.synchronizer;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.nsapi.NSApi;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -38,7 +42,7 @@ public class SynchronizerTest {
     }
 
     @AfterAll
-    static void tearDown() {
+    static void tearDown() throws IOException {
         synchronizer.close();
     }
 
@@ -48,7 +52,7 @@ public class SynchronizerTest {
             "treatments, created_at",
             "devicestatus, created_at"
     })
-    void testMissingZero(String apiPath, String dateField) throws UnirestException {
+    void testMissingZero(String apiPath, String dateField) throws UnirestException, NightscoutIOException, NightscoutServerException {
         Synchronizable sync = new Synchronizable(apiPath, dateField);
         synchronizer.findMissing(sync);
         if (sync.getMissingCount() > 0)
