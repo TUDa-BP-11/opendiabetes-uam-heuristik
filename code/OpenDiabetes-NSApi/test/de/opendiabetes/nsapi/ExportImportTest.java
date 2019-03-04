@@ -3,12 +3,13 @@ package de.opendiabetes.nsapi;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,17 +80,22 @@ public class ExportImportTest {
 
     @Test
     public void testExport() throws IOException {
+        Date date = new Date();
         List<VaultEntry> entries = Arrays.asList(
-                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 80),
-                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 90),
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(), 10),
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(), 20),
-                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(), 200),
-                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(), 250),
-                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(), 0.8, 30),
-                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(), 0.6348762378, 20)
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, 80),
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(date.getTime() - 5 * 60 * 1000), 90),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(date.getTime() - 10 * 60 * 1000), 10),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(date.getTime() - 15 * 60 * 1000), 20),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 20 * 60 * 1000), 200),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 25 * 60 * 1000), 250),
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(date.getTime() - 30 * 60 * 1000), 0.8, 30),
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(date.getTime() - 35 * 60 * 1000), 0.6348762378, 20)
         );
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        // check that order is enforced
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(stream, entries.stream()
+                .sorted(new SortVaultEntryByDate())
+                .collect(Collectors.toList())));
         exporter.exportData(stream, entries);
         stream.close();
 
@@ -102,22 +109,75 @@ public class ExportImportTest {
     }
 
     @Test
+    public void testExportMerge() throws IOException {
+        Date date = new Date();
+        List<VaultEntry> entries = Arrays.asList(
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, 80),
+                // first mergeable entry
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(date.getTime() - 10 * 1000), 10),
+                // has to merge with
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 20 * 1000), 200),
+                // not mergeable
+                new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(date.getTime() - 30 * 1000), 0.8, 30),
+                // more then 60 seconds after first mergeable entry
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(date.getTime() - 71 * 1000), 250)
+        );
+
+        // test that merge occurs
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        exporter.exportData(stream, entries);
+        stream.close();
+        InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(stream.toByteArray()));
+        JsonElement element = new JsonParser().parse(reader);
+        reader.close();
+
+        assertTrue(element.isJsonArray());
+        JsonArray array = element.getAsJsonArray();
+        assertEquals(entries.size() - 1, array.size());
+
+        // test with smaller merge window
+        NightscoutExporter newExporter = new NightscoutExporter(new NightscoutExporterOptions(5));
+        stream = new ByteArrayOutputStream();
+        newExporter.exportData(stream, entries);
+        stream.close();
+        reader = new InputStreamReader(new ByteArrayInputStream(stream.toByteArray()));
+        element = new JsonParser().parse(reader);
+        reader.close();
+
+        assertTrue(element.isJsonArray());
+        array = element.getAsJsonArray();
+        assertEquals(entries.size(), array.size());
+
+        // check that trying to merge two bolus or two meal events triggers an exception
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ByteArrayOutputStream(), Arrays.asList(
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 10),
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 12),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 250)
+        )));
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ByteArrayOutputStream(), Arrays.asList(
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, date, 10),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 250),
+                new VaultEntry(VaultEntryType.MEAL_MANUAL, date, 180)
+        )));
+    }
+
+    @Test
     public void testExportType() throws IOException {
         VaultEntry entry = new VaultEntry(VaultEntryType.STRESS, new Date(), 10);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        assertThrows(InvalidDataException.class, () -> exporter.exportData(stream, Collections.singletonList(entry)));
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(stream, Collections.singletonList(entry)));
         stream.close();
     }
 
     @Test
     public void testExportIOError() {
         VaultEntry entry = new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 10);
-        assertThrows(NightscoutIOException.class, () -> exporter.exportData(new ExceptionOutputStream(), Collections.singletonList(entry)));
+        assertThrows(NightscoutDataException.class, () -> exporter.exportData(new ExceptionOutputStream(), Collections.singletonList(entry)));
     }
 
     @Test
     public void testImportIOError() {
-        assertThrows(NightscoutIOException.class, () -> importer.importData(new ExceptionInputStream()));
+        assertThrows(NightscoutDataException.class, () -> importer.importData(new ExceptionInputStream()));
     }
 
     @ParameterizedTest
@@ -125,12 +185,12 @@ public class ExportImportTest {
             "[{}",  // invalid syntax
             "{}",   // not an array
             "[{}]", // invalid entry type (no type)
-            "[{\"eventType\":\"Meal Bolus\",\"carbs\":\"invalid\",\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}]" ,    // invalid carbs type (not double)
+            "[{\"eventType\":\"Meal Bolus\",\"carbs\":\"invalid\",\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}]",    // invalid carbs type (not double)
             "[{\"eventType\":\"Meal Bolus\",\"carbs\":200.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"invalid date\",\"enteredBy\":\"UAMALGO\"}]"  // invalid timestamp
     })
     public void testImportData(String data) throws IOException {
         ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
-        assertThrows(InvalidDataException.class, () -> importer.importData(stream));
+        assertThrows(NightscoutDataException.class, () -> importer.importData(stream));
         stream.close();
     }
 

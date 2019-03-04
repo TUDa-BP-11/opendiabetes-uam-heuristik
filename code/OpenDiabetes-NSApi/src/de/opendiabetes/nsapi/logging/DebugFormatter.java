@@ -1,5 +1,8 @@
 package de.opendiabetes.nsapi.logging;
 
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
+
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.LogRecord;
@@ -24,10 +27,24 @@ public class DebugFormatter extends DefaultFormatter {
         }
 
         String throwable = "";
+        Throwable thrown = record.getThrown();
         if (record.getThrown() != null) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             pw.println();
+            if (thrown instanceof NightscoutServerException) {
+                NightscoutServerException exception = (NightscoutServerException) thrown;
+                try {
+                    String body = exception.getResponseBody();
+                    sw.append(body);
+                } catch (IOException e) {
+                    sw.append("Exception while trying to handle NightscoutServerException: ");
+                    sw.append(e.getMessage());
+                    sw.append(System.lineSeparator());
+                    e.printStackTrace(pw);
+                }
+                pw.println();
+            }
             record.getThrown().printStackTrace(pw);
             pw.close();
             throwable = sw.toString();

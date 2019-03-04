@@ -71,7 +71,7 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
     }
 
     /**
-     * get a date object from string with time zone information
+     * getRaw a date object from string with time zone information
      */
     private Date makeDate(String dateString) {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");

@@ -25,7 +25,7 @@ public class NSApiTools {
      * @return the loaded vault entries
      * @throws NightscoutIOException if the file does not exist, is a directory, cannot be read, or any other IOException occurs during execution
      */
-    public static List<VaultEntry> loadDataFromFile(String path) {
+    public static List<VaultEntry> loadDataFromFile(String path) throws NightscoutIOException {
         return loadDataFromFile(path, false);
     }
 
@@ -37,7 +37,7 @@ public class NSApiTools {
      * @return the loaded vault entries
      * @throws NightscoutIOException if the file does not exist, is a directory, cannot be read, or any other IOException occurs during execution
      */
-    public static List<VaultEntry> loadDataFromFile(String path, boolean sort) {
+    public static List<VaultEntry> loadDataFromFile(String path, boolean sort) throws NightscoutIOException {
         return loadDataFromFile(path, null, sort);
     }
 
@@ -50,7 +50,7 @@ public class NSApiTools {
      * @return the loaded vault entries
      * @throws NightscoutIOException if the file does not exist, is a directory, cannot be read, or any other IOException occurs during execution
      */
-    public static List<VaultEntry> loadDataFromFile(String path, VaultEntryType type, boolean sort) {
+    public static List<VaultEntry> loadDataFromFile(String path, VaultEntryType type, boolean sort) throws NightscoutIOException {
         File file = new File(path);
 
         if (!file.exists())
@@ -107,28 +107,29 @@ public class NSApiTools {
     }
 
     /**
-     * Writes data to a file using the {@link NightscoutExporter}. Does not overwrite existing files.
-     * Use {@link NSApiTools#writeDataToFile(String, List, boolean)} to overwrite existing files.
+     * Writes data to a file using the default {@link NightscoutExporter}. Does not overwrite existing files.
+     * Use {@link NSApiTools#writeDataToFile(String, List, boolean, NightscoutExporter)} to overwrite existing files.
      *
      * @param path the path of the file
      * @param data data
      * @throws NightscoutIOException if the file is a directory, or already exists, or the file cannot be
      *                               written to for any reason, or an exception occurs while writing to the file
      */
-    public static void writeDataToFile(String path, List<VaultEntry> data) {
-        writeDataToFile(path, data, false);
+    public static void writeDataToFile(String path, List<VaultEntry> data) throws NightscoutIOException {
+        writeDataToFile(path, data, false, new NightscoutExporter());
     }
 
     /**
-     * Writes data to a file using the {@link NightscoutExporter}.
+     * Writes data to a file using the provided {@link NightscoutExporter}.
      *
      * @param path      the path of the file
      * @param data      data
      * @param overwrite whether or not to overwrite an existing file
+     * @param exporter  the exporter to use
      * @throws NightscoutIOException if the file is a directory, or already exists and overwrite is set to false,
      *                               or the file cannot be written to for any reason, or an exception occurs while writing to the file
      */
-    public static void writeDataToFile(String path, List<VaultEntry> data, boolean overwrite) {
+    public static void writeDataToFile(String path, List<VaultEntry> data, boolean overwrite, NightscoutExporter exporter) throws NightscoutIOException {
         File file = new File(path);
 
         if (file.isDirectory())
@@ -146,7 +147,6 @@ public class NSApiTools {
         } catch (FileNotFoundException e) {
             throw new NightscoutIOException("Could not open file: " + path, e);
         }
-        NightscoutExporter exporter = new NightscoutExporter();
         exporter.exportData(stream, data);
         try {
             stream.close();

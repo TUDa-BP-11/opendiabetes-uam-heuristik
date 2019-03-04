@@ -1,6 +1,9 @@
 package de.opendiabetes.nsapi.exception;
 
-public class NightscoutIOException extends RuntimeException {
+/**
+ * Represents an I/O error while reading or writing data from or to a Nightscout server or a file
+ */
+public class NightscoutIOException extends Exception {
     public NightscoutIOException(String message) {
         super(message);
     }

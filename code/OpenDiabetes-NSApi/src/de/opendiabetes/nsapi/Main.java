@@ -2,8 +2,11 @@ package de.opendiabetes.nsapi;
 
 import com.martiansoftware.jsap.*;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.nsapi.logging.DebugFormatter;
 import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Status;
@@ -73,6 +76,12 @@ public class Main {
             .setLongFlag("oldest")
             .setDefault("1970-01-01T00:00:00.000Z")
             .setHelp("The oldest date and time to load data");
+    // Tuning
+    private static final Parameter P_MERGEWINDOW = new FlaggedOption("mergewindow")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("merge-window")
+            .setDefault("60")
+            .setHelp("Set the maximum amount of seconds two entries can be apart from on another for them to be considered the same entry.");
     // Debugging
     private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
@@ -109,6 +118,9 @@ public class Main {
             jsap.registerParameter(P_LATEST);
             jsap.registerParameter(P_OLDEST);
 
+            // Tuning
+            jsap.registerParameter(P_MERGEWINDOW);
+
             // Debugging
             jsap.registerParameter(P_VERBOSE);
             jsap.registerParameter(P_DEBUG);
@@ -133,7 +145,7 @@ public class Main {
         if (!config.success()) {
             LOGGER.log(Level.WARNING, "Invalid arguments:");
             config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
-            LOGGER.info("For an argument explanation execute without arguments.");
+            LOGGER.info("For an argument summary execute without arguments.");
             return;
         }
 
@@ -153,7 +165,13 @@ public class Main {
 
         // start
         NSApi api = new NSApi(config.getString("host"), config.getString("secret"));
-        Status status = api.getStatus();
+        Status status;
+        try {
+            status = api.getStatus();
+        } catch (NightscoutIOException | NightscoutServerException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+            return;
+        }
         if (!status.isStatusOk()) {
             LOGGER.log(Level.SEVERE, "Nightscout server status is not ok:\n%s", getStatus(status));
             return;
@@ -181,7 +199,7 @@ public class Main {
 
             try {
                 data = NSApiTools.loadDataFromFile(config.getString("file"), false);
-            } catch (NightscoutIOException | InvalidDataException e) {
+            } catch (NightscoutIOException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
@@ -204,7 +222,7 @@ public class Main {
                 if (!entries.isEmpty()) {
                     api.postEntries(entries);
                 }
-            } catch (NightscoutIOException | InvalidDataException e) {
+            } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
@@ -235,15 +253,20 @@ public class Main {
                         || types.contains(VaultEntryType.MEAL_MANUAL)
                         || types.contains(VaultEntryType.BASAL_MANUAL))
                     data.addAll(api.getTreatments(latest, oldest, 100));
-            } catch (NightscoutIOException e) {
+            } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
             data = NSApiTools.filterData(data, types);
             data.sort(new SortVaultEntryByDate().reversed());
             try {
-                NSApiTools.writeDataToFile(config.getString("file"), data, config.getBoolean("overwrite"));
-            } catch (NightscoutIOException e) {
+                NSApiTools.writeDataToFile(
+                        config.getString("file"),
+                        data,
+                        config.getBoolean("overwrite"),
+                        new NightscoutExporter(new NightscoutExporterOptions(config.getInt("mergewindow")))
+                );
+            } catch (NightscoutIOException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }

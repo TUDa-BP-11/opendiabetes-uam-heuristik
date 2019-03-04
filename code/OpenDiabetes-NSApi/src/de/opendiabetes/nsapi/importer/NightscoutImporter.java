@@ -1,8 +1,10 @@
 package de.opendiabetes.nsapi.importer;
 
-import com.google.gson.*;
-import de.opendiabetes.nsapi.exception.InvalidDataException;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.importer.Importer;
@@ -40,7 +42,7 @@ public class NightscoutImporter extends Importer {
      *
      * @param source Data source.
      * @return list of generated vault entries. May contain more entries than the source did.
-     * @throws InvalidDataException if the given source is not formatted correctly
+     * @throws NightscoutDataException if the given source is not formatted correctly
      */
     @Override
     public List<VaultEntry> importData(InputStream source) {
@@ -48,15 +50,12 @@ public class NightscoutImporter extends Importer {
         JsonElement element;
         try {
             element = json.parse(reader);
-        } catch (JsonIOException e) {
-            throw new NightscoutIOException("exception while reading data", e);
-        } catch (JsonSyntaxException e) {
-            throw new InvalidDataException("invalid JSON syntax", e);
+        } catch (JsonParseException e) {
+            throw new NightscoutDataException("exception while reading data", e);
         }
-        //TODO: close the source?
 
         if (!element.isJsonArray())
-            throw new InvalidDataException("source is not an array");
+            throw new NightscoutDataException("source is not an array");
 
         List<VaultEntry> entries = new ArrayList<>();
         try {
@@ -92,10 +91,10 @@ public class NightscoutImporter extends Importer {
                     valid = true;
                 }
                 if (!valid)
-                    throw new InvalidDataException("invalid source data, could not identify vault entry type");
+                    throw new NightscoutDataException("invalid source data, could not identify vault entry type");
             }
         } catch (NumberFormatException | IllegalStateException | NullPointerException e) {
-            throw new InvalidDataException("invalid source data", e);
+            throw new NightscoutDataException("invalid source data", e);
         }
         return entries;
     }
@@ -112,7 +111,7 @@ public class NightscoutImporter extends Importer {
         try {
             t = DateTimeFormatter.ISO_DATE_TIME.parse(dateString);
         } catch (DateTimeParseException e) {
-            throw new InvalidDataException("invalid date string: " + dateString, e);
+            throw new NightscoutDataException("invalid date string: " + dateString, e);
         }
         // dates are automatically converted to local time by the toInstant() method of ZonedDateTime
         Date date = Date.from(ZonedDateTime.from(t).toInstant());
