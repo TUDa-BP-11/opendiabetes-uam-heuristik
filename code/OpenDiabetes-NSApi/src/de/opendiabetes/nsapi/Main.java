@@ -1,7 +1,6 @@
 package de.opendiabetes.nsapi;
 
 import com.martiansoftware.jsap.*;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
@@ -35,11 +34,13 @@ public class Main {
     // Nightscout
     private static final Parameter P_HOST = new FlaggedOption("host")
             .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
             .setShortFlag('h')
             .setLongFlag("host")
             .setHelp("Your Nightscout host URL. Make sure to include the port.");
     private static final Parameter P_SECRET = new FlaggedOption("secret")
             .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
             .setShortFlag('s')
             .setLongFlag("secret")
             .setHelp("Your Nightscout API secret.");
@@ -108,7 +109,7 @@ public class Main {
      *
      * @param jsap your JSAP instance
      */
-    public static void registerArguments(JSAP jsap) {
+    private static void registerArguments(JSAP jsap) {
         try {
             // Nightscout server
             jsap.registerParameter(P_HOST);
@@ -135,15 +136,18 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) throws UnirestException {
-        // setup arguments
-        JSAP jsap = new JSAP();
-        registerArguments(jsap);
-
+    /**
+     * Parses the arguments with the given JSAP configuration. Prints an argument summary if no arguments were supplied.
+     *
+     * @param jsap the JSAP configuration
+     * @param args the arguments that will be parsed
+     * @return the result of the parsed arguments or <code>null</code>, if the arguments could not be parsed successfully.
+     */
+    public static JSAPResult initArguments(JSAP jsap, String[] args) {
         // send help message if executed without arguments
         if (args.length == 0) {
             LOGGER.log(Level.INFO, "Argument summary:\n%s", jsap.getHelp());
-            return;
+            return null;
         }
 
         // parse arguments
@@ -152,16 +156,35 @@ public class Main {
             LOGGER.log(Level.WARNING, "Invalid arguments:");
             config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
             LOGGER.info("For an argument summary execute without arguments.");
-            return;
+            return null;
         }
+        return config;
+    }
 
-        // init
+    /**
+     * Initializes the logger with correct verbose and debug settings
+     *
+     * @param config the config
+     */
+    public static void initLogger(JSAPResult config) {
         Level loglevel = config.getBoolean("verbose") ? Level.ALL : Level.INFO;
         LOGGER.setLevel(loglevel);
         LOGGER.getHandlers()[0].setLevel(loglevel);
         if (config.getBoolean("debug")) {
             LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
         }
+    }
+
+    public static void main(String[] args) {
+        // setup arguments
+        JSAP jsap = new JSAP();
+        registerArguments(jsap);
+        JSAPResult config = initArguments(jsap, args);
+        if (config == null)
+            return;
+
+        // init
+        initLogger(config);
         List<VaultEntry> data;
 
         if (!config.contains("host") || !config.contains("secret")) {
