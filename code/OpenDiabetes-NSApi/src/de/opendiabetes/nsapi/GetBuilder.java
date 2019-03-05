@@ -45,7 +45,7 @@ public class GetBuilder {
      * Sets the count parameter for this request.
      *
      * @param count Number of entries to return
-     * @return this
+     * @return this builder
      */
     public GetBuilder count(int count) {
         this.request = this.request.queryString("count", count);
@@ -60,7 +60,7 @@ public class GetBuilder {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public JsonElement getRaw() throws NightscoutIOException, NightscoutServerException {
-        InputStream inputStream = api.getRawInputStream(request);
+        InputStream inputStream = api.send(request);
         InputStreamReader reader = new InputStreamReader(inputStream);
         JsonElement element;
         try {
@@ -85,7 +85,7 @@ public class GetBuilder {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public List<VaultEntry> getVaultEntries() throws NightscoutIOException, NightscoutServerException {
-        InputStream stream = api.getRawInputStream(request);
+        InputStream stream = api.send(request);
         return IMPORTER.importData(stream);
     }
 

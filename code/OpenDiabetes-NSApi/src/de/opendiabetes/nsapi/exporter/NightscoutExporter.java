@@ -74,12 +74,12 @@ public class NightscoutExporter extends Exporter {
                 for (VaultEntry e : toMerge) {
                     if (e.getType().equals(VaultEntryType.BOLUS_NORMAL)) {
                         if (isBolus)
-                            throw new NightscoutDataException("Cannot merge two bolus entries into one!");
+                            throw new NightscoutDataException("Cannot merge two bolus entries into one: " + e.getTimestamp());
                         isBolus = true;
                     }
                     if (e.getType().equals(VaultEntryType.MEAL_MANUAL)) {
                         if (isMeal)
-                            throw new NightscoutDataException("Cannot merge two meal entries into one!");
+                            throw new NightscoutDataException("Cannot merge two meal entries into one: " + e.getTimestamp());
                         isMeal = true;
                     }
                     addProperties(merged, e, false);

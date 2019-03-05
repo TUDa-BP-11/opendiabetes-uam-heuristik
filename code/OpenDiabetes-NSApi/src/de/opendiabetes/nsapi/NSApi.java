@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 public class NSApi {
     private final static NightscoutExporter EXPORTER = new NightscoutExporter();
@@ -52,7 +53,7 @@ public class NSApi {
         Unirest.shutdown();
     }
 
-    // utilities
+    // general
 
     /**
      * Reads the stream using {@link IOStreamUtil#readInputStream(InputStream)}. Closes the stream after reading it.
@@ -71,12 +72,6 @@ public class NSApi {
         return content;
     }
 
-    // GET
-
-    private HttpRequest get(String path) {
-        return Unirest.get(host + path);
-    }
-
     /**
      * Sends the request to the server and gets the body of the response as an {@link InputStream}.
      *
@@ -84,7 +79,8 @@ public class NSApi {
      * @throws NightscoutIOException     if an I/O error occurs during the request
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
-    InputStream getRawInputStream(HttpRequest request) throws NightscoutIOException, NightscoutServerException {
+    InputStream send(HttpRequest request) throws NightscoutIOException, NightscoutServerException {
+        Main.logger().log(Level.FINE, "Sending %s request to %s", new Object[]{request.getHttpMethod(), request.getUrl()});
         HttpResponse<InputStream> response;
         try {
             response = request.asBinary();
@@ -96,6 +92,22 @@ public class NSApi {
         return response.getBody();
     }
 
+    // GET
+
+    private HttpRequest get(String path) {
+        return Unirest.get(host + path);
+    }
+
+    /**
+     * Creates a new {@link GetBuilder} for sending GET requests to the Nightscout server.
+     *
+     * @param path path of the GET request.
+     * @return the constructed builder
+     */
+    public GetBuilder createGet(String path) {
+        return new GetBuilder(this, get(path));
+    }
+
     /**
      * Sends a GET request for the status
      *
@@ -104,7 +116,7 @@ public class NSApi {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public Status getStatus() throws NightscoutIOException, NightscoutServerException {
-        InputStream stream = getRawInputStream(get("status"));
+        InputStream stream = send(get("status"));
         StatusParser parser = new StatusParser();
         return parser.parse(readInputStream(stream));
     }
@@ -117,7 +129,7 @@ public class NSApi {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public Profile getProfile() throws NightscoutIOException, NightscoutServerException {
-        InputStream stream = getRawInputStream(get("profile"));
+        InputStream stream = send(get("profile"));
         ProfileParser parser = new ProfileParser();
         return parser.parse(readInputStream(stream));
     }
@@ -256,6 +268,10 @@ public class NSApi {
         return Unirest.post(host + path);
     }
 
+    public PostBuilder createPost(String path) {
+        return new PostBuilder(this, post(path));
+    }
+
     /**
      * Sends a POST request with the given entries as its payload.
      * Uses {@link NightscoutExporter} to export the data.
@@ -268,15 +284,8 @@ public class NSApi {
     public void postEntries(List<VaultEntry> entries) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         EXPORTER.exportData(stream, entries);
-        HttpResponse<InputStream> response;
         String body = new String(stream.toByteArray());
-        try {
-            response = post("entries").body(body).asBinary();
-        } catch (UnirestException e) {
-            throw new NightscoutIOException("Exception occured while sending the request", e);
-        }
-        if (response.getStatus() != 200)
-            throw new NightscoutServerException(response);
+        createPost("entries").setBody(body).send();
     }
 
     /**
@@ -291,13 +300,6 @@ public class NSApi {
     public void postTreatments(List<VaultEntry> treatments) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         EXPORTER.exportData(stream, treatments);
-        HttpResponse<InputStream> response;
-        try {
-            response = post("treatments").body(stream.toByteArray()).asBinary();
-        } catch (UnirestException e) {
-            throw new NightscoutIOException("Exception occured while sending the request", e);
-        }
-        if (response.getStatus() != 200)
-            throw new NightscoutServerException(response);
+        createPost("treatments").setBody(stream.toByteArray()).send();
     }
 }
