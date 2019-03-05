@@ -82,6 +82,11 @@ public class Main {
             .setLongFlag("merge-window")
             .setDefault("60")
             .setHelp("Set the maximum amount of seconds two entries can be apart from one another for them to be considered the same entry.");
+    public static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("batch-size")
+            .setDefault("100")
+            .setHelp("How many entries should be loaded at once.");
     // Debugging
     public static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
@@ -120,6 +125,7 @@ public class Main {
 
             // Tuning
             jsap.registerParameter(P_MERGEWINDOW);
+            jsap.registerParameter(P_BATCHSIZE);
 
             // Debugging
             jsap.registerParameter(P_VERBOSE);
@@ -248,11 +254,11 @@ public class Main {
             TemporalAccessor oldest = (TemporalAccessor) config.getObject("oldest");
             try {
                 if (types.contains(VaultEntryType.GLUCOSE_CGM))
-                    data.addAll(api.getEntries(latest, oldest, 100));
+                    data.addAll(api.getEntries(latest, oldest, config.getInt("batchsize")));
                 if (types.contains(VaultEntryType.BOLUS_NORMAL)
                         || types.contains(VaultEntryType.MEAL_MANUAL)
                         || types.contains(VaultEntryType.BASAL_MANUAL))
-                    data.addAll(api.getTreatments(latest, oldest, 100));
+                    data.addAll(api.getTreatments(latest, oldest, config.getInt("batchsize")));
             } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
