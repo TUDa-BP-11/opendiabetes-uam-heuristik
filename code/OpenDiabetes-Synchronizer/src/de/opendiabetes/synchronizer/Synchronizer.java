@@ -26,7 +26,8 @@ public class Synchronizer {
     private int batchSize;
 
     public Synchronizer(NSApi read, NSApi write) {
-        this(read, write, Instant.EPOCH, Instant.now(), 100);
+        this(read, write, ZonedDateTime.parse(de.opendiabetes.nsapi.Main.P_OLDEST.getDefault()[0]),
+                ZonedDateTime.parse(de.opendiabetes.nsapi.Main.P_LATEST.getDefault()[0]), 100);
     }
 
     public Synchronizer(NSApi read, NSApi write, TemporalAccessor oldest, TemporalAccessor latest, int batchSize) {

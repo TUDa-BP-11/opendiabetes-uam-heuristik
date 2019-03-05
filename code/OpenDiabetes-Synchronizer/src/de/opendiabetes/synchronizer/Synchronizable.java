@@ -3,6 +3,10 @@ package de.opendiabetes.synchronizer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+/**
+ * A Synchronizable represents a Nightscout data type that can be obtained (GET) and uploaded (POST) via an API path.
+ * The datatype has to contain and a date field which will be used to check if the entry exists on the target instance.
+ */
 public class Synchronizable {
     private final String apiPath;
     private final String dateField;
@@ -26,27 +30,36 @@ public class Synchronizable {
         return dateField;
     }
 
-    public int getFindCount() {
-        return findCount;
-    }
-
-    public void incrFindCount(int increment) {
-        findCount += increment;
-    }
-
+    /**
+     * @return All entries that are missing in the target instance
+     */
     public JsonArray getMissing() {
         return missing;
     }
 
+    /**
+     * @return Amount of entries that are missing in the target instance
+     */
     public int getMissingCount() {
         return missing.size();
     }
 
-    public void putMissing(JsonObject entry) {
+    /**
+     * @return Amount of entries found in the source instance
+     */
+    public int getFindCount() {
+        return findCount;
+    }
+
+    void incrFindCount(int increment) {
+        findCount += increment;
+    }
+
+    void putMissing(JsonObject entry) {
         missing.add(entry);
     }
 
-    public void reset() {
+    void reset() {
         findCount = 0;
         missing = new JsonArray();
     }

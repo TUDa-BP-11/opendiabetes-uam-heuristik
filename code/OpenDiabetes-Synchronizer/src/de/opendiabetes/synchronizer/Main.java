@@ -4,20 +4,14 @@ import com.martiansoftware.jsap.*;
 import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
-import de.opendiabetes.nsapi.logging.DebugFormatter;
-import de.opendiabetes.nsapi.logging.DefaultFormatter;
-import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.IOException;
 import java.time.temporal.TemporalAccessor;
-import java.util.List;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main {
-    private static final Logger LOGGER;
+    private final static Logger LOGGER;
 
     // All parameters
     // Nightscout
@@ -47,11 +41,7 @@ public class Main {
             .setHelp("API secret of the synchronized Nightscout server.");
 
     static {
-        LOGGER = Logger.getLogger(Synchronizer.class.getName());
-        Handler handler = new ConsoleHandler();
-        handler.setFormatter(new DefaultFormatter());
-        LOGGER.addHandler(handler);
-        LOGGER.setUseParentHandlers(false);
+        LOGGER = Logger.getLogger(NSApi.class.getName());
     }
 
     /**
@@ -59,7 +49,7 @@ public class Main {
      *
      * @param jsap your JSAP instance
      */
-    public static void registerArguments(JSAP jsap) {
+    private static void registerArguments(JSAP jsap) {
         try {
             // Nightscout server
             jsap.registerParameter(P_HOST_READ);
@@ -71,6 +61,9 @@ public class Main {
             jsap.registerParameter(de.opendiabetes.nsapi.Main.P_LATEST);
             jsap.registerParameter(de.opendiabetes.nsapi.Main.P_OLDEST);
 
+            // Tuning
+            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_BATCHSIZE);
+
             // Debugging
             jsap.registerParameter(de.opendiabetes.nsapi.Main.P_VERBOSE);
             jsap.registerParameter(de.opendiabetes.nsapi.Main.P_DEBUG);
@@ -80,36 +73,15 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        //TODO: dont duplicate this with NSApi, fix setting LogLevel for NSApi logger and this logger
-        
         // setup arguments
         JSAP jsap = new JSAP();
         registerArguments(jsap);
-
-        // send help message if executed without arguments
-        if (args.length == 0) {
-            LOGGER.log(Level.INFO, "Argument summary:\n%s", jsap.getHelp());
+        JSAPResult config = de.opendiabetes.nsapi.Main.initArguments(jsap, args);
+        if (config == null)
             return;
-        }
-
-        // parse arguments
-        JSAPResult config = jsap.parse(args);
-        if (!config.success()) {
-            LOGGER.log(Level.WARNING, "Invalid arguments:");
-            config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
-            LOGGER.info("For an argument summary execute without arguments.");
-            return;
-        }
 
         // init
-        Level loglevel = config.getBoolean("verbose") ? Level.ALL : Level.INFO;
-        LOGGER.setLevel(loglevel);
-        LOGGER.getHandlers()[0].setLevel(loglevel);
-        if (config.getBoolean("debug")) {
-            LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
-        }
-        List<VaultEntry> data;
-
+        de.opendiabetes.nsapi.Main.initLogger(config);
         NSApi read = new NSApi(config.getString("host-read"), config.getString("secret-read"));
         NSApi write = new NSApi(config.getString("host-write"), config.getString("secret-write"));
 
@@ -117,7 +89,7 @@ public class Main {
                 read, write,
                 (TemporalAccessor) config.getObject("oldest"),
                 (TemporalAccessor) config.getObject("latest"),
-                100);
+                config.getInt("batchsize"));
         Synchronizable entries = new Synchronizable("entries", "dateString");
         Synchronizable treatments = new Synchronizable("treatments", "created_at");
         Synchronizable status = new Synchronizable("devicestatus", "created_at");
