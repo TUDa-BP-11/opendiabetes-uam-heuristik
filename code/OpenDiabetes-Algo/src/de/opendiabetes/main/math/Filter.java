@@ -8,10 +8,11 @@ import java.util.List;
 
 public class Filter {
     public static double getAverage(List<VaultEntry> list, int position, int filterSize) {
+
         double result = 0;
         double amount = filterSize;
 
-        for (int i = position - filterSize / 2; i < position + filterSize / 2; i++) {
+        for (int i = position - filterSize / 2; i <= position + filterSize / 2; i++) {
             if (i < 0 || i >= list.size()) {
                 amount--;
                 continue;
@@ -26,7 +27,7 @@ public class Filter {
         double result = 0;
         double amount = filterSize;
 
-        for (int i = position - filterSize / 2; i < position + filterSize / 2; i++) {
+        for (int i = position - filterSize / 2; i <= position + filterSize / 2; i++) {
             if (i < 0 || i >= list.size()) {
                 amount--;
                 continue;
@@ -46,7 +47,7 @@ public class Filter {
     public static double getMedian(List<VaultEntry> list, int position, int filterSize) {
         List<Double> result = new ArrayList<>();
 
-        for (int i = position - filterSize / 2; i < position + filterSize / 2; i++) {
+        for (int i = position - filterSize / 2; i <= position + filterSize / 2; i++) {
             if (i < 0 || i >= list.size()) {
                 continue;
             }
@@ -60,7 +61,7 @@ public class Filter {
     public static double getMedian(List<VaultEntry> list, int position, int filterSize, int maxTimeDiff) {
         List<Double> result = new ArrayList<>();
 
-        for (int i = position - filterSize / 2; i < position + filterSize / 2; i++) {
+        for (int i = position - filterSize / 2; i <= position + filterSize / 2; i++) {
             if (i < 0 || i >= list.size()) {
                 continue;
             }
