@@ -23,7 +23,7 @@ public class Filter {
         return result / amount;
     }
 
-    public static double getAverage(List<VaultEntry> list, int position, int filterSize, int maxTimeDiff) {
+    public static double getAverage(List<VaultEntry> list, int position, int filterSize, long maxTimeDiff) {
         double result = 0;
         double amount = filterSize;
 
@@ -58,7 +58,7 @@ public class Filter {
         return result.get(result.size() / 2);
     }
 
-    public static double getMedian(List<VaultEntry> list, int position, int filterSize, int maxTimeDiff) {
+    public static double getMedian(List<VaultEntry> list, int position, int filterSize, long maxTimeDiff) {
         List<Double> result = new ArrayList<>();
 
         for (int i = position - filterSize / 2; i <= position + filterSize / 2; i++) {

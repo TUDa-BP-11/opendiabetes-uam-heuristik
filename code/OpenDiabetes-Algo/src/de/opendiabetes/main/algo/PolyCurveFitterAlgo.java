@@ -1,6 +1,7 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.main.math.Filter;
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 
@@ -62,18 +63,27 @@ public class PolyCurveFitterAlgo extends Algorithm {
             currentTime = current.getTimestamp().getTime() / 60000;
             currentLimit = currentTime + absorptionTime / 4;
             if (currentTime > estimatedTimeAccepted) {
-                startValue = current.getValue();
+
+                startValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
+                //startValue = Filter.getAverage(glucose, i, 5, absorptionTime / 3);
+                //startValue = current.getValue();
+                //double deltaBg = Filter.getAverage(glucose, j, 5, 30) - Filter.getAverage(glucose, i, 5, 30);
+                //double deltaBg = next.getValue() - current.getValue();
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                         basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
                 for (int j = i; j < glucose.size(); j++) {
                     next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
+
+                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
+                    //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
+                    //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                                 basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                        deltaBg = next.getValue() - startValue - (nextPrediction - currentPrediction);
-                        lastTime = nextTime;
+                        deltaBg = nextValue - startValue - (nextPrediction - currentPrediction);
+                        //lastTime = nextTime;
 //                        weight = 1 - (nextTime - currentTime) / (absorptionTime / 2);
                         observations.add(new WeightedObservedPoint(weight, nextTime, deltaBg));
                     }
@@ -89,11 +99,11 @@ public class PolyCurveFitterAlgo extends Algorithm {
 //                    if (estimatedCarbs > 0
 //                            && estimatedCarbs < 200 // && error < 10
 //                            ) {
-                    estimatedTimeAccepted = estimatedTime;
-                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                            estimatedCarbs);
-                    mealTreatments.add(meal);
+                estimatedTimeAccepted = estimatedTime;
+                meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                        TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                        estimatedCarbs);
+                mealTreatments.add(meal);
 //                    }
 //                }
             }
