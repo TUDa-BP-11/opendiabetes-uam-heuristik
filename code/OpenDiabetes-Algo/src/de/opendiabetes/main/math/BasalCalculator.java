@@ -19,7 +19,7 @@ public class BasalCalculator {
             double basalRate = profile.getBasalProfiles().get(0).getValue();
             for (VaultEntry entry : basalTreatments) {
                 if (!entry.getType().equals(VaultEntryType.BASAL_MANUAL)) {
-                    throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL");
+                    throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL but was " + entry.getType().toString());
                 }
                 if (entry.getValue2() <= 0) {
                     continue;
@@ -30,7 +30,7 @@ public class BasalCalculator {
         } else {
             for (VaultEntry entry : basalTreatments) {
                 if (!entry.getType().equals(VaultEntryType.BASAL_MANUAL)) {
-                    throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL");
+                    throw new IllegalArgumentException("VaultEntryType should be BASAL_MANUAL but was " + entry.getType().toString());
                 }
                 addBasal(entry, result, profile);
             }
