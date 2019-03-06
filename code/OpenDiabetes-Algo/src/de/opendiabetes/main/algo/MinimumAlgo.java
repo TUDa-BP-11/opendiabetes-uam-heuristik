@@ -13,11 +13,11 @@ import java.util.List;
 public class MinimumAlgo extends Algorithm {
 
 
-    public MinimumAlgo(double absorptionTime, double insulinDuration, Profile profile) {
+    public MinimumAlgo(long absorptionTime, long insulinDuration, Profile profile) {
         super(absorptionTime, insulinDuration, profile);
     }
 
-    public MinimumAlgo(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+    public MinimumAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         super(absorptionTime, insulinDuration, dataProvider);
     }
 

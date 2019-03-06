@@ -8,15 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Algorithm {
-    protected double absorptionTime;
-    protected double insulinDuration;
+
+    protected long absorptionTime;
+    protected long insulinDuration;
     protected Profile profile;
     protected List<VaultEntry> glucose;
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
 
-
-    public Algorithm(double absorptionTime, double insulinDuration, Profile profile) {
+    public Algorithm(long absorptionTime, long insulinDuration, Profile profile) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
         this.profile = profile;
@@ -25,19 +25,18 @@ public abstract class Algorithm {
         basalTreatments = new ArrayList<>();
     }
 
-    public Algorithm(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+    public Algorithm(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
         setDataProvider(dataProvider);
     }
-
 
     /**
      * Set the time needed to absorb a meal completely
      *
      * @param absorptionTime absoption time in minutes
      */
-    public void setAbsorptionTime(double absorptionTime) {
+    public void setAbsorptionTime(long absorptionTime) {
         this.absorptionTime = absorptionTime;
     }
 
@@ -46,7 +45,7 @@ public abstract class Algorithm {
      *
      * @param insulinDuration insulin duration in minutes
      */
-    public void setInsulinDuration(double insulinDuration) {
+    public void setInsulinDuration(long insulinDuration) {
         this.insulinDuration = insulinDuration;
     }
 
@@ -62,7 +61,8 @@ public abstract class Algorithm {
     /**
      * Set a list of glucose measurements for calculation
      *
-     * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
+     * @param entries list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      */
     public void setGlucoseMeasurements(List<VaultEntry> entries) {
         this.glucose = entries;
@@ -71,7 +71,8 @@ public abstract class Algorithm {
     /**
      * Set a list of insulin bolus treatments for calculation
      *
-     * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
+     * @param bolusTreatments list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
         this.bolusTreatments = bolusTreatments;
@@ -80,7 +81,8 @@ public abstract class Algorithm {
     /**
      * Set a list of insulin bolus treatments for calculation
      *
-     * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     * @param basalTreatments list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
         this.basalTreatments = basalTreatments;
@@ -102,7 +104,8 @@ public abstract class Algorithm {
     /**
      * Starts the calculation of predicted meals
      *
-     * @return a list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#MEAL_MANUAL}
+     * @return a list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#MEAL_MANUAL}
      */
     public abstract List<VaultEntry> calculateMeals();
 }

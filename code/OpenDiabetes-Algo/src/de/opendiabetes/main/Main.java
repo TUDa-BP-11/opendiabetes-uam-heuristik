@@ -52,8 +52,8 @@ public class Main {
         // General
         TemporalAccessor lastest = null;
         TemporalAccessor oldest = null;
-        double absorptionTime = 120;
-        double insulinDuration = 180;
+        long absorptionTime = 120;
+        long insulinDuration = 180;
 
         boolean debug = false;
 
@@ -124,12 +124,12 @@ public class Main {
                             i++;
                             break;
                         case "absorptiontime":
-                            absorptionTime = getDoubleValue(arg, args, i);
+                            absorptionTime = getLongValue(arg, args, i);
                             i++;
                             break;
                         case "insduration":
                         case "insulinduration":
-                            insulinDuration = getDoubleValue(arg, args, i);
+                            insulinDuration = getLongValue(arg, args, i);
                             i++;
                             break;
 
@@ -269,6 +269,18 @@ public class Main {
     private static double parseDouble(String arg, String value) {
         try {
             return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
+        }
+    }
+    
+    private static long getLongValue(String arg, String[] args, int i) {
+        return parseLong(arg, getValue(arg, args, i));
+    }
+    
+    private static long parseLong(String arg, String value) {
+        try {
+            return Long.parseLong(value);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
         }
