@@ -69,11 +69,11 @@ public abstract class Algorithm {
         if (!entries.isEmpty()) {
             VaultEntry current = entries.get(0);
             for (VaultEntry entry : entries){
-                if(entry.getTimestamp().getTime() - current.getTimestamp().getTime() < 0){
+                if(entry.getTimestamp().getTime() < current.getTimestamp().getTime()){
                     throw new IllegalArgumentException("entries have to be sorted by timestamp");
                 }
-                if (entry.getType().equals(VaultEntryType.GLUCOSE_CGM)){
-                    throw new IllegalArgumentException("VaultEntryType should be GLUCOSE_CGM but was" + entry.getType().toString());
+                if (!entry.getType().equals(VaultEntryType.GLUCOSE_CGM)){
+                    throw new IllegalArgumentException("VaultEntryType should be GLUCOSE_CGM but was " + entry.getType().toString());
                 }
             }
         }
@@ -92,10 +92,10 @@ public abstract class Algorithm {
         if (!bolusTreatments.isEmpty()) {
             VaultEntry current = bolusTreatments.get(0);
             for (VaultEntry entry : bolusTreatments){
-                if(entry.getTimestamp().getTime() - current.getTimestamp().getTime() < 0){
+                if(entry.getTimestamp().getTime() < current.getTimestamp().getTime()){
                     throw new IllegalArgumentException("bolusTreatments have to be sorted by timestamp");
                 }
-                if (entry.getType().equals(VaultEntryType.BOLUS_NORMAL)){
+                if (!entry.getType().equals(VaultEntryType.BOLUS_NORMAL)){
                     throw new IllegalArgumentException("VaultEntryType should be BOLUS_NORMAL but was" + entry.getType().toString());
                 }
             }
@@ -113,10 +113,10 @@ public abstract class Algorithm {
         if (!basalTreatments.isEmpty()) {
             VaultEntry current = basalTreatments.get(0);
             for (VaultEntry entry : basalTreatments){
-                if(entry.getTimestamp().getTime() - current.getTimestamp().getTime() < 0){
+                if(entry.getTimestamp().getTime() < current.getTimestamp().getTime()){
                     throw new IllegalArgumentException("basalTreatments have to be sorted by timestamp");
                 }
-                if (entry.getType().equals(VaultEntryType.BASAL_PROFILE)){
+                if (!entry.getType().equals(VaultEntryType.BASAL_PROFILE)){
                     throw new IllegalArgumentException("VaultEntryType should be BASAL_PROFILE but was" + entry.getType().toString());
                 }
             }

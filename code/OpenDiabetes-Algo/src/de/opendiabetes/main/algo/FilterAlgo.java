@@ -73,7 +73,7 @@ public class FilterAlgo extends Algorithm {
 
         int row = 0;
         
-        resample glucose to 5 min grid?
+//        resample glucose to 5 min grid?
         for (VaultEntry current : glucose) {
             currentTime = current.getTimestamp().getTime();
 
