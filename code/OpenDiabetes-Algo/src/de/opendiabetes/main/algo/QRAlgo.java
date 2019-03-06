@@ -16,11 +16,11 @@ import static java.lang.Math.pow;
 
 public class QRAlgo extends Algorithm {
 
-    public QRAlgo(double absorptionTime, double insulinDuration, Profile profile) {
+    public QRAlgo(long absorptionTime, long insulinDuration, Profile profile) {
         super(absorptionTime, insulinDuration, profile);
     }
 
-    public QRAlgo(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+    public QRAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         super(absorptionTime, insulinDuration, dataProvider);
     }
 

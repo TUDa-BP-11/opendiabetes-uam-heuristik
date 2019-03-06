@@ -2,14 +2,12 @@ package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.CGMPlotter;
 import de.opendiabetes.main.math.BasalCalculator;
-import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.main.util.Snippet;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.util.ArrayList;
@@ -17,8 +15,8 @@ import java.util.List;
 
 public class Main {
 
-    static int absorptionTime = 180;
-    static int insDuration = 3 * 60;
+    static int absorptionTime = 120;
+    static int insDuration = 180;
 
     public static void main(String[] args) {
 
@@ -64,7 +62,7 @@ public class Main {
             e.setValue(e.getValue());
         }
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, 0 * insDuration * 60 * 1000, 10); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60000, 0*insDuration * 60000, 1); //Integer.MAX_VALUE
 
         Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);

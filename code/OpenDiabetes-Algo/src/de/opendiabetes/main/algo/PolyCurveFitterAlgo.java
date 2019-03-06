@@ -21,11 +21,11 @@ import static java.lang.Math.pow;
  */
 public class PolyCurveFitterAlgo extends Algorithm {
 
-    public PolyCurveFitterAlgo(double absorptionTime, double insulinDuration, Profile profile) {
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, Profile profile) {
         super(absorptionTime, insulinDuration, profile);
     }
 
-    public PolyCurveFitterAlgo(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         super(absorptionTime, insulinDuration, dataProvider);
     }
 

@@ -12,14 +12,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
 public class FilterAlgo extends Algorithm {
 
-    public FilterAlgo(double absorptionTime, double insulinDuration, Profile profile) {
+    public FilterAlgo(long absorptionTime, long insulinDuration, Profile profile) {
         super(absorptionTime, insulinDuration, profile);
     }
 
-    public FilterAlgo(double absorptionTime, double insulinDuration, AlgorithmDataProvider dataProvider) {
+    public FilterAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         super(absorptionTime, insulinDuration, dataProvider);
     }
 
@@ -28,7 +27,7 @@ public class FilterAlgo extends Algorithm {
         RealMatrix matrix;
         RealVector nkbg;
         RealVector mealValues;
-        
+
         ArrayList<Long> times;
 
         List<VaultEntry> mealTreatments;
@@ -45,15 +44,18 @@ public class FilterAlgo extends Algorithm {
         // possible discrete meal times within snippet time range each 5 Minutes.
         long firstTime = glucose.get(0).getTimestamp().getTime();
         long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime();
-        long step = 5 * 60 * 1000; // 5 minutes
-        long currentTime = firstTime;
+        long step = 5 * 60000; // 5 minutes
+        long currentTime = firstTime - absorptionTime * 60000;
+
         while (currentTime <= lastTime) {
             times.add(currentTime);
             currentTime += step;
         }
-        matrix = new Array2DRowRealMatrix(glucose.size(), times.size()); //3
+        matrix = new Array2DRowRealMatrix(glucose.size(), times.size());
 
         int row = 0;
+        
+//        resample glucose to 5 min grid?
         for (VaultEntry current : glucose) {
             currentTime = current.getTimestamp().getTime();
 
@@ -64,27 +66,23 @@ public class FilterAlgo extends Algorithm {
 
             deltaBg = currentValue - currentPrediction;
             nkbg = nkbg.append(deltaBg);
-
             for (int column = 0; column < times.size(); column++) {
-                long dt = currentTime - times.get(column);
-                if (dt < 0) {
-                    dt = 0;
-                }
-
-                matrix.setEntry(row, column, Predictions.carbsOnBoard(dt, absorptionTime));
-
+                matrix.setEntry(row, column, Predictions.carbsOnBoard((currentTime - times.get(column))/60000, absorptionTime));
             }
             row++;
         }
-        // COB*m = nkbg
-        DecompositionSolver solver = new QRDecomposition(matrix).getSolver();
-        mealValues = solver.solve(nkbg);
-        for (int i = 0; i < mealValues.getDimension(); i++) {
-            meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                    TimestampUtils.createCleanTimestamp(new Date(times.get(i))),
-                    mealValues.getEntry(i));
-            System.out.println(meal.toString());
-            mealTreatments.add(meal);
+
+//        System.out.println(nkbg.toString());
+        DecompositionSolver solver = new SingularValueDecomposition(matrix).getSolver();
+        if (solver.isNonSingular()) {
+            mealValues = solver.solve(nkbg);
+            for (int i = 0; i < mealValues.getDimension(); i++) {
+                meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                        TimestampUtils.createCleanTimestamp(new Date(times.get(i))),
+                        mealValues.getEntry(i));
+                System.out.println(meal.toString());
+                mealTreatments.add(meal);
+            }
         }
 
         return mealTreatments;
