@@ -62,7 +62,7 @@ public class Main {
             e.setValue(e.getValue());
         }
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60 * 1000, insDuration * 60 * 1000, 10); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60000, 0*insDuration * 60000, 1); //Integer.MAX_VALUE
 
         Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);

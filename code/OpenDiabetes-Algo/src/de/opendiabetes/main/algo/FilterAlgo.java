@@ -51,24 +51,6 @@ public class FilterAlgo extends Algorithm {
             times.add(currentTime);
             currentTime += step;
         }
-//        long maxTime = lastTime-firstTime;
-//        long minTime = firstTime + insulinDuration * 60000;
-//        int startIdx = 0;
-//System.out.println(firstTime/60000 +"::"+ lastTime/60000+"::"+minTime/60000+"::" + maxTime/60000+"::"+insulinDuration);
-//        for (VaultEntry current : glucose) {
-//
-//            currentTime = current.getTimestamp().getTime();
-//            
-//            if (currentTime < minTime) {
-//                startIdx++;
-//            } else {
-//                break;
-//            }
-//        }
-//        if (glucose.size() - startIdx <= 0) {
-//            return mealTreatments;
-//        }
-
         matrix = new Array2DRowRealMatrix(glucose.size(), times.size());
 
         int row = 0;
@@ -77,7 +59,6 @@ public class FilterAlgo extends Algorithm {
         for (VaultEntry current : glucose) {
             currentTime = current.getTimestamp().getTime();
 
-//            if (currentTime >= minTime) {
             currentPrediction = Predictions.predict(currentTime, mealTreatments, bolusTreatments,
                     basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
@@ -86,13 +67,12 @@ public class FilterAlgo extends Algorithm {
             deltaBg = currentValue - currentPrediction;
             nkbg = nkbg.append(deltaBg);
             for (int column = 0; column < times.size(); column++) {
-                matrix.setEntry(row, column, Predictions.carbsOnBoard(currentTime - times.get(column), absorptionTime));
+                matrix.setEntry(row, column, Predictions.carbsOnBoard((currentTime - times.get(column))/60000, absorptionTime));
             }
             row++;
-//            }
         }
-        // COB*m = nkbg
 
+//        System.out.println(nkbg.toString());
         DecompositionSolver solver = new SingularValueDecomposition(matrix).getSolver();
         if (solver.isNonSingular()) {
             mealValues = solver.solve(nkbg);
