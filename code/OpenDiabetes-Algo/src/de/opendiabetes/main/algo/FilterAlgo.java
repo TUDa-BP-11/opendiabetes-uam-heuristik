@@ -1,6 +1,7 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.main.math.Filter;
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -56,18 +57,21 @@ public class FilterAlgo extends Algorithm {
         int row = 0;
         
 //        resample glucose to 5 min grid?
-        for (VaultEntry current : glucose) {
+        for (int i = 0; i < glucose.size(); i++) {
+            VaultEntry current = glucose.get(i);
             currentTime = current.getTimestamp().getTime();
 
             currentPrediction = Predictions.predict(currentTime, mealTreatments, bolusTreatments,
                     basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
-            currentValue = current.getValue();
+
+            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
+            //currentValue = current.getValue();
 
             deltaBg = currentValue - currentPrediction;
             nkbg = nkbg.append(deltaBg);
             for (int column = 0; column < times.size(); column++) {
-                matrix.setEntry(row, column, Predictions.carbsOnBoard((currentTime - times.get(column))/60000, absorptionTime));
+                matrix.setEntry(row, column, Predictions.carbsOnBoard((currentTime - times.get(column)) / 60000, absorptionTime));
             }
             row++;
         }
