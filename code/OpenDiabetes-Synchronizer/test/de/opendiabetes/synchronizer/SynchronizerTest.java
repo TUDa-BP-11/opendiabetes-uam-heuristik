@@ -1,7 +1,5 @@
 package de.opendiabetes.synchronizer;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
@@ -21,7 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SynchronizerTest {
-    private static Synchronizer synchronizer;
+    private static NSApi read;
+    private static NSApi write;
 
     @BeforeAll
     static void setUp() {
@@ -40,14 +39,14 @@ public class SynchronizerTest {
         if (readHost == null || readSecret == null || writeHost == null || writeSecret == null)
             fail("");
 
-        NSApi read = new NSApi(readHost, readSecret);
-        NSApi write = new NSApi(writeHost, writeSecret);
-        synchronizer = new Synchronizer(read, write);
+        read = new NSApi(readHost, readSecret);
+        write = new NSApi(writeHost, writeSecret);
     }
 
     @AfterAll
     static void tearDown() throws IOException {
-        synchronizer.close();
+        read.close();
+        write.close();
     }
 
     @ParameterizedTest
@@ -57,31 +56,44 @@ public class SynchronizerTest {
             "devicestatus, created_at"
     })
     void testMissingZero(String apiPath, String dateField) throws NightscoutIOException, NightscoutServerException {
+        Synchronizer synchronizer = new Synchronizer(read, write);
         Synchronizable sync = new Synchronizable(apiPath, dateField);
         synchronizer.findMissing(sync);
         if (sync.getMissingCount() > 0)
             synchronizer.postMissing(sync);
         synchronizer.findMissing(sync);
-        int missingNew = sync.getMissingCount();
-        assertEquals(0, missingNew);
+        assertEquals(0, sync.getMissingCount());
     }
 
     @Test
     void testMissingEntry() throws NightscoutIOException, NightscoutServerException {
+        Synchronizer synchronizer = new Synchronizer(read, write);
         Synchronizable sync = new Synchronizable("entries", "dateString");
         synchronizer.findMissing(sync);
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        System.out.println(gson.toJson(sync.getMissing()));
         synchronizer.getReadApi().postEntries(Collections.singletonList(
                 new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 80)
         ));
+        synchronizer = new Synchronizer(read, write);
         synchronizer.findMissing(sync);
-        System.out.println("======================");
-        System.out.println(gson.toJson(sync.getMissing()));
         assertEquals(found + 1, sync.getFindCount());
-        //TODO: this fails currently, maybe rewrite Synchronizer cause it's unnecessarily complicated
+        assertEquals(missing + 1, sync.getMissingCount());
+    }
+
+    @Test
+    void testMissingTreatments() throws NightscoutIOException, NightscoutServerException {
+        Synchronizer synchronizer = new Synchronizer(read, write);
+        Synchronizable sync = new Synchronizable("treatments", "created_at");
+        synchronizer.findMissing(sync);
+        int found = sync.getFindCount();
+        int missing = sync.getMissingCount();
+        synchronizer.getReadApi().postTreatments(Collections.singletonList(
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(), 4)
+        ));
+        synchronizer = new Synchronizer(read, write);
+        synchronizer.findMissing(sync);
+        assertEquals(found + 1, sync.getFindCount());
         assertEquals(missing + 1, sync.getMissingCount());
     }
 }

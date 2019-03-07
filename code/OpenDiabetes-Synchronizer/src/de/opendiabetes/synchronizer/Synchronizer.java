@@ -1,28 +1,23 @@
 package de.opendiabetes.synchronizer;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import de.opendiabetes.nsapi.GetBuilder;
+import de.opendiabetes.nsapi.DataCursor;
 import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
 
 public class Synchronizer {
     private NSApi read;
     private NSApi write;
-    private String oldest;
-    private String latest;
+    private TemporalAccessor oldest;
+    private TemporalAccessor latest;
     private int batchSize;
 
     public Synchronizer(NSApi read, NSApi write) {
@@ -33,9 +28,8 @@ public class Synchronizer {
     public Synchronizer(NSApi read, NSApi write, TemporalAccessor oldest, TemporalAccessor latest, int batchSize) {
         this.read = read;
         this.write = write;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-        this.oldest = formatter.format(oldest);
-        this.latest = formatter.format(latest);
+        this.oldest = oldest;
+        this.latest = latest;
         this.batchSize = batchSize;
     }
 
@@ -47,18 +41,6 @@ public class Synchronizer {
         return write;
     }
 
-    public String getOldest() {
-        return oldest;
-    }
-
-    public String getLatest() {
-        return latest;
-    }
-
-    public int getBatchSize() {
-        return batchSize;
-    }
-
     /**
      * Finds all missing entries in the target NS instance. Nightscout returns entries in
      * order from latest to oldest, therefore we actually compare in the same order
@@ -67,94 +49,68 @@ public class Synchronizer {
      */
     public void findMissing(Synchronizable synchronizable) throws NightscoutIOException, NightscoutServerException {
         synchronizable.reset();
-        GetBuilder sourceGetBuilder;
-        GetBuilder targetGetBuilder;
-        JsonArray sourceEntries = new JsonArray();
-        JsonArray targetEntries;
+
         String dateField = synchronizable.getDateField();
-        do {
-            sourceGetBuilder = read.createGet(synchronizable.getApiPath());
-            sourceGetBuilder.count(batchSize);
+        DataCursor readCursor = new DataCursor(read, synchronizable.getApiPath(), dateField, latest, oldest, batchSize);
+        DataCursor writeCursor = new DataCursor(write, synchronizable.getApiPath(), dateField, latest, oldest, batchSize);
 
-            if (sourceEntries.size() == 0) {  // first search (include start: lte)
-                sourceGetBuilder.find(dateField).lte(latest);
-            } else {    // next search, start at oldest found entry (excluded: lt)
-                String last = sourceEntries.get(sourceEntries.size() - 1).getAsJsonObject().get(dateField).getAsString();
-                sourceGetBuilder.find(dateField).lt(last);
-            }
-            sourceGetBuilder.find(dateField).gte(oldest);
+        JsonObject lastCompare = null;
+        while (readCursor.hasNext()) {
+            JsonObject current = readCursor.next();
+            String currentDateString = current.get(dateField).getAsString();
+            synchronizable.incrFindCount();
+            boolean found = false;
 
-            sourceEntries = sourceGetBuilder.getRaw().getAsJsonArray();
-            synchronizable.incrFindCount(sourceEntries.size());
-            Main.logger().log(Level.FINE, "Found %d entries in source", sourceEntries.size());
+            // compare if the last entry was not found or if the write cursor has more objects
+            while (lastCompare != null || writeCursor.hasNext()) {
+                JsonObject compare;
+                if (lastCompare == null)
+                    compare = writeCursor.next();
+                else compare = lastCompare;
+                String compareDateString = compare.get(dateField).getAsString();
 
-            if (sourceEntries.size() > 0) {
-                int i = 0;
-                JsonObject original = sourceEntries.get(i).getAsJsonObject();
-                String originalDate = original.get(dateField).getAsString();
-
-                do {
-                    // get entries from target to compare
-                    targetGetBuilder = write.createGet(synchronizable.getApiPath());
-                    targetGetBuilder.count(batchSize);
-                    if (i == 0) // first search
-                        targetGetBuilder.find(dateField).lte(originalDate);
-                    else // next search, start at oldest found entry
-                        targetGetBuilder.find(dateField).lt(originalDate);
-                    targetGetBuilder.find(dateField).gte(oldest);
-                    targetEntries = targetGetBuilder.getRaw().getAsJsonArray();
-                    Main.logger().log(Level.FINE, "Found %d entries in target", targetEntries.size());
-
-                    if (targetEntries.size() == 0) {  // if no result in target instance, all entries are missing
-                        Main.logger().log(Level.FINE, "Marking remaining %d entries as missing", sourceEntries.size() - i);
-                        for (; i < sourceEntries.size(); i++)
-                            synchronizable.putMissing(sourceEntries.get(i).getAsJsonObject());
-                    } else {
-                        // start comparing entries from source with target
-                        int k = 0;
-                        do {
-                            original = sourceEntries.get(i).getAsJsonObject();
-                            originalDate = original.get(dateField).getAsString();
-                            String compareDate = targetEntries.get(k).getAsJsonObject().get(dateField).getAsString();
-                            if (originalDate.equals(compareDate)) {     // not missing
-                                Main.logger().log(Level.FINE, "- %s IS NOT missing", originalDate);
-                                k++;
-                                i++;
-                            } else {
-                                ZonedDateTime originalZDT = getZonedDateTime(originalDate);
-                                ZonedDateTime compareZDT = getZonedDateTime(compareDate);
-                                if (originalZDT.isAfter(compareZDT)) {   // original is missing
-                                    Main.logger().log(Level.FINE, "+ %s IS missing", originalDate);
-                                    synchronizable.putMissing(original);
-                                    i++;
-                                } else {    // original is newer then compare, test next
-                                    k++;
-                                }
-                            }
-                        } while (i < sourceEntries.size() && k < targetEntries.size());
-                        // compare as long as there is something to compare
+                if (currentDateString.equals(compareDateString)) {
+                    found = true;
+                    lastCompare = null;
+                    break;  // break out of inner loop
+                } else {
+                    ZonedDateTime currentDate = NSApi.getZonedDateTime(currentDateString);
+                    ZonedDateTime compareDate = NSApi.getZonedDateTime(compareDateString);
+                    if (currentDate.isAfter(compareDate)) {
+                        lastCompare = compare;
+                        break;  // break out of inner loop
                     }
-                } while (i < sourceEntries.size());
-                // repeat if there are still entries not compared (target has more results than batch size)
+                }
+                // keep going until current is either found or before the next compare
+                lastCompare = null;
             }
-        } while (sourceEntries.size() != 0);  // repeat as long as source returns something
-    }
-
-    private ZonedDateTime getZonedDateTime(String value) throws NightscoutIOException {
-        try {
-            TemporalAccessor t = DateTimeFormatter.ISO_DATE_TIME.parse(value);
-            if (t.isSupported(ChronoField.OFFSET_SECONDS))
-                return ZonedDateTime.from(t);
-            else return LocalDateTime.from(t).atZone(ZoneId.of("UTC"));
-        } catch (DateTimeParseException e) {
-            throw new NightscoutIOException("Could not parse date: " + value, e);
+            if (found) {
+                Main.logger().log(Level.FINE, "- %s IS NOT missing", current.get(dateField).getAsString());
+            } else {
+                Main.logger().log(Level.FINE, "+ %s IS missing", current.get(dateField).getAsString());
+                synchronizable.putMissing(current);
+            }
         }
     }
 
+    /**
+     * Posts all missing objects to the write server. Strips all <code>_id</code> fields of all objects if found,
+     * to prevent MongoDB errors on the server side.
+     *
+     * @param synchronizable the synchronizeable
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
     public void postMissing(Synchronizable synchronizable) throws NightscoutIOException, NightscoutServerException {
-        write.createPost(synchronizable.getApiPath())
-                .setBody(synchronizable.getMissing().toString())
-                .send();
+        for (JsonElement e : synchronizable.getMissing()) {
+            JsonObject o = e.getAsJsonObject();
+            if (o.has("_id"))
+                o.remove("_id");
+        }
+        for (JsonArray array : NSApi.split(synchronizable.getMissing(), batchSize))
+            write.createPost(synchronizable.getApiPath())
+                    .setBody(array.toString())
+                    .send();
     }
 
     public void close() throws IOException {

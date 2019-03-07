@@ -2,6 +2,7 @@ package de.opendiabetes.synchronizer;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import de.opendiabetes.nsapi.NSApi;
 
 /**
  * A Synchronizable represents a Nightscout data type that can be obtained (GET) and uploaded (POST) via an API path.
@@ -14,6 +15,10 @@ public class Synchronizable {
     private int findCount;
     private JsonArray missing;
 
+    /**
+     * @param apiPath   API path used with {@link NSApi#createGet(String)}. Has to return an array of json objects.
+     * @param dateField the name of the field which holds information about the date and time of your data object
+     */
     public Synchronizable(String apiPath, String dateField) {
         this.apiPath = apiPath;
         this.dateField = dateField;
@@ -51,8 +56,8 @@ public class Synchronizable {
         return findCount;
     }
 
-    void incrFindCount(int increment) {
-        findCount += increment;
+    void incrFindCount() {
+        findCount++;
     }
 
     void putMissing(JsonObject entry) {
