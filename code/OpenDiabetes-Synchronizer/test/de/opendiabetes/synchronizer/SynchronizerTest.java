@@ -12,6 +12,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
 
@@ -56,7 +60,10 @@ public class SynchronizerTest {
             "devicestatus, created_at"
     })
     void testMissingZero(String apiPath, String dateField) throws NightscoutIOException, NightscoutServerException {
-        Synchronizer synchronizer = new Synchronizer(read, write);
+        ZonedDateTime oldest = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"));
+        // prevent testing with data that was just uploaded by another test, because Nightscout gets confused with caching
+        ZonedDateTime latest = ZonedDateTime.now().minus(1, ChronoUnit.DAYS);
+        Synchronizer synchronizer = new Synchronizer(read, write, oldest, latest, 100);
         Synchronizable sync = new Synchronizable(apiPath, dateField);
         synchronizer.findMissing(sync);
         if (sync.getMissingCount() > 0)
