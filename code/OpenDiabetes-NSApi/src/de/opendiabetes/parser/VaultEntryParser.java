@@ -22,35 +22,37 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
     }
 
     /**
-     * Parses a {@link JSONArray} containing NightScout entries (e.g. results from the NightScout API) to a List of {@link VaultEntry}s.
+     * Parses a {@link JSONArray} containing NightScout entries (e.g. results
+     * from the NightScout API) to a List of {@link VaultEntry}s.
      *
-     * @param entries The array to parse. All entries in the array have to be JSON Objects
+     * @param entries The array to parse. All entries in the array have to be
+     * JSON Objects
      * @return a list of VaultEntry representing the given input
      */
     public List<VaultEntry> parse(JSONArray entries) {
         List<VaultEntry> result = new ArrayList<>();
+        //TODO: Jens fragen, warum er die Sekunden aus den Timestamps entfernen will
         for (int i = 0; i < entries.length(); i++) {
             JSONObject o = entries.getJSONObject(i);
 
             Date date;
             String type = o.optString("type");
+            String eventType = o.optString("eventType");
             if (type != null && type.equals("sgv")) {
                 VaultEntryType entryType = VaultEntryType.GLUCOSE_CGM;
                 date = new Date(o.getLong("date"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("sgv")));
-
-            }
+            } 
             if (o.has("insulin") && !o.isNull("insulin")) {
                 VaultEntryType entryType = VaultEntryType.BOLUS_NORMAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("insulin")));
-            }
+            } 
             if (o.has("carbs") && !o.isNull("carbs")) {
                 VaultEntryType entryType = VaultEntryType.MEAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
                 result.add(new VaultEntry(entryType, date, o.getDouble("carbs")));
-            }
-            String eventType = o.optString("eventType");
+            } 
             if (eventType != null && eventType.equals("Temp Basal")) {
                 VaultEntryType entryType = VaultEntryType.BASAL_MANUAL;
                 date = makeDate(o.getString("timestamp"));
@@ -158,7 +160,6 @@ public class VaultEntryParser implements Parser<List<VaultEntry>> {
      * <p>
      * }
      */
-
     // "Correction Bolus", "duration", "unabsorbed", "type", "programmed", "insulin"
     // "Meal Bolus", "carbs", "absorptionTime"
     public String toJson(List<VaultEntry> vaultEntries) {

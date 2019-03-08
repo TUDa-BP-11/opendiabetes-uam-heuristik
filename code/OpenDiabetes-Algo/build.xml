@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="OpenDiabetes-Algo" default="default" basedir=".">
+    <description>Builds, tests, and runs the project OpenDiabetes-Algo.</description>
+    <import file="nbproject/build-impl.xml"/>
+    <!--
+    There exist several targets which are by default empty and which can be 
+    used for execution of your tasks. These targets are usually executed 
+    before and after some main targets. They are: 
+
+      -pre-init:                 called before initialization of project properties
+      -post-init:                called after initialization of project properties
+      -pre-compile:              called before javac compilation
+      -post-compile:             called after javac compilation
+      -pre-compile-single:       called before javac compilation of single file
+      -post-compile-single:      called after javac compilation of single file
+      -pre-compile-test:         called before javac compilation of JUnit tests
+      -post-compile-test:        called after javac compilation of JUnit tests
+      -pre-compile-test-single:  called before javac compilation of single JUnit test
+      -post-compile-test-single: called after javac compilation of single JUunit test
+      -pre-jar:                  called before JAR building
+      -post-jar:                 called after JAR building
+      -post-clean:               called after cleaning build products
+    -->
+    <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
+    <property name="nsapi.jar" value="OpenDiabetes-NSApi.jar"/>
+    <available property="nsapi.available" file="${nsapi.dir}/dist/${nsapi.jar}"/>
+
+    <target name="full" depends="clean, init, compile, jar, junit5-test"
+            description="Clean, build jar with all libraries, run tests"/>
+
+    <target name="compile-nsapi" unless="nsapi.available" description="Builds the engine, unless it already exists">
+        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
+        <ant dir="${nsapi.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
+    </target>
+
+    <target name="-pre-compile" depends="compile-nsapi"
+            description="Unjars all dependencies. Builds the engine if necessary"/>
+
+    <target name="-pre-jar" depends="init, compile-nsapi">
+        <unjar dest="${build.classes.dir}" overwrite="false">
+            <filelist dir="${nsapi.dir}/dist">
+                <file name="${nsapi.jar}"/>
+            </filelist>
+        </unjar>
+    </target>
+
+    <!-- Tests -->
+    <condition property="junit5.cantest">
+        <and>
+            <antversion atleast="1.10.3"/>
+            <available classname="org.junit.platform.launcher.core.LauncherFactory"/>
+            <available classname="org.junit.platform.commons.util.Preconditions"/>
+            <available classname="org.junit.platform.engine.TestEngine"/>
+        </and>
+    </condition>
+
+    <target name="junit5-test-check" unless="junit5.cantest"
+            description="Prints a warning if the current version of ant does not support tests">
+        <echo>One of the following conditions to run tests is not met:</echo>
+        <echo>Ant version 1.10.3 or newer</echo>
+        <echo>JUnit Platform Launcher, Commons and Engine need to available in the ant classpath</echo>
+    </target>
+
+    <target name="junit5-test" if="junit5.cantest" depends="-pre-pre-jar, junit5-test-check, compile-test"
+            description="Runs the tests. Ant version 1.10.3 or higher required">
+
+        <junitlauncher haltonfailure="true" printsummary="true">
+            <classpath>
+                <pathelement path="${build.classes.dir}"/>
+                <pathelement path="${build.test.classes.dir}"/>
+                <fileset dir="${libraries.dir}" includes="*.jar"/>
+                <fileset dir="${libraries.dir}/junit" includes="*.jar"/>
+            </classpath>
+            <testclasses outputdir="${dist.jar.dir}">
+                <fileset dir="${build.test.classes.dir}" includes="**"/>
+            </testclasses>
+            <listener type="legacy-plain" sendsysout="true" sendsyserr="true"/>
+        </junitlauncher>
+    </target>
+</project>
