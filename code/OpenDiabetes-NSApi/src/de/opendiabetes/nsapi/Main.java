@@ -1,7 +1,6 @@
 package de.opendiabetes.nsapi;
 
 import com.martiansoftware.jsap.*;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
@@ -35,11 +34,13 @@ public class Main {
     // Nightscout
     private static final Parameter P_HOST = new FlaggedOption("host")
             .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
             .setShortFlag('h')
             .setLongFlag("host")
             .setHelp("Your Nightscout host URL. Make sure to include the port.");
     private static final Parameter P_SECRET = new FlaggedOption("secret")
             .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
             .setShortFlag('s')
             .setLongFlag("secret")
             .setHelp("Your Nightscout API secret.");
@@ -66,12 +67,12 @@ public class Main {
             .setShortFlag('o')
             .setLongFlag("overwrite")
             .setHelp("Overwrite existing files");
-    private static final Parameter P_LATEST = new FlaggedOption("latest")
+    public static final Parameter P_LATEST = new FlaggedOption("latest")
             .setStringParser(new IsoDateTimeParser())
             .setLongFlag("latest")
             .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
             .setHelp("The latest date and time to load data");
-    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+    public static final Parameter P_OLDEST = new FlaggedOption("oldest")
             .setStringParser(new IsoDateTimeParser())
             .setLongFlag("oldest")
             .setDefault("1970-01-01T00:00:00.000Z")
@@ -82,11 +83,16 @@ public class Main {
             .setLongFlag("merge-window")
             .setDefault("60")
             .setHelp("Set the maximum amount of seconds two entries can be apart from one another for them to be considered the same entry.");
+    public static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("batch-size")
+            .setDefault("100")
+            .setHelp("How many entries should be loaded at once.");
     // Debugging
-    private static final Parameter P_VERBOSE = new Switch("verbose")
+    public static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
             .setHelp("Sets logging to verbose");
-    private static final Parameter P_DEBUG = new Switch("debug")
+    public static final Parameter P_DEBUG = new Switch("debug")
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
@@ -103,7 +109,7 @@ public class Main {
      *
      * @param jsap your JSAP instance
      */
-    public static void registerArguments(JSAP jsap) {
+    private static void registerArguments(JSAP jsap) {
         try {
             // Nightscout server
             jsap.registerParameter(P_HOST);
@@ -120,6 +126,7 @@ public class Main {
 
             // Tuning
             jsap.registerParameter(P_MERGEWINDOW);
+            jsap.registerParameter(P_BATCHSIZE);
 
             // Debugging
             jsap.registerParameter(P_VERBOSE);
@@ -129,15 +136,18 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) throws UnirestException {
-        // setup arguments
-        JSAP jsap = new JSAP();
-        registerArguments(jsap);
-
+    /**
+     * Parses the arguments with the given JSAP configuration. Prints an argument summary if no arguments were supplied.
+     *
+     * @param jsap the JSAP configuration
+     * @param args the arguments that will be parsed
+     * @return the result of the parsed arguments or <code>null</code>, if the arguments could not be parsed successfully.
+     */
+    public static JSAPResult initArguments(JSAP jsap, String[] args) {
         // send help message if executed without arguments
         if (args.length == 0) {
             LOGGER.log(Level.INFO, "Argument summary:\n%s", jsap.getHelp());
-            return;
+            return null;
         }
 
         // parse arguments
@@ -146,20 +156,39 @@ public class Main {
             LOGGER.log(Level.WARNING, "Invalid arguments:");
             config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
             LOGGER.info("For an argument summary execute without arguments.");
-            return;
+            return null;
         }
+        return config;
+    }
 
-        // init
+    /**
+     * Initializes the logger with correct verbose and debug settings
+     *
+     * @param config the config
+     */
+    public static void initLogger(JSAPResult config) {
         Level loglevel = config.getBoolean("verbose") ? Level.ALL : Level.INFO;
         LOGGER.setLevel(loglevel);
         LOGGER.getHandlers()[0].setLevel(loglevel);
         if (config.getBoolean("debug")) {
             LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
         }
+    }
+
+    public static void main(String[] args) {
+        // setup arguments
+        JSAP jsap = new JSAP();
+        registerArguments(jsap);
+        JSAPResult config = initArguments(jsap, args);
+        if (config == null)
+            return;
+
+        // init
+        initLogger(config);
         List<VaultEntry> data;
 
         if (!config.contains("host") || !config.contains("secret")) {
-            LOGGER.log(Level.WARNING, "Please specify your Nigthscout host and API secret:\n%s\n%s", new Object[]{P_HOST.getSyntax(), P_SECRET.getSyntax()});
+            LOGGER.log(Level.WARNING, "Please specify your Nightscout host and API secret:\n%s\n%s", new Object[]{P_HOST.getSyntax(), P_SECRET.getSyntax()});
             return;
         }
 
@@ -248,11 +277,11 @@ public class Main {
             TemporalAccessor oldest = (TemporalAccessor) config.getObject("oldest");
             try {
                 if (types.contains(VaultEntryType.GLUCOSE_CGM))
-                    data.addAll(api.getEntries(latest, oldest, 100));
+                    data.addAll(api.getEntries(latest, oldest, config.getInt("batchsize")));
                 if (types.contains(VaultEntryType.BOLUS_NORMAL)
                         || types.contains(VaultEntryType.MEAL_MANUAL)
                         || types.contains(VaultEntryType.BASAL_MANUAL))
-                    data.addAll(api.getTreatments(latest, oldest, 100));
+                    data.addAll(api.getTreatments(latest, oldest, config.getInt("batchsize")));
             } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
