@@ -80,9 +80,9 @@ public class SynchronizerTest {
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
         synchronizer.getReadApi().postEntries(Collections.singletonList(
-                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(), 80)
+                // set one minute in the past to prevent issues with clocks out of sync
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(System.currentTimeMillis() - 60 * 1000), 80)
         ));
-        synchronizer = new Synchronizer(read, write);
         synchronizer.findMissing(sync);
         assertEquals(found + 1, sync.getFindCount());
         assertEquals(missing + 1, sync.getMissingCount());
@@ -96,9 +96,9 @@ public class SynchronizerTest {
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
         synchronizer.getReadApi().postTreatments(Collections.singletonList(
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(), 4)
+                // set one minute in the past to prevent issues with clocks out of sync
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(System.currentTimeMillis() - 60 * 1000), 4)
         ));
-        synchronizer = new Synchronizer(read, write);
         synchronizer.findMissing(sync);
         assertEquals(found + 1, sync.getFindCount());
         assertEquals(missing + 1, sync.getMissingCount());
