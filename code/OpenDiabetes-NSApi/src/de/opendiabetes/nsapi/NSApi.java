@@ -39,6 +39,7 @@ public class NSApi {
     private final static NightscoutExporter EXPORTER = new NightscoutExporter();
 
     private String host;
+    private String secret;
 
     /**
      * Constructs a new NighScout API instance. Connects to the specified host and port, using the given token for all queries
@@ -48,9 +49,10 @@ public class NSApi {
      */
     public NSApi(String host, String secret) {
         this.host = host + "/api/v1/";
+        this.secret = DigestUtils.sha1Hex(secret);
         Unirest.setDefaultHeader("accept", "application/json");
         Unirest.setDefaultHeader("content-type", "application/json");
-        Unirest.setDefaultHeader("API-SECRET", DigestUtils.sha1Hex(secret));
+        Unirest.setDefaultHeader("API-SECRET", this.secret);
     }
 
     /**
@@ -165,7 +167,7 @@ public class NSApi {
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
     public List<VaultEntry> getEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
-        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString");
+        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString", "yyyy-MM-dd'T'HH:mm:ss.SSSX");
     }
 
     /**
@@ -247,14 +249,14 @@ public class NSApi {
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
     public List<VaultEntry> getTreatments(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
-        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at");
+        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at", "yyyy-MM-dd'T'HH:mm:ssX");
     }
 
-    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField) throws NightscoutIOException, NightscoutServerException {
+    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField, String datePattern) throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = new ArrayList<>();
         List<VaultEntry> fetched = null;
         GetBuilder getBuilder;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePattern);
         String latestString = formatter.format(latest);
         String oldestString = formatter.format(oldest);
         do {

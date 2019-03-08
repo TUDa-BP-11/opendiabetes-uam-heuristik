@@ -293,7 +293,7 @@ public class Main {
                         config.getString("file"),
                         data,
                         config.getBoolean("overwrite"),
-                        new NightscoutExporter(new NightscoutExporterOptions(config.getInt("mergewindow")))
+                        new NightscoutExporter(new NightscoutExporterOptions(config.getInt("mergewindow"), true))
                 );
             } catch (NightscoutIOException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);

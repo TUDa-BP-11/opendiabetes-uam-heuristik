@@ -1,6 +1,9 @@
 package de.opendiabetes.nsapi.exporter;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -20,7 +23,7 @@ import java.util.TimeZone;
 
 public class NightscoutExporter extends Exporter {
     private final NightscoutExporterOptions options;
-    private final Gson json;
+    private final Gson gson;
 
     public NightscoutExporter() {
         this(new NightscoutExporterOptions());
@@ -29,9 +32,7 @@ public class NightscoutExporter extends Exporter {
     public NightscoutExporter(NightscoutExporterOptions options) {
         super(options);
         this.options = options;
-        this.json = new GsonBuilder()
-                .setPrettyPrinting()
-                .create();
+        this.gson = new Gson();
     }
 
     /**
@@ -105,8 +106,9 @@ public class NightscoutExporter extends Exporter {
 
         try {
             JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
-            writer.setIndent("  ");
-            json.toJson(array, writer);
+            if (options.isPretty())
+                writer.setIndent("  ");
+            gson.toJson(array, writer);
             writer.close();
         } catch (IOException | JsonIOException e) {
             throw new NightscoutDataException("Exception while flushing stream", e);
