@@ -1,5 +1,6 @@
 package de.opendiabetes.nsapi;
 
+import com.google.gson.JsonArray;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -20,10 +21,18 @@ import org.apache.commons.codec.digest.DigestUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 public class NSApi {
@@ -256,7 +265,8 @@ public class NSApi {
             fetched = getBuilder.getVaultEntries();
             if (!fetched.isEmpty()) {
                 entries.addAll(fetched);
-                latestString = fetched.get(fetched.size() - 1).getTimestamp().toInstant().toString();
+                Date ld = fetched.get(fetched.size() - 1).getTimestamp();
+                latestString = formatter.format(ld.toInstant().atZone(ZoneId.of("UTC")));
             }
         } while (!fetched.isEmpty());
         return entries;
@@ -270,6 +280,22 @@ public class NSApi {
 
     public PostBuilder createPost(String path) {
         return new PostBuilder(this, post(path));
+    }
+
+    /**
+     * Sends one or more POST requests with the given entries as their payloads. Splits the list into smaller batches to upload individually.
+     * Uses {@link NightscoutExporter} to export the data.
+     *
+     * @param entries   data
+     * @param batchSize maximum amount of entries to send in one POST request
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @throws NightscoutDataException   if an exception occurs while exporting the data
+     */
+    public void postEntries(List<VaultEntry> entries, int batchSize) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        for (List<VaultEntry> vaultEntries : split(entries, batchSize)) {
+            postEntries(vaultEntries);
+        }
     }
 
     /**
@@ -288,6 +314,23 @@ public class NSApi {
         createPost("entries").setBody(body).send();
     }
 
+
+    /**
+     * Sends one or more POST requests with the given treatments as their payloads. Splits the list into smaller batches to upload individually.
+     * Uses {@link NightscoutExporter} to export the data.
+     *
+     * @param treatments data
+     * @param batchSize  maximum amount of treatments to send in one POST request
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @throws NightscoutDataException   if an exception occurs while exporting the data
+     */
+    public void postTreatments(List<VaultEntry> treatments, int batchSize) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        for (List<VaultEntry> vaultEntries : split(treatments, batchSize)) {
+            postTreatments(vaultEntries);
+        }
+    }
+
     /**
      * Sends a POST request with the given treatments as its payload.
      * Uses {@link NightscoutExporter} to export the data.
@@ -301,5 +344,83 @@ public class NSApi {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         EXPORTER.exportData(stream, treatments);
         createPost("treatments").setBody(stream.toByteArray()).send();
+    }
+
+    // util
+
+    /**
+     * Splits the list into multiple partitions. The Order is kept, so concatenating all partitions would
+     * result in the original list. Changes to the original list are not reflected in the partitions.
+     *
+     * @param list      list to split
+     * @param batchSize maximum size of each partition
+     * @param <T>       type of objects in the list
+     * @return list of partitions
+     */
+    public static <T> List<List<T>> split(List<T> list, int batchSize) {
+        return split(list, batchSize, ArrayList::new, List::add);
+    }
+
+    /**
+     * Splits the array into multiple partitions. The Order is kept, so concatenating all partitions would
+     * result in the original array.
+     *
+     * @param array     array to split
+     * @param batchSize maximum size of each partition
+     * @return list of partitions
+     */
+    public static List<JsonArray> split(JsonArray array, int batchSize) {
+        return split(array, batchSize, JsonArray::new, JsonArray::add);
+    }
+
+    /**
+     * Splits the list into multiple partitions. The Order is kept, so concatenating all partitions would
+     * result in the original list. Changes to the original list are not reflected in the partitions.
+     *
+     * @param list      list to split
+     * @param batchSize maximum size of each partition
+     * @param supplier  a supplier for new partitions such as {@link ArrayList#ArrayList()}
+     * @param consumer  consumer that gets a partition and an object and adds the object to the partition such as {@link List#add}
+     * @param <I>       iterable
+     * @param <T>       type of objects in the iterable
+     * @return list of partitions
+     */
+    public static <I extends Iterable<T>, T> List<I> split(I list, int batchSize, Supplier<I> supplier, BiConsumer<I, T> consumer) {
+        List<I> batches = new ArrayList<>();
+        int i = 0;
+        I batch = null;
+        for (T item : list) {
+            if (i == 0)
+                batch = supplier.get();
+            consumer.accept(batch, item);
+            i++;
+            if (i == batchSize) {
+                batches.add(batch);
+                i = 0;
+            }
+        }
+        // add last batch
+        if (i > 0)
+            batches.add(batch);
+        return batches;
+    }
+
+    /**
+     * Parses the given string as an iso date time. Applies any timezone information if possible,
+     * if no timezone is defined in the string it is treated as UTC time.
+     *
+     * @param value date and time string according to {@link DateTimeFormatter#ISO_DATE_TIME}
+     * @return object representing the given time
+     * @throws NightscoutIOException if the value cannot be parsed for any reason
+     */
+    public static ZonedDateTime getZonedDateTime(String value) throws NightscoutIOException {
+        try {
+            TemporalAccessor t = DateTimeFormatter.ISO_DATE_TIME.parse(value);
+            if (t.isSupported(ChronoField.OFFSET_SECONDS))
+                return ZonedDateTime.from(t);
+            else return LocalDateTime.from(t).atZone(ZoneId.of("UTC"));
+        } catch (DateTimeException e) {
+            throw new NightscoutIOException("Could not parse date: " + value, e);
+        }
     }
 }

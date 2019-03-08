@@ -1,5 +1,6 @@
 package de.opendiabetes.nsapi;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
@@ -16,7 +17,9 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -130,6 +133,41 @@ class NSApiTest {
         List<VaultEntry> between = api.getEntries(latest, oldest, 20);
         // test that exactly 2 entries less are returned (first and last from original request should be missing)
         assertEquals(entries.size() - 2, between.size());
+    }
+
+    @Test
+    void testDataCursor() throws NightscoutIOException, NightscoutServerException {
+        ZonedDateTime latest = ZonedDateTime.now();
+        ZonedDateTime oldest = ZonedDateTime.parse("2017-01-01T00:00:00.000Z");
+        int batchSize = 20 + (int) (Math.random() * 100);
+        List<VaultEntry> expected = api.getEntries(latest, oldest, batchSize);
+        DataCursor cursor = new DataCursor(api, "entries", "dateString", latest, oldest, batchSize / 2);
+        List<JsonObject> actual = new ArrayList<>();
+        while (cursor.hasNext()) {
+            actual.add(cursor.next());
+        }
+        assertEquals(expected.size(), actual.size());
+    }
+
+    @Test
+    void testSplit() {
+        Random random = new Random();
+        int size = 50 + random.nextInt(100);
+        int batchSize = size / (2 + random.nextInt(3));
+
+        // test with list of random integers
+        List<Integer> list = random.ints(size).boxed().collect(Collectors.toList());
+        List<List<Integer>> partitions = NSApi.split(list, batchSize);
+        List<Integer> newList = new ArrayList<>();
+        partitions.forEach(newList::addAll);
+        assertIterableEquals(list, newList);
+
+        // test with json array of random integers
+        JsonArray array = random.ints(size).collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
+        List<JsonArray> arrayPartitions = NSApi.split(array, batchSize);
+        JsonArray newArray = new JsonArray();
+        arrayPartitions.forEach(newArray::addAll);
+        assertIterableEquals(array, newArray);
     }
 
     private final static String ID_RANGE = "0123456789abcdef";

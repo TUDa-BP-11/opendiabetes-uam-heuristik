@@ -15,12 +15,8 @@ import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -233,6 +229,10 @@ public class Main {
                 return;
             }
             data = NSApiTools.filterData(data, (Set<VaultEntryType>) config.getObject("post"));
+            Date latest = Date.from(((ZonedDateTime) config.getObject("latest")).toInstant());
+            Date oldest = Date.from(((ZonedDateTime) config.getObject("oldest")).toInstant());
+            data = data.stream().filter(e -> e.getTimestamp().compareTo(oldest) >= 0 && e.getTimestamp().compareTo(latest) <= 0)
+                    .collect(Collectors.toList());
             LOGGER.log(Level.INFO, "Loaded %d entries from file", data.size());
 
             List<VaultEntry> treatments = data.stream()
@@ -246,10 +246,10 @@ public class Main {
 
             try {
                 if (!treatments.isEmpty()) {
-                    api.postTreatments(treatments);
+                    api.postTreatments(treatments, config.getInt("batchsize"));
                 }
                 if (!entries.isEmpty()) {
-                    api.postEntries(entries);
+                    api.postEntries(entries, config.getInt("batchsize"));
                 }
             } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
@@ -351,8 +351,8 @@ public class Main {
         @Override
         public Object parse(String s) throws ParseException {
             try {
-                return DateTimeFormatter.ISO_DATE_TIME.parse(s);
-            } catch (DateTimeParseException e) {
+                return NSApi.getZonedDateTime(s);
+            } catch (NightscoutIOException e) {
                 throw new ParseException(e);
             }
         }

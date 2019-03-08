@@ -1,0 +1,118 @@
+package de.opendiabetes.nsapi;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
+
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
+import java.util.Iterator;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+
+/**
+ * A buffer for Nightscout data. Lazily loads objects from the server as needed. The internal buffer is refreshed
+ * if it runs out of objects until the server does not return any more data.
+ */
+public class DataCursor implements Iterator<JsonElement> {
+    private final NSApi api;
+    private final String path;
+    private final String dateField;
+    private final String oldest;
+    private final int batchSize;
+
+    private final LinkedBlockingQueue<JsonObject> buffer;
+    private String current;
+    private boolean first;
+    private boolean finished;
+
+    /**
+     * Creates a new cursor. Latest and oldest point in time are formatted using the
+     * following {@link DateTimeFormatter pattern}:<br>
+     * <code>yyyy-MM-dd'T'HH:mm:ss.SSSX</code>
+     *
+     * @param api       Nightscout API instance
+     * @param path      API path used with {@link NSApi#createGet(String)}. Has to return an array of json objects.
+     * @param dateField the name of the field which holds information about the date and time of your data object
+     * @param latest    latest point in time to load data for
+     * @param oldest    oldest point in time to load data for
+     * @param batchSize amount of entries which will be loaded at once
+     */
+    public DataCursor(NSApi api, String path, String dateField, TemporalAccessor latest, TemporalAccessor oldest, int batchSize) {
+        this(api, path, dateField, latest, oldest, batchSize, "yyyy-MM-dd'T'HH:mm:ss.SSSX");
+    }
+
+    /**
+     * Creates a new cursor.
+     *
+     * @param api         Nightscout API instance
+     * @param path        API path used with {@link NSApi#createGet(String)}. Has to return an array of json objects.
+     * @param dateField   the name of the field which holds information about the date and time of your data object
+     * @param latest      latest point in time to load data for
+     * @param oldest      oldest point in time to load data for
+     * @param batchSize   amount of entries which will be loaded at once
+     * @param datePattern {@link DateTimeFormatter pattern} used to format latest and oldest point in time
+     */
+    public DataCursor(NSApi api, String path, String dateField, TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String datePattern) {
+        this.api = api;
+        this.path = path;
+        this.dateField = dateField;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePattern);
+        this.oldest = formatter.format(oldest);
+        this.batchSize = batchSize;
+
+        this.buffer = new LinkedBlockingQueue<>(batchSize);
+        this.current = formatter.format(latest);
+        this.first = true;
+        this.finished = false;
+    }
+
+    /**
+     * Checks if there is more data. May block the thread to request new data from the Nightscout server.
+     *
+     * @return true if there is more data
+     */
+    @Override
+    public boolean hasNext() {
+        if (buffer.size() > 0)
+            return true;
+        if (finished)
+            return false;
+        try {
+            GetBuilder builder = api.createGet(path);
+            // use lte on first fetch, lt for all remaining requests.
+            if (first) {
+                builder.find(dateField).lte(current);
+                first = false;
+            } else builder.find(dateField).lt(current);
+            // finish request
+            JsonArray array = builder
+                    .find(dateField).gte(oldest)
+                    .count(batchSize)
+                    .getRaw().getAsJsonArray();
+            array.forEach(e -> buffer.offer(e.getAsJsonObject()));
+            // we are done if the returned array has less data then the batch size
+            if (array.size() < batchSize)
+                finished = true;
+            else current = array.get(array.size() - 1).getAsJsonObject().get(dateField).getAsString();
+
+            return array.size() > 0;
+        } catch (NightscoutIOException | NightscoutServerException | IllegalStateException e) {
+            Main.logger().log(Level.SEVERE, e, e::getMessage);
+            return false;
+        }
+    }
+
+    /**
+     * Gets the next object of the current buffer. Note that this method will never block, but may return null if not
+     * used in conjunction with {@link this#hasNext()} as the buffer will only be refreshed by that method.
+     *
+     * @return the next entry parsed as some kind of json element.
+     */
+    @Override
+    public JsonObject next() {
+        return buffer.poll();
+    }
+}
