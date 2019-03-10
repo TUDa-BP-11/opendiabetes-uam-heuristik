@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestTreatmentMapper {
 
-    private final long ONE_MINUTE = 60 * 1000;
-    private final double DELTA = 1e-15;
+    private static final long ONE_MINUTE = 60 * 1000;
+    private static final double DELTA = 1e-15;
 
     @Test
     public void testSimpleDuration() {

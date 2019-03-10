@@ -1,5 +1,6 @@
 package de.opendiabetes.parser;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -96,7 +97,7 @@ public class Profile {
     }
 
 
-    private static class BasalProfileComparator implements Comparator<BasalProfile> {
+    private static class BasalProfileComparator implements Comparator<BasalProfile>, Serializable {
 
         @Override
         public int compare(Profile.BasalProfile profile1, Profile.BasalProfile profile2) {
