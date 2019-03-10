@@ -1,10 +1,11 @@
 package de.opendiabetes.main.dataprovider;
 
-import com.mashape.unirest.http.exceptions.UnirestException;
 import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.main.math.BasalCalculator;
 import de.opendiabetes.nsapi.GetBuilder;
 import de.opendiabetes.nsapi.NSApi;
+import de.opendiabetes.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.parser.TreatmentMapper;
@@ -75,7 +76,7 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
                 throw new DataProviderException(this, "Nightscout server returned status " + status.getStatus());
             if (!status.isApiEnabled())
                 throw new DataProviderException(this, "Nightscout server returned api is not enabled");
-        } catch (UnirestException e) {
+        } catch (NightscoutIOException | NightscoutServerException e) {
             throw new DataProviderException(this, "Exception while reading status from Nightscout: " + e.getMessage(), e);
         }
     }
@@ -99,7 +100,7 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
                     latest = fetched.get(fetched.size() - 1).getTimestamp().toInstant().toString();
                 }
             } while (!fetched.isEmpty());
-        } catch (UnirestException e) {
+        } catch (NightscoutIOException | NightscoutServerException e) {
             throw new DataProviderException(this, "Exception while reading entries from Nightscout: " + e.getMessage(), e);
         }
         if (entries.isEmpty())
@@ -125,7 +126,7 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
                     latest = fetched.get(fetched.size() - 1).getTimestamp().toInstant().toString();
                 }
             } while (!fetched.isEmpty());
-        } catch (UnirestException e) {
+        } catch (NightscoutIOException | NightscoutServerException e) {
             throw new DataProviderException(this, "Exception while reading treatments from Nightscout: " + e.getMessage(), e);
         }
         if (treatments.isEmpty())
@@ -171,7 +172,7 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
         if (profile == null) {
             try {
                 profile = api.getProfile();
-            } catch (UnirestException e) {
+            } catch (NightscoutIOException | NightscoutServerException e) {
                 throw new DataProviderException(this, "Exception while reading profile from Nightscout: " + e.getMessage(), e);
             }
         }
