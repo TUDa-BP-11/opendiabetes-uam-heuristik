@@ -12,23 +12,20 @@ import de.opendiabetes.vault.util.TimestampUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NSApiTest {
@@ -144,6 +141,70 @@ class NSApiTest {
             // else the collections have to be equal
             assertIterableEquals(treatments, newTreatments);
         }
+    }
+
+    @Test
+    void testSlice() throws NightscoutIOException, NightscoutServerException {
+        List<VaultEntry> entries = api.getEntries().getVaultEntries();
+        assumeFalse(entries.isEmpty());
+
+        // split entries by day to test prefix
+        HashMap<LocalDate, List<VaultEntry>> entriesByDay = entries.stream().collect(HashMap::new, (map, entry) -> {
+            // get local date of entry
+            LocalDate date = LocalDate.from(entry.getTimestamp().toInstant().atZone(ZoneId.of("UTC")));
+            // create a list if there isn't one for this date, then add the entry
+            map.computeIfAbsent(date, d -> new ArrayList<>()).add(entry);
+        }, (m1, m2) -> {
+            // for each day in the second list, take all entries
+            m2.forEach((date, list) -> m1.compute(date, (k, v) -> {
+                // if the first map already has entries at this date, add them
+                if (v != null)
+                    list.addAll(v);
+                return list;
+            }));
+        });
+
+        for (Map.Entry<LocalDate, List<VaultEntry>> entry : entriesByDay.entrySet()) {
+            LocalDate date = entry.getKey();
+            List<VaultEntry> list = entry.getValue();
+            int end = list.get(0).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
+            int start = list.get(list.size() - 1).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
+            String regex = "T{" + start + ".." + end + "}";
+            List<VaultEntry> slice = api.getSlice("entries", "dateString", "sgv", date.toString(), regex).getVaultEntries();
+            assertIterableEquals(list, slice);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "entries, sgv",
+            "treatments, "
+    })
+    void testEcho(String storage, String spec) throws NightscoutIOException, NightscoutServerException {
+        JsonObject echo = api.getEcho(storage, spec).getRaw().getAsJsonObject();
+        assertNotNull(echo);
+        assertTrue(echo.has("query"));
+
+        assertTrue(echo.has("input"));
+        if (spec != null) {
+            JsonObject input = echo.getAsJsonObject("input");
+            assertTrue(input.has("find"));
+            JsonObject find = input.getAsJsonObject("find");
+            assertTrue(find.has("type"));
+            assertEquals(spec, find.get("type").getAsString());
+        }
+
+        assertTrue(echo.has("params"));
+        JsonObject params = echo.getAsJsonObject("params");
+        assertTrue(params.has("echo"));
+        assertEquals(storage, params.get("echo").getAsString());
+        if (spec != null) {
+            assertTrue(params.has("model"));
+            assertEquals(spec, params.get("model").getAsString());
+        }
+
+        assertTrue(echo.has("storage"));
+        assertEquals(storage, echo.get("storage").getAsString());
     }
 
     @Test
