@@ -1,10 +1,7 @@
 package de.opendiabetes.parser;
 
-import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public class Profile {
@@ -94,16 +91,4 @@ public class Profile {
             return value;
         }
     }
-
-
-    private static class BasalProfileComparator implements Comparator<BasalProfile> {
-
-        @Override
-        public int compare(Profile.BasalProfile profile1, Profile.BasalProfile profile2) {
-            return (profile1.getStart().getHour() * 60 + profile1.getStart().getMinute())
-                    - (profile2.getStart().getHour() * 60 + profile2.getStart().getMinute());
-        }
-
-    }
-
 }
