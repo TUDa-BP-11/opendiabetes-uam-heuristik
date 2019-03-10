@@ -96,7 +96,6 @@ public class Profile {
         }
     }
 
-
     private static class BasalProfileComparator implements Comparator<BasalProfile>, Serializable {
 
         @Override
@@ -106,5 +105,4 @@ public class Profile {
         }
 
     }
-
 }

@@ -1,9 +1,11 @@
 package de.opendiabetes.main.dataprovider;
 
+import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.parser.Profile;
-import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -57,9 +59,11 @@ public class DemoDataProvider implements AlgorithmDataProvider {
     }
 
     public static void main(String[] args) {
-        VaultEntryParser parser = new VaultEntryParser();
+        NightscoutExporter exporter = new NightscoutExporter(new NightscoutExporterOptions(60, true));
         DemoDataProvider provider = new DemoDataProvider();
-        System.out.println(parser.toJson(provider.getGlucoseMeasurements()));
-        System.out.println(parser.toJson(provider.getBolusTreatments(), 120));
+        List<VaultEntry> entries = provider.getGlucoseMeasurements();
+        entries.sort(new SortVaultEntryByDate().reversed());
+        exporter.exportData(System.out, entries);
+        exporter.exportData(System.out, provider.getBolusTreatments());
     }
 }
