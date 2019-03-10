@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -22,7 +21,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -93,11 +95,9 @@ class NSApiTest {
         // split into three batches
         api.postEntries(entries, 4);
 
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         GetBuilder builder = api.getEntries()
-                .find("dateString").lte(formatter.format(entries.get(0).getTimestamp()))
-                .find("dateString").gte(formatter.format(entries.get(entries.size() - 1).getTimestamp()))
+                .find("dateString").lte(NSApi.DATETIME_SIMPLEFORMAT_ENTRY.format(entries.get(0).getTimestamp()))
+                .find("dateString").gte(NSApi.DATETIME_SIMPLEFORMAT_ENTRY.format(entries.get(entries.size() - 1).getTimestamp()))
                 .count(100);     // in case there are other random entries from previous tests in this time
         List<VaultEntry> newEntries = builder.getVaultEntries();
 
@@ -127,11 +127,9 @@ class NSApiTest {
         // split into three batches
         api.postTreatments(treatments, 4);
 
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         GetBuilder builder = api.getTreatments()
-                .find("created_at").lte(formatter.format(treatments.get(0).getTimestamp()))
-                .find("created_at").gte(formatter.format(treatments.get(treatments.size() - 1).getTimestamp()))
+                .find("created_at").lte(NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(treatments.get(0).getTimestamp()))
+                .find("created_at").gte(NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(treatments.get(treatments.size() - 1).getTimestamp()))
                 .count(100);     // in case there are other random treatments from previous tests in this time
         List<VaultEntry> newTreatments = builder.getVaultEntries();
 
@@ -270,13 +268,25 @@ class NSApiTest {
 
         // remove milliseconds, should be set to 0
         formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        now = now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS);
-        assertEquals(now, NSApi.getZonedDateTime(formatter.format(now)));
+        assertEquals(
+                now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS),
+                NSApi.getZonedDateTime(formatter.format(now))
+        );
 
-        // remove seconds, should be set to 0
+        // remove milliseconds, should be set to 0, but keep timezone
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
+        assertEquals(
+                now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS).toInstant(),
+                NSApi.getZonedDateTime(formatter.format(now)).toInstant()
+        );
+
+        // remove seconds and milliseconds, should be set to 0
         formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        now = now.minus(now.get(ChronoField.SECOND_OF_MINUTE), ChronoUnit.SECONDS);
-        assertEquals(now, NSApi.getZonedDateTime(formatter.format(now)));
+        assertEquals(
+                now.minus(now.get(ChronoField.SECOND_OF_MINUTE), ChronoUnit.SECONDS)
+                        .minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS),
+                NSApi.getZonedDateTime(formatter.format(now))
+        );
 
         // time is missing, should throw exception
         String broken = DateTimeFormatter.ISO_DATE.format(ZonedDateTime.now());

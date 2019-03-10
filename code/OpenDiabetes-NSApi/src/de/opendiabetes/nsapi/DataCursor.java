@@ -29,9 +29,7 @@ public class DataCursor implements Iterator<JsonElement> {
     private boolean finished;
 
     /**
-     * Creates a new cursor. Latest and oldest point in time are formatted using the
-     * following {@link DateTimeFormatter pattern}:<br>
-     * <code>yyyy-MM-dd'T'HH:mm:ss.SSSX</code>
+     * Creates a new cursor. Latest and oldest point in time are formatted using the {@link NSApi#DATETIME_PATTERN_ENTRY} pattern.
      *
      * @param api       Nightscout API instance
      * @param path      API path used with {@link NSApi#createGet(String)}. Has to return an array of json objects.
@@ -41,25 +39,24 @@ public class DataCursor implements Iterator<JsonElement> {
      * @param batchSize amount of entries which will be loaded at once
      */
     public DataCursor(NSApi api, String path, String dateField, TemporalAccessor latest, TemporalAccessor oldest, int batchSize) {
-        this(api, path, dateField, latest, oldest, batchSize, "yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        this(api, path, dateField, latest, oldest, batchSize, NSApi.DATETIME_FORMATTER_ENTRY);
     }
 
     /**
      * Creates a new cursor.
      *
-     * @param api         Nightscout API instance
-     * @param path        API path used with {@link NSApi#createGet(String)}. Has to return an array of json objects.
-     * @param dateField   the name of the field which holds information about the date and time of your data object
-     * @param latest      latest point in time to load data for
-     * @param oldest      oldest point in time to load data for
-     * @param batchSize   amount of entries which will be loaded at once
-     * @param datePattern {@link DateTimeFormatter pattern} used to format latest and oldest point in time
+     * @param api       Nightscout API instance
+     * @param path      API path used with {@link NSApi#createGet(String)}. Has to return an array of json objects.
+     * @param dateField the name of the field which holds information about the date and time of your data object
+     * @param latest    latest point in time to load data for
+     * @param oldest    oldest point in time to load data for
+     * @param batchSize amount of entries which will be loaded at once
+     * @param formatter DateTimeFormatter used to format latest and oldest point in time
      */
-    public DataCursor(NSApi api, String path, String dateField, TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String datePattern) {
+    public DataCursor(NSApi api, String path, String dateField, TemporalAccessor latest, TemporalAccessor oldest, int batchSize, DateTimeFormatter formatter) {
         this.api = api;
         this.path = path;
         this.dateField = dateField;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePattern);
         this.oldest = formatter.format(oldest);
         this.batchSize = batchSize;
 

@@ -1,6 +1,6 @@
 package de.opendiabetes.nsapi;
 
-import com.google.gson.JsonArray;
+import com.google.gson.*;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -21,6 +21,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -31,12 +33,41 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
 public class NSApi {
-    private final static NightscoutExporter EXPORTER = new NightscoutExporter();
+    /**
+     * {@link DateTimeFormatter Pattern} used to format dates in entries.
+     */
+    public final static String DATETIME_PATTERN_ENTRY = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
+    /**
+     * Used to format {@link TemporalAccessor} objects in entries.
+     */
+    public final static DateTimeFormatter DATETIME_FORMATTER_ENTRY = DateTimeFormatter.ofPattern(DATETIME_PATTERN_ENTRY);
+    /**
+     * Used to format {@link Date} objects in entries. The timezone of this formatter is set to UTC.
+     */
+    public final static SimpleDateFormat DATETIME_SIMPLEFORMAT_ENTRY = new SimpleDateFormat(DATETIME_PATTERN_ENTRY);
+    /**
+     * {@link DateTimeFormatter Pattern} used to format dates in treatments.
+     */
+    public final static String DATETIME_PATTERN_TREATMENT = "yyyy-MM-dd'T'HH:mm:ssX";
+    /**
+     * Used to format {@link TemporalAccessor} objects in treatments.
+     */
+    public final static DateTimeFormatter DATETIME_FORMATTER_TREATMENT = DateTimeFormatter.ofPattern(DATETIME_PATTERN_TREATMENT);
+    /**
+     * Used to format {@link Date} objects in treatments. The timezone of this formatter is set to UTC.
+     */
+    public final static SimpleDateFormat DATETIME_SIMPLEFORMAT_TREATMENT = new SimpleDateFormat(DATETIME_PATTERN_TREATMENT);
+
+    static {
+        DATETIME_SIMPLEFORMAT_ENTRY.setTimeZone(TimeZone.getTimeZone("UTC"));
+        DATETIME_SIMPLEFORMAT_TREATMENT.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
     private String host;
     private String secret;
@@ -103,6 +134,24 @@ public class NSApi {
         return response.getBody();
     }
 
+    JsonElement sendAndParse(HttpRequest request) throws NightscoutIOException, NightscoutServerException {
+        InputStream inputStream = send(request);
+        InputStreamReader reader = new InputStreamReader(inputStream);
+        JsonElement element;
+        try {
+            JsonParser parser = new JsonParser();
+            element = parser.parse(reader);
+        } catch (JsonParseException e) {
+            throw new NightscoutDataException("Exception while parsing response from server", e);
+        }
+        try {
+            reader.close();
+        } catch (IOException e) {
+            throw new NightscoutIOException("Exception while closing stream", e);
+        }
+        return element;
+    }
+
     // GET
 
     private HttpRequest get(String path) {
@@ -167,7 +216,7 @@ public class NSApi {
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
     public List<VaultEntry> getEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
-        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString", "yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString", DATETIME_FORMATTER_ENTRY);
     }
 
     /**
@@ -249,14 +298,13 @@ public class NSApi {
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
     public List<VaultEntry> getTreatments(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
-        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at", "yyyy-MM-dd'T'HH:mm:ssX");
+        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at", DATETIME_FORMATTER_TREATMENT);
     }
 
-    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField, String datePattern) throws NightscoutIOException, NightscoutServerException {
+    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField, DateTimeFormatter formatter) throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = new ArrayList<>();
         List<VaultEntry> fetched = null;
         GetBuilder getBuilder;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(datePattern);
         String latestString = formatter.format(latest);
         String oldestString = formatter.format(oldest);
         do {
@@ -310,8 +358,9 @@ public class NSApi {
      * @throws NightscoutDataException   if an exception occurs while exporting the data
      */
     public void postEntries(List<VaultEntry> entries) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        NightscoutExporter exporter = new NightscoutExporter();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EXPORTER.exportData(stream, entries);
+        exporter.exportData(stream, entries);
         String body = new String(stream.toByteArray());
         createPost("entries").setBody(body).send();
     }
@@ -343,9 +392,76 @@ public class NSApi {
      * @throws NightscoutDataException   if an exception occurs while exporting the data
      */
     public void postTreatments(List<VaultEntry> treatments) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        NightscoutExporter exporter = new NightscoutExporter();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        EXPORTER.exportData(stream, treatments);
+        exporter.exportData(stream, treatments);
         createPost("treatments").setBody(stream.toByteArray()).send();
+    }
+
+    // DELETE
+
+    private HttpRequest delete(String path, String id) {
+        return Unirest.delete(host + path + "/" + id);
+    }
+
+    /**
+     * Deletes the given VaultEntry by first sending a GET request to the Nightscout server to find the id of the entry.
+     * Then sends a DELETE request with the id of the entry.
+     *
+     * @param entry entry to delete
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @deprecated This method is currently broken: Nightscout seems to not actually delete any entries even if a valid ID is provided.
+     * Thus this method will always throw an exception.
+     */
+    @Deprecated
+    public void deleteEntry(VaultEntry entry) throws NightscoutIOException, NightscoutServerException {
+        deleteVaultEntry(entry, "entries", "dateString", DATETIME_SIMPLEFORMAT_ENTRY);
+    }
+
+    /**
+     * Deletes the given VaultEntry by first sending a GET request to the Nightscout server to find the id of the treatment.
+     * Then sends a DELETE request with the id of the treatment.
+     *
+     * @param treatment treatment to delete
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @deprecated This method is currently broken: Nightscout seems to return inconsistent responses even if it successfully deletes the treatment.
+     * Thus this method may throw unexpected exceptions.
+     */
+    @Deprecated
+    public void deleteTreatment(VaultEntry treatment) throws NightscoutIOException, NightscoutServerException {
+        deleteVaultEntry(treatment, "treatments", "created_at", DATETIME_SIMPLEFORMAT_TREATMENT);
+    }
+
+    private void deleteVaultEntry(VaultEntry entry, String path, String dateField, SimpleDateFormat formatter) throws NightscoutIOException, NightscoutServerException {
+        JsonObject fetched;
+        try {
+            fetched = createGet(path)
+                    .find(dateField).eq(formatter.format(entry.getTimestamp()))
+                    .getRaw()
+                    .getAsJsonArray().get(0).getAsJsonObject();
+        } catch (IllegalStateException | IndexOutOfBoundsException e) {
+            throw new NightscoutIOException("Invalid response from Nightscout server, expected JSON Array containing one JSON Object!", e);
+        }
+        String id;
+        try {
+            id = fetched.get("_id").getAsString();
+        } catch (NullPointerException | IllegalStateException | ClassCastException e) {
+            throw new NightscoutIOException("Could not find _id field for this treatment!");
+        }
+        JsonElement response = sendAndParse(delete(path, id));
+        boolean ok;
+        int n;
+        try {
+            JsonObject o = response.getAsJsonObject();
+            ok = o.get("ok").getAsInt() == 1;
+            n = o.get("n").getAsInt();
+        } catch (NullPointerException | ClassCastException e) {
+            throw new NightscoutIOException("Invalid response from Nightscout server.");
+        }
+        if (!ok || n != 1)
+            throw new NightscoutDataException("Nightscout server returned 'ok': " + ok + ", 'n': " + n);
     }
 
     // util
