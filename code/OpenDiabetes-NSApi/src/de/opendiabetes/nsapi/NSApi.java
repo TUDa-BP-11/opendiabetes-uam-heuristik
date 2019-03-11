@@ -10,6 +10,7 @@ import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.Status;
@@ -33,10 +34,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class NSApi {
+    public final static Logger LOGGER;
     private final static NightscoutExporter EXPORTER = new NightscoutExporter();
+
+    static {
+        LOGGER = Logger.getLogger(NSApi.class.getName());
+        Handler handler = new ConsoleHandler();
+        handler.setFormatter(new DefaultFormatter());
+        LOGGER.addHandler(handler);
+        LOGGER.setUseParentHandlers(false);
+    }
 
     private String host;
 
@@ -89,7 +102,7 @@ public class NSApi {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     InputStream send(HttpRequest request) throws NightscoutIOException, NightscoutServerException {
-        Main.logger().log(Level.FINE, "Sending %s request to %s", new Object[]{request.getHttpMethod(), request.getUrl()});
+        LOGGER.log(Level.FINE, "Sending %s request to %s", new Object[]{request.getHttpMethod(), request.getUrl()});
         HttpResponse<InputStream> response;
         try {
             response = request.asBinary();
@@ -347,6 +360,58 @@ public class NSApi {
     }
 
     // util
+
+    /**
+     * Checks that the Nightscout server is reachable and that the status is ok and the api is enabled.
+     * Logs exceptions and problems with {@link NSApi#LOGGER}.
+     *
+     * @return true if everything is ok, false otherwise
+     */
+    public boolean checkStatusOk() {
+        Status status;
+        try {
+            status = getStatus();
+        } catch (NightscoutIOException | NightscoutServerException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+            return false;
+        }
+        if (!status.isStatusOk()) {
+            LOGGER.log(Level.SEVERE, "Nightscout server status is not ok:\n%s", printStatus(status));
+            return false;
+        }
+        if (!status.isApiEnabled()) {
+            LOGGER.log(Level.SEVERE, "Nightscout api is not enabled:\n%s", printStatus(status));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Fetches the status and formats it for logging.
+     *
+     * @return formatted String containing status information
+     */
+    public String printStatus() {
+        try {
+            return printStatus(getStatus());
+        } catch (NightscoutIOException | NightscoutServerException e) {
+            return e.getMessage();
+        }
+    }
+
+    /**
+     * Formats the status for logging.
+     *
+     * @param status Status of the Nightscout server
+     * @return formatted String containing status information
+     */
+    public String printStatus(Status status) {
+        return "name:          " + status.getName() + "\n"
+                + "version:       " + status.getVersion() + "\n"
+                + "server status: " + status.getStatus() + "\n"
+                + "api enabled:   " + status.isApiEnabled() + "\n"
+                + "server time:   " + status.getServerTime();
+    }
 
     /**
      * Splits the list into multiple partitions. The Order is kept, so concatenating all partitions would

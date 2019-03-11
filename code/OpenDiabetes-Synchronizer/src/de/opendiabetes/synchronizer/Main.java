@@ -10,9 +10,10 @@ import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Main {
-    private final static Logger LOGGER;
+import static de.opendiabetes.nsapi.Main.*;
+import static de.opendiabetes.nsapi.NSApi.LOGGER;
 
+public class Main {
     // All parameters
     // Nightscout
     private static final Parameter P_HOST_READ = new FlaggedOption("host-read")
@@ -39,10 +40,20 @@ public class Main {
             .setShortFlag('S')
             .setLongFlag("secret-write")
             .setHelp("API secret of the synchronized Nightscout server.");
-
-    static {
-        LOGGER = Logger.getLogger(NSApi.class.getName());
-    }
+    private static final Parameter P_DATA = new FlaggedOption("data")
+            .setStringParser(new SychronizableParser())
+            .setLongFlag("data")
+            .setAllowMultipleDeclarations(true)
+            .setDefault(new String[]{
+                    "entries:dateString",
+                    "treatments:created_at",
+                    "devicestatus:created_at"
+            })
+            .setUsageName("apiPath[:dateField]")
+            .setHelp("Define what data will be synchronized. Can be declared multiple times. Default date field is 'created_at'.");
+    private static final Parameter P_WITH_IDS = new Switch("with-ids")
+            .setLongFlag("with-ids")
+            .setHelp("Set this to keep the '_id' fields of objects when uploading them to the write server.");
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -58,15 +69,17 @@ public class Main {
             jsap.registerParameter(P_SECRET_WRITE);
 
             // Action
-            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_LATEST);
-            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_OLDEST);
+            jsap.registerParameter(P_DATA);
+            jsap.registerParameter(P_LATEST);
+            jsap.registerParameter(P_OLDEST);
 
             // Tuning
-            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_BATCHSIZE);
+            jsap.registerParameter(P_BATCHSIZE);
+            jsap.registerParameter(P_WITH_IDS);
 
             // Debugging
-            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_VERBOSE);
-            jsap.registerParameter(de.opendiabetes.nsapi.Main.P_DEBUG);
+            jsap.registerParameter(P_VERBOSE);
+            jsap.registerParameter(P_DEBUG);
         } catch (JSAPException e) {
             LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
         }
@@ -83,42 +96,50 @@ public class Main {
         // init
         de.opendiabetes.nsapi.Main.initLogger(config);
         NSApi read = new NSApi(config.getString("host-read"), config.getString("secret-read"));
+        if (!read.checkStatusOk())
+            return;
         NSApi write = new NSApi(config.getString("host-write"), config.getString("secret-write"));
+        if (!write.checkStatusOk())
+            return;
 
         Synchronizer synchronizer = new Synchronizer(
                 read, write,
                 (TemporalAccessor) config.getObject("oldest"),
                 (TemporalAccessor) config.getObject("latest"),
                 config.getInt("batchsize"));
-        Synchronizable entries = new Synchronizable("entries", "dateString");
-        Synchronizable treatments = new Synchronizable("treatments", "created_at");
-        Synchronizable status = new Synchronizable("devicestatus", "created_at");
-
-        try {
-            synchronizer.findMissing(entries);
-            System.out.println("Found " + entries.getFindCount() + " entries of which " + entries.getMissingCount() + " are missing in the target instance.");
-            if (entries.getMissingCount() > 0)
-                synchronizer.postMissing(entries);
-            synchronizer.findMissing(treatments);
-            System.out.println("Found " + treatments.getFindCount() + " treatments of which " + treatments.getMissingCount() + " are missing in the target instance.");
-            if (treatments.getMissingCount() > 0)
-                synchronizer.postMissing(treatments);
-            synchronizer.findMissing(status);
-            System.out.println("Found " + status.getFindCount() + " devicestatus of which " + status.getMissingCount() + " are missing in the target instance.");
-            if (status.getMissingCount() > 0)
-                synchronizer.postMissing(status);
-        } catch (NightscoutIOException | NightscoutServerException e) {
-            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        for (Object object : config.getObjectArray("data")) {
+            Synchronizable sync = (Synchronizable) object;
+            try {
+                synchronizer.findMissing(sync);
+                LOGGER.log(Level.INFO, "Found %d objects in /%s of which %d are missing in the target instance.",
+                        new Object[]{sync.getFindCount(), sync.getApiPath(), sync.getMissingCount()});
+                if (sync.getMissingCount() > 0) {
+                    LOGGER.log(Level.INFO, "Uploading %d objects...", sync.getMissingCount());
+                    synchronizer.postMissing(sync, !config.getBoolean("with-ids"));
+                }
+            } catch (NightscoutIOException | NightscoutServerException e) {
+                LOGGER.log(Level.SEVERE, e, e::getMessage);
+            }
         }
         try {
             synchronizer.close();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
-        System.out.println("Done!");
+        LOGGER.log(Level.INFO, "Done!");
     }
 
     public static Logger logger() {
         return LOGGER;
+    }
+
+    private static class SychronizableParser extends StringParser {
+        @Override
+        public Synchronizable parse(String s) throws ParseException {
+            if (!s.matches("^.+(:[a-z_]+)?$"))
+                throw new ParseException("Invalid api path or date field, Syntax is <apiPath>[:dateField]");
+            String[] parts = s.split(":");
+            return new Synchronizable(parts[0], parts.length == 1 ? "created_at" : parts[1]);
+        }
     }
 }

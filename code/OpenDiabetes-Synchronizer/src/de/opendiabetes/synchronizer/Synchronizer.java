@@ -94,7 +94,7 @@ public class Synchronizer {
     }
 
     /**
-     * Posts all missing objects to the write server. Strips all <code>_id</code> fields of all objects if found,
+     * Posts all missing objects to the write server. Strips all <code>_id</code> fields of all objects,
      * to prevent MongoDB errors on the server side.
      *
      * @param synchronizable the synchronizeable
@@ -102,10 +102,24 @@ public class Synchronizer {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public void postMissing(Synchronizable synchronizable) throws NightscoutIOException, NightscoutServerException {
-        for (JsonElement e : synchronizable.getMissing()) {
-            JsonObject o = e.getAsJsonObject();
-            if (o.has("_id"))
-                o.remove("_id");
+        postMissing(synchronizable, true);
+    }
+
+    /**
+     * Posts all missing objects to the write server.
+     *
+     * @param synchronizable the synchronizeable
+     * @param stripIds       set to true to strip all <code>_id</code> fields of objects before uploading them
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
+    public void postMissing(Synchronizable synchronizable, boolean stripIds) throws NightscoutIOException, NightscoutServerException {
+        if (stripIds) {
+            for (JsonElement e : synchronizable.getMissing()) {
+                JsonObject o = e.getAsJsonObject();
+                if (o.has("_id"))
+                    o.remove("_id");
+            }
         }
         for (JsonArray array : NSApi.split(synchronizable.getMissing(), batchSize))
             write.createPost(synchronizable.getApiPath())

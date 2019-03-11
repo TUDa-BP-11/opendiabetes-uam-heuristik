@@ -7,7 +7,6 @@ import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.nsapi.logging.DebugFormatter;
-import de.opendiabetes.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.parser.Status;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -17,15 +16,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Main {
-    private static final Logger LOGGER;
+import static de.opendiabetes.nsapi.NSApi.LOGGER;
 
+public class Main {
     // All parameters
     // Nightscout
     private static final Parameter P_HOST = new FlaggedOption("host")
@@ -92,13 +88,6 @@ public class Main {
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
-    static {
-        LOGGER = Logger.getLogger(NSApi.class.getName());
-        Handler handler = new ConsoleHandler();
-        handler.setFormatter(new DefaultFormatter());
-        LOGGER.addHandler(handler);
-        LOGGER.setUseParentHandlers(false);
-    }
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -190,24 +179,11 @@ public class Main {
 
         // start
         NSApi api = new NSApi(config.getString("host"), config.getString("secret"));
-        Status status;
-        try {
-            status = api.getStatus();
-        } catch (NightscoutIOException | NightscoutServerException e) {
-            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        if (!api.checkStatusOk())
             return;
-        }
-        if (!status.isStatusOk()) {
-            LOGGER.log(Level.SEVERE, "Nightscout server status is not ok:\n%s", getStatus(status));
-            return;
-        }
-        if (!status.isApiEnabled()) {
-            LOGGER.log(Level.SEVERE, "Nightscout api is not enabled:\n%s", getStatus(status));
-            return;
-        }
 
         if (config.getBoolean("status")) {
-            LOGGER.log(Level.INFO, "Nightscout server information:\n%s", getStatus(status));
+            LOGGER.log(Level.INFO, "Nightscout server information:\n%s", api.printStatus());
             return;
         }
 
@@ -309,10 +285,6 @@ public class Main {
                 + "server status: " + status.getStatus() + "\n"
                 + "api enabled:   " + status.isApiEnabled() + "\n"
                 + "server time:   " + status.getServerTime();
-    }
-
-    public static Logger logger() {
-        return LOGGER;
     }
 
     private static class TypeSetParser extends StringParser {
