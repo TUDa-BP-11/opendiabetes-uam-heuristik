@@ -1,6 +1,7 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.main.math.Filter;
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -43,7 +44,6 @@ public class QRAlgo extends Algorithm {
 //        firstTime = Math.min(Math.min(glucose.get(0).getTimestamp().getTime(),basalTreatments.get(0).getTimestamp().getTime()),bolusTreatments.get(0).getTimestamp().getTime());
 //        lastTime = Math.min(Math.min(glucose.get(glucose.size()-1).getTimestamp().getTime(),basalTreatments.get(basalTreatments.size()-1).getTimestamp().getTime()),bolusTreatments.get(bolusTreatments.size()-1).getTimestamp().getTime());
 //        step = 5*60000;
-        
         long estimatedTime;
         long currentTime;
         long nextTime;
@@ -70,13 +70,19 @@ public class QRAlgo extends Algorithm {
             if (currentTime > estimatedTimeAccepted) {
 
                 currentLimit = currentTime + absorptionTime / 6;
-                currentValue = current.getValue();
+
+                currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
+                //currentValue = Filter.getAverage(glucose, i, 5, absorptionTime / 3);
+                //currentValue = current.getValue();
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                         basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 for (int j = i; j < glucose.size(); j++) {
 
                     next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
+                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
+                    //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
+                    //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
@@ -88,7 +94,7 @@ public class QRAlgo extends Algorithm {
                         nkbg = nkbg.append(deltaBg);
                     }
                 }
-                
+
                 if (times.getDimension() >= 3) {
                     matrix = new Array2DRowRealMatrix(times.getDimension(), 2); //3
 //                    matrix.setColumnVector(1, times);
@@ -113,11 +119,11 @@ public class QRAlgo extends Algorithm {
 //                            && estimatedTime < lastTime) {
 //                    if (estimatedCarbs >= 5 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
 //                            ) {
-                        estimatedTimeAccepted = estimatedTime;
-                        meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                                TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                                estimatedCarbs);
-                        mealTreatments.add(meal);
+                    estimatedTimeAccepted = estimatedTime;
+                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                            estimatedCarbs);
+                    mealTreatments.add(meal);
 
 //                        } else if (currentLimit < absorptionTime / 2) {
 //                            currentLimit += absorptionTime / 6;

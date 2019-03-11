@@ -72,42 +72,45 @@ public class TestVaultEntryParser {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
         formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        String testString = "[";
+        StringBuffer testString = new StringBuffer().append("[");
         for (int i = 0; i < size; i++) {
-            testString += "{";
+            testString.append("{");
             time[i] = startTime + random.nextInt(3000) * 1000L;
-            testString += "\"timestamp\": \"" + formatter.format(time[i]) + "\",";
+            testString.append("\"timestamp\": \"" + formatter.format(time[i]) + "\",");
             switch (random.nextInt(3)) {
                 case 0://Basal
                     types[i] = VaultEntryType.BASAL_MANUAL;
-                    testString += "\"eventType\": \"Temp Basal\",";
+                    testString.append("\"eventType\": \"Temp Basal\",");
                     values[i] = 1 + random.nextInt(10);
-                    testString += "\"rate\": " + values[i] + ",";
+                    testString.append("\"rate\": ").append(values[i]).append(",");
                     duration[i] = random.nextInt(30);
-                    testString += "\"duration\": " + duration[i];
+                    testString.append("\"duration\": ").append(duration[i]);
                     break;
                 case 1://Meal
                     types[i] = VaultEntryType.MEAL_MANUAL;
-                    testString += "\"eventType\": \"Meal Bolus\",";
+                    testString.append("\"eventType\": \"Meal Bolus\",");
                     values[i] = 1 + random.nextInt(50);
-                    testString += "\"carbs\": " + values[i];
+                    testString.append("\"carbs\": ").append(values[i]);
                     break;
                 case 2://Bolus
                     types[i] = VaultEntryType.BOLUS_NORMAL;
-                    testString += "\"eventType\": \"Correction Bolus\",";
+                    testString.append("\"eventType\": \"Correction Bolus\",");
                     values[i] = 1 + random.nextInt(5);
-                    testString += "\"insulin\": " + values[i];
+                    testString.append("\"insulin\": ").append(values[i]);
                     break;
                 default:
                     break;
             }
-            testString += "},";
+            testString.append("}");
+            if(i < size - 1){
+                testString.append(",");
+            }
         }
-        testString = testString.substring(0, testString.length() - 1);
-        testString += "]";
+
+        testString.append("]");
 
         VaultEntryParser parser = new VaultEntryParser();
-        List<VaultEntry> treatments = parser.parse(testString);
+        List<VaultEntry> treatments = parser.parse(testString.toString());
 
         assertEquals(size, treatments.size());
         for (int i = 0; i < size; i++) {

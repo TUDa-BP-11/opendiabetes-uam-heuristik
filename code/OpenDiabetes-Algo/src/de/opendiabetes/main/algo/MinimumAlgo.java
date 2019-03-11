@@ -1,6 +1,7 @@
 package de.opendiabetes.main.algo;
 
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.main.math.Filter;
 import de.opendiabetes.main.math.Predictions;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -39,7 +40,9 @@ public class MinimumAlgo extends Algorithm {
                 }
                 double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                double deltaBg = next.getValue() - current.getValue();
+                double deltaBg = Filter.getMedian(glucose, j, 5, absorptionTime / 3) - Filter.getMedian(glucose, i, 5, absorptionTime / 3);
+                //double deltaBg = Filter.getAverage(glucose, j, 5, absorptionTime / 3) - Filter.getAverage(glucose, i, 5, absorptionTime / 3);
+                //double deltaBg = next.getValue() - current.getValue();
                 double deltaPrediction = (nextPrediction - currentPrediction);
                 double value = calcMealValue(deltaBg - deltaPrediction, dTime);
                 if (j == i + 1 || value < mealValue) {
