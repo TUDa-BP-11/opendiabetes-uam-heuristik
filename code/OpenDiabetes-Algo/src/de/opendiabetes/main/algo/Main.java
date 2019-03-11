@@ -9,9 +9,14 @@ import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
 
@@ -27,9 +32,17 @@ public class Main {
         profile.toZulu();
 
         VaultEntryParser parser = new VaultEntryParser();
-
         String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
-        List<VaultEntry> treatments = parser.parseFile(treatmentPath);
+        List<VaultEntry> treatments = new ArrayList();
+        treatments = parser.parseFile(treatmentPath);
+
+//        NightscoutImporter importer = new NightscoutImporter();
+//        try (InputStream stream = new FileInputStream(treatmentPath)) {
+//            treatments = importer.importData(stream);
+//        } catch (IOException ex) {
+//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
         List<VaultEntry> bolusTreatment = new ArrayList<>();
@@ -56,11 +69,14 @@ public class Main {
         List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
 
         String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
-        List<VaultEntry> entries = parser.parseFile(entriesPath);
+        List<VaultEntry> entries = new ArrayList();
+        entries = parser.parseFile(entriesPath);
+//        try (InputStream stream = new FileInputStream(entriesPath)) {
+//            entries = importer.importData(stream);
+//        } catch (IOException ex) {
+//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         entries.sort(new SortVaultEntryByDate());
-        for (VaultEntry e : entries) {
-            e.setValue(e.getValue());
-        }
 
         List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
 
@@ -131,7 +147,11 @@ public class Main {
 //        }
     }
 }
-
+// QR nochemol 
+//Bias: 4.177488722344515
+//RootMeanSquareError: 5.72346890825367
+//Varianz: 15.30668431843085
+//Standardabweichung: 3.9123757895211
 // QR gefiltert
 //Bias: -0.8028490815722585
 //RootMeanSquareError: 9.374997218912611

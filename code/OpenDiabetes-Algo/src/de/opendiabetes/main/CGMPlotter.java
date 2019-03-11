@@ -163,10 +163,11 @@ public class CGMPlotter {
                 MeanError /= N;
                 MeanSquareError /= N;
                 double rms = Math.sqrt(MeanSquareError);
-                System.out.println("Bias: " + MeanError);
-                System.out.println("RootMeanSquareError: " + rms);
-                System.out.println("Varianz: " + (MeanSquareError - MeanError * MeanError));
-                System.out.println("Standardabweichung: " + Math.sqrt(MeanSquareError - MeanError * MeanError));
+                System.out.printf("Bias: %.3g%%\n", MeanError);
+                System.out.printf("RootMeanSquareError: %.3g%%\n", rms);
+                System.out.printf("MaxError: %.3g%%\n",  Collections.max(errorValues));
+//                System.out.println("Varianz: " + (MeanSquareError - MeanError * MeanError));
+//                System.out.println("Standardabweichung: " + Math.sqrt(MeanSquareError - MeanError * MeanError));
 
                 histPlt = Plot.create();
                 histPlt.xlabel("variance");
