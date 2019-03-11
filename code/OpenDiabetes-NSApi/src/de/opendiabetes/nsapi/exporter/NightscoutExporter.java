@@ -50,7 +50,7 @@ public class NightscoutExporter extends Exporter {
         JsonArray array = new JsonArray();
 
         // maximum amount of milliseconds for merging entries as one
-        long window = options.getMergeWindow() * 1000;
+        long window = options.getMergeWindow() * 1000L;
         for (int i = 0; i < data.size(); i++) {
             VaultEntry entry = data.get(i);
             // if entry is mergeable check for more entries in given window
