@@ -53,10 +53,6 @@ public class NSApi {
      */
     public final static DateTimeFormatter DATETIME_FORMATTER_ENTRY = DateTimeFormatter.ofPattern(DATETIME_PATTERN_ENTRY);
     /**
-     * Used to format {@link Date} objects in entries. The timezone of this formatter is set to UTC.
-     */
-    public final static SimpleDateFormat DATETIME_SIMPLEFORMAT_ENTRY = new SimpleDateFormat(DATETIME_PATTERN_ENTRY);
-    /**
      * {@link DateTimeFormatter Pattern} used to format dates in treatments.
      */
     public final static String DATETIME_PATTERN_TREATMENT = "yyyy-MM-dd'T'HH:mm:ssX";
@@ -64,10 +60,6 @@ public class NSApi {
      * Used to format {@link TemporalAccessor} objects in treatments.
      */
     public final static DateTimeFormatter DATETIME_FORMATTER_TREATMENT = DateTimeFormatter.ofPattern(DATETIME_PATTERN_TREATMENT);
-    /**
-     * Used to format {@link Date} objects in treatments. The timezone of this formatter is set to UTC.
-     */
-    public final static SimpleDateFormat DATETIME_SIMPLEFORMAT_TREATMENT = new SimpleDateFormat(DATETIME_PATTERN_TREATMENT);
 
     static {
         LOGGER = Logger.getLogger(NSApi.class.getName());
@@ -75,9 +67,6 @@ public class NSApi {
         handler.setFormatter(new DefaultFormatter());
         LOGGER.addHandler(handler);
         LOGGER.setUseParentHandlers(false);
-
-        DATETIME_SIMPLEFORMAT_ENTRY.setTimeZone(TimeZone.getTimeZone("UTC"));
-        DATETIME_SIMPLEFORMAT_TREATMENT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     private String host;
@@ -427,7 +416,7 @@ public class NSApi {
      */
     @Deprecated
     public void deleteEntry(VaultEntry entry) throws NightscoutIOException, NightscoutServerException {
-        deleteVaultEntry(entry, "entries", "dateString", DATETIME_SIMPLEFORMAT_ENTRY);
+        deleteVaultEntry(entry, "entries", "dateString", craeteSimpleDateFormatEntry());
     }
 
     /**
@@ -442,7 +431,7 @@ public class NSApi {
      */
     @Deprecated
     public void deleteTreatment(VaultEntry treatment) throws NightscoutIOException, NightscoutServerException {
-        deleteVaultEntry(treatment, "treatments", "created_at", DATETIME_SIMPLEFORMAT_TREATMENT);
+        deleteVaultEntry(treatment, "treatments", "created_at", craeteSimpleDateFormatTreatment());
     }
 
     private void deleteVaultEntry(VaultEntry entry, String path, String dateField, SimpleDateFormat formatter) throws NightscoutIOException, NightscoutServerException {
@@ -603,5 +592,23 @@ public class NSApi {
         } catch (DateTimeException e) {
             throw new NightscoutIOException("Could not parse date: " + value, e);
         }
+    }
+
+    /**
+     * @return a SimpleDateFormat using {@link NSApi#DATETIME_PATTERN_ENTRY} with timezone UTC
+     */
+    public static SimpleDateFormat craeteSimpleDateFormatEntry() {
+        SimpleDateFormat format = new SimpleDateFormat(DATETIME_PATTERN_ENTRY);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return format;
+    }
+
+    /**
+     * @return a SimpleDateFormat using {@link NSApi#DATETIME_PATTERN_TREATMENT} with timezone UTC
+     */
+    public static SimpleDateFormat craeteSimpleDateFormatTreatment() {
+        SimpleDateFormat format = new SimpleDateFormat(DATETIME_PATTERN_TREATMENT);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return format;
     }
 }

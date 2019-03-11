@@ -16,6 +16,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
@@ -92,9 +93,10 @@ class NSApiTest {
         // split into three batches
         api.postEntries(entries, 4);
 
+        SimpleDateFormat format = NSApi.craeteSimpleDateFormatEntry();
         GetBuilder builder = api.getEntries()
-                .find("dateString").lte(NSApi.DATETIME_SIMPLEFORMAT_ENTRY.format(entries.get(0).getTimestamp()))
-                .find("dateString").gte(NSApi.DATETIME_SIMPLEFORMAT_ENTRY.format(entries.get(entries.size() - 1).getTimestamp()))
+                .find("dateString").lte(format.format(entries.get(0).getTimestamp()))
+                .find("dateString").gte(format.format(entries.get(entries.size() - 1).getTimestamp()))
                 .count(100);     // in case there are other random entries from previous tests in this time
         List<VaultEntry> newEntries = builder.getVaultEntries();
 
@@ -124,9 +126,10 @@ class NSApiTest {
         // split into three batches
         api.postTreatments(treatments, 4);
 
+        SimpleDateFormat format = NSApi.craeteSimpleDateFormatTreatment();
         GetBuilder builder = api.getTreatments()
-                .find("created_at").lte(NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(treatments.get(0).getTimestamp()))
-                .find("created_at").gte(NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(treatments.get(treatments.size() - 1).getTimestamp()))
+                .find("created_at").lte(format.format(treatments.get(0).getTimestamp()))
+                .find("created_at").gte(format.format(treatments.get(treatments.size() - 1).getTimestamp()))
                 .count(100);     // in case there are other random treatments from previous tests in this time
         List<VaultEntry> newTreatments = builder.getVaultEntries();
 
