@@ -12,7 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestFilter {
-    private final long ONE_MINUTE = 60 * 1000;
+    private static final long ONE_MINUTE = 60 * 1000;
 
     @Test
     public void testAverage() {
