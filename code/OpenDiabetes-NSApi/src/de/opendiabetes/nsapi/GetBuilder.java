@@ -1,18 +1,13 @@
 package de.opendiabetes.nsapi;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.mashape.unirest.request.HttpRequest;
-import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 
 /**
@@ -60,21 +55,7 @@ public class GetBuilder {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public JsonElement getRaw() throws NightscoutIOException, NightscoutServerException {
-        InputStream inputStream = api.send(request);
-        InputStreamReader reader = new InputStreamReader(inputStream);
-        JsonElement element;
-        try {
-            JsonParser parser = new JsonParser();
-            element = parser.parse(reader);
-        } catch (JsonParseException e) {
-            throw new NightscoutDataException("Exception while parsing response from server", e);
-        }
-        try {
-            reader.close();
-        } catch (IOException e) {
-            throw new NightscoutIOException("Exception while closing stream", e);
-        }
-        return element;
+        return api.sendAndParse(request);
     }
 
     /**

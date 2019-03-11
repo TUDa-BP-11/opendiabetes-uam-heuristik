@@ -1,7 +1,11 @@
 package de.opendiabetes.nsapi.exporter;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
+import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -12,15 +16,12 @@ import de.opendiabetes.vault.util.SortVaultEntryByDate;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimeZone;
 
 public class NightscoutExporter extends Exporter {
     private final NightscoutExporterOptions options;
-    private final Gson json;
+    private final Gson gson;
 
     public NightscoutExporter() {
         this(new NightscoutExporterOptions());
@@ -29,9 +30,7 @@ public class NightscoutExporter extends Exporter {
     public NightscoutExporter(NightscoutExporterOptions options) {
         super(options);
         this.options = options;
-        this.json = new GsonBuilder()
-                .setPrettyPrinting()
-                .create();
+        this.gson = new Gson();
     }
 
     /**
@@ -105,8 +104,9 @@ public class NightscoutExporter extends Exporter {
 
         try {
             JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
-            writer.setIndent("  ");
-            json.toJson(array, writer);
+            if (options.isPretty())
+                writer.setIndent("  ");
+            gson.toJson(array, writer);
             writer.close();
         } catch (IOException | JsonIOException e) {
             throw new NightscoutDataException("Exception while flushing stream", e);
@@ -124,16 +124,13 @@ public class NightscoutExporter extends Exporter {
     }
 
     private void addProperties(JsonObject object, VaultEntry entry, boolean setEventType) {
-        DateFormat formatter;
         String dateString;
         switch (entry.getType()) {
             case GLUCOSE_CGM:
                 object.addProperty("type", "sgv");
                 object.addProperty("sgv", entry.getValue());
                 object.addProperty("date", entry.getTimestamp().getTime());
-                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-                object.addProperty("dateString", formatter.format(entry.getTimestamp()));
+                object.addProperty("dateString", NSApi.DATETIME_SIMPLEFORMAT_ENTRY.format(entry.getTimestamp()));
 
                 //TODO: set these to correct values
                 object.addProperty("direction", "");
@@ -144,9 +141,7 @@ public class NightscoutExporter extends Exporter {
                 if (setEventType)
                     object.addProperty("eventType", "Correction Bolus");
                 object.addProperty("insulin", entry.getValue());
-                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-                dateString = formatter.format(entry.getTimestamp());
+                dateString = NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(entry.getTimestamp());
                 object.addProperty("created_at", dateString);
                 object.addProperty("timestamp", dateString);
                 object.addProperty("programmed", entry.getValue());
@@ -160,9 +155,7 @@ public class NightscoutExporter extends Exporter {
                 object.addProperty("carbs", entry.getValue());
                 //TODO: set absorption time to correct value
                 object.addProperty("absorptionTime", 180);
-                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-                dateString = formatter.format(entry.getTimestamp());
+                dateString = NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(entry.getTimestamp());
                 object.addProperty("created_at", dateString);
                 object.addProperty("timestamp", dateString);
                 break;
@@ -170,9 +163,7 @@ public class NightscoutExporter extends Exporter {
                 object.addProperty("eventType", "Temp Basal");
                 object.addProperty("rate", entry.getValue());
                 object.addProperty("duration", entry.getValue2());
-                formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-                dateString = formatter.format(entry.getTimestamp());
+                dateString = NSApi.DATETIME_SIMPLEFORMAT_TREATMENT.format(entry.getTimestamp());
                 object.addProperty("created_at", dateString);
                 object.addProperty("timestamp", dateString);
                 object.addProperty("temp", "absolute");

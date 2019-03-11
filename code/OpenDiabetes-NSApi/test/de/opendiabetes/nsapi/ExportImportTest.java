@@ -136,7 +136,7 @@ public class ExportImportTest {
         assertEquals(entries.size() - 1, array.size());
 
         // test with smaller merge window
-        NightscoutExporter newExporter = new NightscoutExporter(new NightscoutExporterOptions(5));
+        NightscoutExporter newExporter = new NightscoutExporter(new NightscoutExporterOptions(5, false));
         stream = new ByteArrayOutputStream();
         newExporter.exportData(stream, entries);
         stream.close();
