@@ -29,7 +29,6 @@ public class QRAlgo extends Algorithm {
         RealMatrix matrix;
         RealVector nkbg;
         RealVector times;
-
         ArrayList<Double> alNkbg;
         ArrayList<Double> alPred;
         ArrayList<Double> albg;
@@ -40,6 +39,11 @@ public class QRAlgo extends Algorithm {
         VaultEntry next;
         VaultEntry current;
 
+//        long firstTime, lastTime, step;
+//        firstTime = Math.min(Math.min(glucose.get(0).getTimestamp().getTime(),basalTreatments.get(0).getTimestamp().getTime()),bolusTreatments.get(0).getTimestamp().getTime());
+//        lastTime = Math.min(Math.min(glucose.get(glucose.size()-1).getTimestamp().getTime(),basalTreatments.get(basalTreatments.size()-1).getTimestamp().getTime()),bolusTreatments.get(bolusTreatments.size()-1).getTimestamp().getTime());
+//        step = 5*60000;
+        
         long estimatedTime;
         long currentTime;
         long nextTime;
@@ -78,16 +82,13 @@ public class QRAlgo extends Algorithm {
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                                 basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
-                        deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
+//                        deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
+                        deltaBg = next.getValue() - nextPrediction;
                         times = times.append(nextTime - currentTime);
                         nkbg = nkbg.append(deltaBg);
-                        alTimes.add(nextTime * 60);
-                        alNkbg.add(deltaBg + i);
-                        alPred.add(nextPrediction);
-                        albg.add(next.getValue());
                     }
                 }
-
+                
                 if (times.getDimension() >= 3) {
                     matrix = new Array2DRowRealMatrix(times.getDimension(), 2); //3
 //                    matrix.setColumnVector(1, times);
@@ -110,19 +111,19 @@ public class QRAlgo extends Algorithm {
 //                    System.out.println("Date: " + new Date(estimatedTime * 60000) + " Carbs: " + estimatedCarbs);
 //                    if (currentTime - estimatedTime < absorptionTime / 2
 //                            && estimatedTime < lastTime) {
-//                        if (estimatedCarbs > 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
-//                                ) {
-                    estimatedTimeAccepted = estimatedTime;
-                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                            estimatedCarbs);
-                    mealTreatments.add(meal);
+//                    if (estimatedCarbs >= 5 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
+//                            ) {
+                        estimatedTimeAccepted = estimatedTime;
+                        meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                                TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                                estimatedCarbs);
+                        mealTreatments.add(meal);
 
 //                        } else if (currentLimit < absorptionTime / 2) {
 //                            currentLimit += absorptionTime / 6;
 //                        } else {
 //                            break;
-//                        }
+//                    }
 //                        int j_max = mealTreatments.size();
 //                        double tempValue = estimatedCarbs;
 //                        ArrayList<VaultEntry> temps = new ArrayList<>();

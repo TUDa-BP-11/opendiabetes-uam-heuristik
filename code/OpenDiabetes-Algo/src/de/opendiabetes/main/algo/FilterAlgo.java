@@ -54,7 +54,7 @@ public class FilterAlgo extends Algorithm {
         matrix = new Array2DRowRealMatrix(glucose.size(), times.size());
 
         int row = 0;
-        
+
 //        resample glucose to 5 min grid?
         for (VaultEntry current : glucose) {
             currentTime = current.getTimestamp().getTime();
@@ -67,7 +67,7 @@ public class FilterAlgo extends Algorithm {
             deltaBg = currentValue - currentPrediction;
             nkbg = nkbg.append(deltaBg);
             for (int column = 0; column < times.size(); column++) {
-                matrix.setEntry(row, column, Predictions.carbsOnBoard((currentTime - times.get(column))/60000, absorptionTime));
+                matrix.setEntry(row, column, Predictions.carbsOnBoard((currentTime - times.get(column)) / 60000, absorptionTime));
             }
             row++;
         }

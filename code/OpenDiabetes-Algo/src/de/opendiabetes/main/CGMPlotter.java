@@ -53,6 +53,7 @@ public class CGMPlotter {
         List<Double> bgTimes;
         List<Double> bgValues;
         List<Double> algo2Values;
+        List<Double> noMealValues;
 
         basalValues = new ArrayList();
         basalTimes = new ArrayList();
@@ -74,9 +75,9 @@ public class CGMPlotter {
             mealValues.add(a.getValue()); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
             mealTimes.add(a.getTimestamp().getTime() / 1000.0);
         }
-
         bgTimes = new ArrayList();
         bgValues = new ArrayList();
+        noMealValues = new ArrayList();
         algo2Values = new ArrayList();
         startValue = s.getEntries().get(0).getValue();
         for (VaultEntry ve : s.getEntries()) {
@@ -84,17 +85,25 @@ public class CGMPlotter {
                     meals, s.getTreatments(), s.getBasals(),
                     sensitivity, insDuration,
                     carbratio, absorptionTime);
+            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
+                    new ArrayList(), s.getTreatments(), s.getBasals(),
+                    sensitivity, insDuration,
+                    carbratio, absorptionTime);
 
+            noMealValues.add(ve.getValue() - noMealPredict);
             algo2Values.add(startValue + algoPredict);
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
             bgValues.add(ve.getValue());
         }
 
-        plt.plot().addDates(bgTimes).add(bgValues).color("blue"); //.label("Testlabel")
+        plt.xlabel("time");
+        plt.ylabel("BGCV");
+        plt.plot().addDates(bgTimes).add(bgValues).color("blue").marker("x"); //.label("Testlabel")
+        plt.plot().addDates(bgTimes).add(noMealValues).color("orange").marker("x"); //.label("Testlabel")
         plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").marker("x");
         plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").marker("o");
         plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").marker("o");
-        plt.plot().addDates(bgTimes).add(algo2Values).linestyle("--");//.color("cyan").linestyle("--");
+        plt.plot().addDates(bgTimes).add(algo2Values).linestyle("--").marker("x");//.color("cyan").linestyle("--");
 
     }
 
@@ -120,7 +129,9 @@ public class CGMPlotter {
             errorValues.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
             errorTimes.add((ve.getTimestamp().getTime() - startTime) / 1000.0);
         }
-
+        ;
+        errorPlt.xlabel("time");
+        errorPlt.ylabel("relative error");
         errorPlt.plot().addDates(errorTimes).add(errorValues);//.color("magenta").linestyle("--");
         errorPlt.plot().addDates(errorTimes).add(Collections.nCopies(errorValues.size(), 10)).color("black");//.linestyle("--");
         errorPlt.plot().addDates(errorTimes).add(Collections.nCopies(errorValues.size(), -10)).color("black");
@@ -158,6 +169,8 @@ public class CGMPlotter {
                 System.out.println("Standardabweichung: " + Math.sqrt(MeanSquareError - MeanError * MeanError));
 
                 histPlt = Plot.create();
+                histPlt.xlabel("variance");
+                histPlt.ylabel("frequency");
                 histPlt.hist().add(errorValues).bins(100);
                 histPlt.show();
             }

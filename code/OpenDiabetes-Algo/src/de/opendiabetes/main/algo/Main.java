@@ -62,50 +62,19 @@ public class Main {
             e.setValue(e.getValue());
         }
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 4 * 60 * 60000, 0*insDuration * 60000, 1); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
 
-        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
+//        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
-//        Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
 
         List<VaultEntry> meals;
         int i = 0;
 
         CGMPlotter cgpm = new CGMPlotter(true);
 
-// QR gefiltert
-//Bias: -0.8028490815722585
-//RootMeanSquareError: 9.374997218912611
-//Varianz: 87.24600620683776
-//Standardabweichung: 9.340557060841594
-
-// QR ungefiltert
-//Bias: 0.9211518031116709
-//RootMeanSquareError: 8.38324840630532
-//Varianz: 69.4303331974448
-//Standardabweichung: 8.332486615497489
-
-// PCF time contraint
-//Bias: -1.433234557714322
-//RootMeanSquareError: 21.317030666853903
-//Varianz: 452.36163515416314
-//Standardabweichung: 21.268794868401997
-
-// PCF unconstrained
-//Bias: 0.79567402861145
-//RootMeanSquareError: 41.82931286794456
-//Varianz: 1749.0583178445856
-//Standardabweichung: 41.82174455764113
-
-// Min positive
-//Bias: 118.04564100165312
-//RootMeanSquareError: 259.385428933642
-//Varianz: 53346.02738359828
-//Standardabweichung: 230.96758946570463
-
-
-for (Snippet s : snippets) {
+        for (Snippet s : snippets) {
 
             algo.setGlucoseMeasurements(s.getEntries());
             algo.setBolusTreatments(s.getTreatments());
@@ -162,3 +131,29 @@ for (Snippet s : snippets) {
 //        }
     }
 }
+
+// QR gefiltert
+//Bias: -0.8028490815722585
+//RootMeanSquareError: 9.374997218912611
+//Varianz: 87.24600620683776
+//Standardabweichung: 9.340557060841594
+// QR ungefiltert
+//Bias: 0.9211518031116709
+//RootMeanSquareError: 8.38324840630532
+//Varianz: 69.4303331974448
+//Standardabweichung: 8.332486615497489
+// PCF time contraint
+//Bias: -1.433234557714322
+//RootMeanSquareError: 21.317030666853903
+//Varianz: 452.36163515416314
+//Standardabweichung: 21.268794868401997
+// PCF unconstrained
+//Bias: 0.79567402861145
+//RootMeanSquareError: 41.82931286794456
+//Varianz: 1749.0583178445856
+//Standardabweichung: 41.82174455764113
+// Min positive
+//Bias: 118.04564100165312
+//RootMeanSquareError: 259.385428933642
+//Varianz: 53346.02738359828
+//Standardabweichung: 230.96758946570463
