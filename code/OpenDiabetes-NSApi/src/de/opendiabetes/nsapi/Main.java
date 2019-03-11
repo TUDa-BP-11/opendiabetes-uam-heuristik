@@ -88,7 +88,6 @@ public class Main {
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
-
     /**
      * Registers all arguments to the given JSAP instance
      *
