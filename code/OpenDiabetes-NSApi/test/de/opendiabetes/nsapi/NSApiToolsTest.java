@@ -70,7 +70,7 @@ public class NSApiToolsTest {
     }
 
     @Test
-    void testWrite() throws NightscoutIOException, IOException {
+    void testWrite() throws NightscoutIOException, IOException, InterruptedException {
         Path test2 = Paths.get(testdata.toString(), "test2.json");
         if (Files.exists(test2))
             Files.delete(test2);
@@ -84,6 +84,7 @@ public class NSApiToolsTest {
         assertThrows(NightscoutIOException.class, () -> NSApiTools.writeDataToFile(test2.toString(), data));
         // confirm that overwrite works
         FileTime lastModifield = Files.getLastModifiedTime(test2);
+        Thread.sleep(1000);
         assertDoesNotThrow(() -> NSApiTools.writeDataToFile(test2.toString(), data, true, new NightscoutExporter()));
         assertTrue(lastModifield.compareTo(Files.getLastModifiedTime(test2)) < 0);
     }
