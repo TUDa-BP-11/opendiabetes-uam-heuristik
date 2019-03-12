@@ -3,7 +3,7 @@ package de.opendiabetes.nsapi.importer;
 import de.opendiabetes.vault.importer.ImporterOptions;
 
 public class NightscoutImporterOptions extends ImporterOptions {
-    public final static boolean DEFAULT_REQUIREVALIDDATA = true;
+    public final static boolean DEFAULT_REQUIREVALIDDATA = false;
 
     private final boolean requireValidData;
 
