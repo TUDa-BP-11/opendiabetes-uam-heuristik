@@ -65,9 +65,12 @@ public class CGMPlotter {
         List<Double> bgTimes = new ArrayList<>();
         List<Double> bgValues = new ArrayList<>();
         List<Double> noMealValues = new ArrayList<>();
-        List<Double> algo2Values = new ArrayList<>();
-        double startValue = entries.get(0).getValue();
+        List<Double> algoValues = new ArrayList<>();
+        double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+        double startTime = getStartTime(entries, meals, absorptionTime);
         for (VaultEntry ve : entries) {
+            if(ve.getTimestamp().getTime() < startTime)
+                continue;
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
@@ -78,7 +81,7 @@ public class CGMPlotter {
                     carbratio, absorptionTime);
 
             noMealValues.add(ve.getValue() - noMealPredict);
-            algo2Values.add(startValue + algoPredict);
+            algoValues.add(startValue + algoPredict);
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
             bgValues.add(ve.getValue());
         }
@@ -90,7 +93,7 @@ public class CGMPlotter {
         plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").marker("x");
         plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").marker("o");
         plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").marker("o");
-        plt.plot().addDates(bgTimes).add(algo2Values).linestyle("--");//.color("cyan").linestyle("--");
+        plt.plot().addDates(bgTimes).add(algoValues).linestyle("--");//.color("cyan").linestyle("--");
 
     }
 
@@ -102,9 +105,11 @@ public class CGMPlotter {
 
         List<Double> errorTimes = new ArrayList<>();
         List<Double> errorValues = new ArrayList<>();
-        double startValue = entries.get(0).getValue();
-        double startTime = entries.get(0).getTimestamp().getTime();
+        double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+        double startTime = getStartTime(entries, meals, absorptionTime);
         for (VaultEntry ve : entries) {
+            if(ve.getTimestamp().getTime() < startTime)
+                continue;
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
@@ -158,5 +163,47 @@ public class CGMPlotter {
         } catch (IOException | PythonExecutionException ex) {
             Logger.getLogger(de.opendiabetes.main.CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
+                                 List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+                                 double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+        double startTime = entries.get(0).getTimestamp().getTime();
+        double firstValidMealTime = startTime;
+        for (int i = 0; i < meals.size(); i++) {
+            VaultEntry meal = meals.get(i);
+            if (startTime + absorptionTime * 60000 < meal.getTimestamp().getTime()) {
+                firstValidMealTime = meal.getTimestamp().getTime();
+                break;
+            }
+        }
+
+        double startValue = entries.get(0).getValue();
+        for (int i = 0; i < entries.size() - 1; i++) {
+            startValue = entries.get(i).getValue() - Predictions.predict(entries.get(i).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
+            if (entries.get(i + 1).getTimestamp().getTime() > firstValidMealTime)
+                break;
+        }
+
+
+        return startValue;
+    }
+
+    private double getStartTime(List<VaultEntry> entries, List<VaultEntry> meals, int absorptionTime){
+        double startTime = entries.get(0).getTimestamp().getTime();
+        double firstValidMealTime = startTime;
+        for (int i = 0; i < meals.size(); i++) {
+            VaultEntry meal = meals.get(i);
+            if (startTime + absorptionTime * 60000 < meal.getTimestamp().getTime()) {
+                firstValidMealTime = meal.getTimestamp().getTime();
+                break;
+            }
+        }
+        for (int i = 0; i < entries.size() - 1; i++) {
+            startTime = entries.get(i).getTimestamp().getTime();
+            if (entries.get(i + 1).getTimestamp().getTime() > firstValidMealTime)
+                break;
+        }
+        return startTime;
     }
 }

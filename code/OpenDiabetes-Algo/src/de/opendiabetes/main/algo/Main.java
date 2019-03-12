@@ -71,7 +71,7 @@ public class Main {
         }
         entries.sort(new SortVaultEntryByDate());
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 6 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
 
 //        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
