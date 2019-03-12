@@ -1,22 +1,29 @@
 package de.opendiabetes.main.dataprovider;
 
+import de.opendiabetes.main.algo.Main;
 import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.main.math.BasalCalculator;
+import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
-import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class FileDataProvider implements AlgorithmDataProvider {
@@ -30,6 +37,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
     private List<VaultEntry> treatments;
     private List<VaultEntry> basals;
     private Profile profile;
+    private NightscoutImporter importer;
 
     /**
      * Creates a data provider that reads data from disk. All dates are given in ISO-8601 representation.
@@ -45,6 +53,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
      */
     public FileDataProvider(String base, String entries, String treatments, String profile, TemporalAccessor latest, TemporalAccessor oldest) {
         Path basePath;
+        importer = new NightscoutImporter();
         if (base == null)
             basePath = Paths.get("");
         else basePath = Paths.get(base);
@@ -84,8 +93,12 @@ public class FileDataProvider implements AlgorithmDataProvider {
     @Override
     public List<VaultEntry> getGlucoseMeasurements() {
         if (entries == null) {
-            VaultEntryParser parser = new VaultEntryParser();
-            List<VaultEntry> list = parser.parseFile(entriesPath);
+            List<VaultEntry> list = new ArrayList<>();
+            try (InputStream stream = new FileInputStream(entriesPath.toString())) {
+                list = importer.importData(stream);
+            } catch (IOException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
             entries = list.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.GLUCOSE_CGM))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
@@ -95,8 +108,11 @@ public class FileDataProvider implements AlgorithmDataProvider {
     }
 
     private void readTreatments() {
-        VaultEntryParser parser = new VaultEntryParser();
-        treatments = parser.parseFile(treatmentsPath);
+        try (InputStream stream = new FileInputStream(treatmentsPath.toString())) {
+            treatments = importer.importData(stream);
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override

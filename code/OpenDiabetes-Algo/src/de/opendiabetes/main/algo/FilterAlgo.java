@@ -55,7 +55,7 @@ public class FilterAlgo extends Algorithm {
         matrix = new Array2DRowRealMatrix(glucose.size(), times.size());
 
         int row = 0;
-        
+
 //        resample glucose to 5 min grid?
         for (int i = 0; i < glucose.size(); i++) {
             VaultEntry current = glucose.get(i);
