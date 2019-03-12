@@ -7,6 +7,7 @@ import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.nsapi.importer.NightscoutImporter;
+import de.opendiabetes.nsapi.importer.NightscoutImporterOptions;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
@@ -76,6 +77,16 @@ public class ExportImportTest {
         List<VaultEntry> entries = importer.importData(stream);
         stream.close();
         assertEquals(8, entries.size());
+    }
+
+    @Test
+    public void testInvalidDate() {
+        String data = "[{\"type\": \"invalid\"}]";
+        ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
+        assertThrows(NightscoutDataException.class, () -> importer.importData(stream));
+        NightscoutImporter newImporter = new NightscoutImporter(new NightscoutImporterOptions(false));
+        ByteArrayInputStream newStream = new ByteArrayInputStream(data.getBytes());
+        assertDoesNotThrow(() -> newImporter.importData(newStream));
     }
 
     @Test
