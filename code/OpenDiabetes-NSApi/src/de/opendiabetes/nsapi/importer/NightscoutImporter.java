@@ -8,7 +8,6 @@ import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.importer.Importer;
-import de.opendiabetes.vault.importer.ImporterOptions;
 import de.opendiabetes.vault.util.TimestampUtils;
 
 import java.io.InputStream;
@@ -23,15 +22,17 @@ import java.util.Date;
 import java.util.List;
 
 public class NightscoutImporter extends Importer {
+    private final NightscoutImporterOptions options;
     private final JsonParser json;
 
     public NightscoutImporter() {
-        this(new ImporterOptions());
+        this(new NightscoutImporterOptions());
     }
 
-    public NightscoutImporter(ImporterOptions options) {
+    public NightscoutImporter(NightscoutImporterOptions options) {
         super(options);
-        json = new JsonParser();
+        this.options = options;
+        this.json = new JsonParser();
     }
 
     /**
@@ -90,7 +91,7 @@ public class NightscoutImporter extends Importer {
                     entries.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, date, o.get("rate").getAsDouble(), o.get("duration").getAsDouble()));
                     valid = true;
                 }
-                if (!valid)
+                if (!valid && options.requireValidData())
                     throw new NightscoutDataException("invalid source data, could not identify vault entry type");
             }
         } catch (NumberFormatException | IllegalStateException | NullPointerException e) {
