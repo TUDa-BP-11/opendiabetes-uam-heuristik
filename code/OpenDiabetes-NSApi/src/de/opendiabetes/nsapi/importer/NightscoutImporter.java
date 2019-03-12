@@ -4,11 +4,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.importer.Importer;
-import de.opendiabetes.vault.importer.ImporterOptions;
 import de.opendiabetes.vault.util.TimestampUtils;
 
 import java.io.InputStream;
@@ -21,17 +21,20 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 
 public class NightscoutImporter extends Importer {
+    private final NightscoutImporterOptions options;
     private final JsonParser json;
 
     public NightscoutImporter() {
-        this(new ImporterOptions());
+        this(new NightscoutImporterOptions());
     }
 
-    public NightscoutImporter(ImporterOptions options) {
+    public NightscoutImporter(NightscoutImporterOptions options) {
         super(options);
-        json = new JsonParser();
+        this.options = options;
+        this.json = new JsonParser();
     }
 
     /**
@@ -65,7 +68,7 @@ public class NightscoutImporter extends Importer {
 
                 // BG measurements
                 if (o.has("type") && o.get("type").getAsString().equals("sgv")) {
-                    Date date = new Date(o.get("date").getAsLong());
+                    Date date = TimestampUtils.createCleanTimestamp(new Date(o.get("date").getAsLong()));
                     entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, o.get("sgv").getAsDouble()));
                     valid = true;
                 }
@@ -90,8 +93,11 @@ public class NightscoutImporter extends Importer {
                     entries.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, date, o.get("rate").getAsDouble(), o.get("duration").getAsDouble()));
                     valid = true;
                 }
-                if (!valid)
-                    throw new NightscoutDataException("invalid source data, could not identify vault entry type");
+                if (!valid) {
+                    if (options.requireValidData())
+                        throw new NightscoutDataException("invalid source data, could not identify vault entry type");
+                    else NSApi.LOGGER.log(Level.WARNING, "Could not parse JSON Object: " + o.toString());
+                }
             }
         } catch (NumberFormatException | IllegalStateException | NullPointerException e) {
             throw new NightscoutDataException("invalid source data", e);

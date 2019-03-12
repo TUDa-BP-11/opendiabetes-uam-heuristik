@@ -6,17 +6,22 @@ import de.opendiabetes.main.util.Snippet;
 import de.opendiabetes.parser.Profile;
 import de.opendiabetes.parser.ProfileParser;
 import de.opendiabetes.parser.TreatmentMapper;
-import de.opendiabetes.parser.VaultEntryParser;
+import de.opendiabetes.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
 
-    static int absorptionTime = 120;
-    static int insDuration = 180;
+    private static final int absorptionTime = 120;
+    private static final int insDuration = 180;
 
     public static void main(String[] args) {
 
@@ -26,22 +31,19 @@ public class Main {
         Profile profile = profileParser.parseFile(profilePath);
         profile.toZulu();
 
-        VaultEntryParser parser = new VaultEntryParser();
         String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
-        List<VaultEntry> treatments = new ArrayList();
-        treatments = parser.parseFile(treatmentPath);
+        List<VaultEntry> treatments = new ArrayList<>();
 
-//        NightscoutImporter importer = new NightscoutImporter();
-//        try (InputStream stream = new FileInputStream(treatmentPath)) {
-//            treatments = importer.importData(stream);
-//        } catch (IOException ex) {
-//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        NightscoutImporter importer = new NightscoutImporter();
+        try (InputStream stream = new FileInputStream(treatmentPath)) {
+            treatments = importer.importData(stream);
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
         List<VaultEntry> bolusTreatment = new ArrayList<>();
-        List<VaultEntry> mealTreatment = new ArrayList<>();
 
         for (VaultEntry treatment : treatments) {
             switch (treatment.getType()) {
@@ -50,9 +52,6 @@ public class Main {
                     break;
                 case BOLUS_NORMAL:
                     bolusTreatment.add(treatment);
-                    break;
-                case MEAL_MANUAL:
-                    mealTreatment.add(treatment);
                     break;
                 default:
                     System.out.println("de.opendiabetes.main.algo.Main.main() " + treatment.getType());
@@ -64,23 +63,21 @@ public class Main {
         List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
 
         String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
-        List<VaultEntry> entries = new ArrayList();
-        entries = parser.parseFile(entriesPath);
-//        try (InputStream stream = new FileInputStream(entriesPath)) {
-//            entries = importer.importData(stream);
-//        } catch (IOException ex) {
-//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        List<VaultEntry> entries = new ArrayList<>();
+        try (InputStream stream = new FileInputStream(entriesPath)) {
+            entries = importer.importData(stream);
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
         entries.sort(new SortVaultEntryByDate());
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 6 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
 
 //        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
         Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
 
-        List<VaultEntry> meals;
         int i = 0;
 
         CGMPlotter cgpm = new CGMPlotter(true);
@@ -88,17 +85,17 @@ public class Main {
         for (Snippet s : snippets) {
 
             algo.setGlucoseMeasurements(s.getEntries());
-            algo.setBolusTreatments(s.getTreatments());
+            algo.setBolusTreatments(s.getBoli());
             algo.setBasalTreatments(s.getBasals());
 
-            System.out.println("calc :" + ++i + " with " + s.getEntries().size() + " entries, " + s.getBasals().size() + " basals, " + s.getTreatments().size() + " bolus");
-            meals = algo.calculateMeals();
+            System.out.println("calc :" + ++i + " with " + s.getEntries().size() + " entries, " + s.getBasals().size() + " basals, " + s.getBoli().size() + " bolus");
+            List<VaultEntry> meals = algo.calculateMeals();
 
             System.out.println("Found meals:" + meals.size());
 
-            cgpm.plot(s, meals, profile.getSensitivity(), insDuration,
+            cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
-            cgpm.plotError(s, meals, profile.getSensitivity(), insDuration,
+            cgpm.plotError(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
         }
 

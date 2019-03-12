@@ -16,11 +16,11 @@ public class Snippet {
     private long last;
 
     private final List<VaultEntry> entries = new ArrayList<>();
-    private final List<VaultEntry> treatments = new ArrayList<>();
+    private final List<VaultEntry> boli = new ArrayList<>();
     private final List<VaultEntry> basals = new ArrayList<>();
 
     public static List<Snippet> getSnippets(List<VaultEntry> entries,
-            List<VaultEntry> bolusTreatments,
+            List<VaultEntry> boli,
             List<VaultEntry> basals,
             long snippetLength,
             long insDuration,
@@ -31,11 +31,11 @@ public class Snippet {
             return snippets;
         }
         entries.sort(Comparator.comparing(VaultEntry::getTimestamp));
-        bolusTreatments.sort(Comparator.comparing(VaultEntry::getTimestamp));
+        boli.sort(Comparator.comparing(VaultEntry::getTimestamp));
         basals.sort(Comparator.comparing(VaultEntry::getTimestamp));
 
         System.out.println("Found " + entries.size() + " entries in source");
-        System.out.println("Found " + bolusTreatments.size() + " bolusTreatments in source");
+        System.out.println("Found " + boli.size() + " boli in source");
         System.out.println("Found " + basals.size() + " basals in source");
 
 //        for (int i = 0; i < Math.min(5, entries.size()); i++){
@@ -65,9 +65,9 @@ public class Snippet {
                 }
             }
         }
-        for (VaultEntry e : bolusTreatments) {
+        for (VaultEntry e : boli) {
             for (Snippet s : snippets) {
-                s.addTreatment(e, insDuration);
+                s.addBolus(e, insDuration);
             }
         }
         for (VaultEntry e : basals) {
@@ -84,8 +84,8 @@ public class Snippet {
         return entries;
     }
 
-    public List<VaultEntry> getTreatments() {
-        return treatments;
+    public List<VaultEntry> getBoli() {
+        return boli;
     }
 
     public List<VaultEntry> getBasals() {
@@ -106,9 +106,9 @@ public class Snippet {
         }
     }
 
-    public void addTreatment(VaultEntry entry, long treatmentsInAdvance) {
+    public void addBolus(VaultEntry entry, long treatmentsInAdvance) {
         if (entry.getTimestamp().getTime() <= last && first - treatmentsInAdvance <= entry.getTimestamp().getTime()) {
-            treatments.add(entry);
+            boli.add(entry);
         }
     }
 
