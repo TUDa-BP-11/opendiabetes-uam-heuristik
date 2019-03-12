@@ -80,13 +80,13 @@ public class ExportImportTest {
     }
 
     @Test
-    public void testInvalidDate() {
+    public void testInvalidData() {
         String data = "[{\"type\": \"invalid\"}]";
         ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
-        assertThrows(NightscoutDataException.class, () -> importer.importData(stream));
-        NightscoutImporter newImporter = new NightscoutImporter(new NightscoutImporterOptions(false));
+        assertDoesNotThrow(() -> importer.importData(stream));
+        NightscoutImporter newImporter = new NightscoutImporter(new NightscoutImporterOptions(true));
         ByteArrayInputStream newStream = new ByteArrayInputStream(data.getBytes());
-        assertDoesNotThrow(() -> newImporter.importData(newStream));
+        assertThrows(NightscoutDataException.class, () -> newImporter.importData(newStream));
     }
 
     @Test
@@ -195,10 +195,10 @@ public class ExportImportTest {
     @ValueSource(strings = {
             "[{}",  // invalid syntax
             "{}",   // not an array
-            "[{}]", // invalid entry type (no type)
             "[{\"eventType\":\"Meal Bolus\",\"carbs\":\"invalid\",\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"2019-02-20T19:09:42Z\",\"enteredBy\":\"UAMALGO\"}]",    // invalid carbs type (not double)
             "[{\"eventType\":\"Meal Bolus\",\"carbs\":200.0,\"absorptionTime\":120,\"created_at\":\"2019-02-20T19:09:42Z\",\"timestamp\":\"invalid date\",\"enteredBy\":\"UAMALGO\"}]"  // invalid timestamp
     })
+
     public void testImportData(String data) throws IOException {
         ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
         assertThrows(NightscoutDataException.class, () -> importer.importData(stream));
