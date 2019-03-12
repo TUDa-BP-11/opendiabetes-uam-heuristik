@@ -9,14 +9,9 @@ import de.opendiabetes.parser.TreatmentMapper;
 import de.opendiabetes.parser.VaultEntryParser;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Main {
 
@@ -33,8 +28,7 @@ public class Main {
 
         VaultEntryParser parser = new VaultEntryParser();
         String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
-        List<VaultEntry> treatments = new ArrayList();
-        treatments = parser.parseFile(treatmentPath);
+        List<VaultEntry> treatments = parser.parseFile(treatmentPath);
 
 //        NightscoutImporter importer = new NightscoutImporter();
 //        try (InputStream stream = new FileInputStream(treatmentPath)) {
@@ -69,8 +63,7 @@ public class Main {
         List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
 
         String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
-        List<VaultEntry> entries = new ArrayList();
-        entries = parser.parseFile(entriesPath);
+        List<VaultEntry> entries = parser.parseFile(entriesPath);
 //        try (InputStream stream = new FileInputStream(entriesPath)) {
 //            entries = importer.importData(stream);
 //        } catch (IOException ex) {
@@ -93,17 +86,17 @@ public class Main {
         for (Snippet s : snippets) {
 
             algo.setGlucoseMeasurements(s.getEntries());
-            algo.setBolusTreatments(s.getTreatments());
+            algo.setBolusTreatments(s.getBoli());
             algo.setBasalTreatments(s.getBasals());
 
-            System.out.println("calc :" + ++i + " with " + s.getEntries().size() + " entries, " + s.getBasals().size() + " basals, " + s.getTreatments().size() + " bolus");
+            System.out.println("calc :" + ++i + " with " + s.getEntries().size() + " entries, " + s.getBasals().size() + " basals, " + s.getBoli().size() + " bolus");
             meals = algo.calculateMeals();
 
             System.out.println("Found meals:" + meals.size());
 
-            cgpm.plot(s, meals, profile.getSensitivity(), insDuration,
+            cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
-            cgpm.plotError(s, meals, profile.getSensitivity(), insDuration,
+            cgpm.plotError(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
         }
 
