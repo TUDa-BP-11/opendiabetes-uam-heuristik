@@ -38,12 +38,13 @@ public class Main {
         try (InputStream stream = new FileInputStream(treatmentPath)) {
             treatments = importer.importData(stream);
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Main.class.getName()).log(Level.WARNING, null, ex);
         }
 
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
         List<VaultEntry> bolusTreatment = new ArrayList<>();
+        List<VaultEntry> mealTreatment = new ArrayList<>();
 
         for (VaultEntry treatment : treatments) {
             switch (treatment.getType()) {
@@ -52,6 +53,9 @@ public class Main {
                     break;
                 case BOLUS_NORMAL:
                     bolusTreatment.add(treatment);
+                    break;
+                case MEAL_MANUAL:
+                    mealTreatment.add(treatment);
                     break;
                 default:
                     System.out.println("de.opendiabetes.main.algo.Main.main() " + treatment.getType());

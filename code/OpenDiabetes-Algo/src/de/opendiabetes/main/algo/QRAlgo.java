@@ -64,7 +64,7 @@ public class QRAlgo extends Algorithm {
             alTimes = new ArrayList();
 
             current = glucose.get(i);
-
+            System.out.println(current.getTimestamp());
             currentTime = current.getTimestamp().getTime() / 60000;
 
             if (currentTime > estimatedTimeAccepted) {

@@ -67,28 +67,30 @@ public class CGMPlotter {
         }
 
         List<Double> bgTimes = new ArrayList<>();
+        List<Double> algoTimes = new ArrayList<>();
         List<Double> bgValues = new ArrayList<>();
         List<Double> noMealValues = new ArrayList<>();
         List<Double> algoValues = new ArrayList<>();
         double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
         double startTime = getStartTime(entries, meals, absorptionTime);
         for (VaultEntry ve : entries) {
-            if (ve.getTimestamp().getTime() < startTime) {
-                continue;
-            }
-            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    meals, bolusTreatments, basalTreatments,
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
+            bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
+            bgValues.add(ve.getValue());
+
             double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     new ArrayList<>(), bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
                     carbratio, absorptionTime);
-
             noMealValues.add(ve.getValue() - noMealPredict);
+//            if (ve.getTimestamp().getTime() < startTime) {
+//                continue;
+//            }
+            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
+                    meals, bolusTreatments, basalTreatments,
+                    sensitivity, insDuration,
+                    carbratio, absorptionTime);
             algoValues.add(startValue + algoPredict);
-            bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
-            bgValues.add(ve.getValue());
+            algoTimes.add((ve.getTimestamp().getTime()) / 1000.0);
         }
 
         plt.xlabel("time");
@@ -98,7 +100,7 @@ public class CGMPlotter {
         plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").marker("x");
         plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").marker("o");
         plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").marker("o");
-        plt.plot().addDates(bgTimes).add(algoValues).linestyle("--");//.color("cyan").linestyle("--");
+        plt.plot().addDates(algoTimes).add(algoValues).linestyle("--");//.color("cyan").linestyle("--");
 
     }
 
@@ -113,9 +115,9 @@ public class CGMPlotter {
         double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
         double startTime = getStartTime(entries, meals, absorptionTime);
         for (VaultEntry ve : entries) {
-            if (ve.getTimestamp().getTime() < startTime) {
-                continue;
-            }
+//            if (ve.getTimestamp().getTime() < startTime) {
+//                continue;
+//            }
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
