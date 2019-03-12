@@ -81,7 +81,7 @@ public class ExportImportTest {
 
     @Test
     public void testInvalidDate() {
-        String data = "[{}]";
+        String data = "[{\"type\": \"invalid\"}]";
         ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
         assertThrows(NightscoutDataException.class, () -> importer.importData(stream));
         NightscoutImporter newImporter = new NightscoutImporter(new NightscoutImporterOptions(false));

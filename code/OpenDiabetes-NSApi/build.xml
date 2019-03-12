@@ -25,18 +25,10 @@
     <!-- OpenDiabetesVault-Engine properties -->
     <property name="engine.dir" value="${basedir}/../OpenDiabetesVault-Engine"/>
     <property name="engine.jar" value="OpenDiabetesVault-Engine.jar"/>
-    <available property="engine.available" file="${engine.dir}/dist/${engine.jar}"/>
 
-    <target name="full" depends="clean, init, compile, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
+    <target name="full" depends="clean, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
 
-    <target name="compile-engine" unless="engine.available" description="Builds the engine, unless it already exists">
-        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
-        <ant dir="${engine.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
-    </target>
-
-    <target name="-pre-compile" depends="compile-engine" description="Unjars all dependencies. Builds the engine if necessary"/>
-
-    <target name="-pre-jar" depends="init, compile-engine">
+    <target name="-pre-jar" depends="init">
         <unjar dest="${build.classes.dir}" overwrite="false">
             <filelist dir="${engine.dir}/dist">
                 <file name="${engine.jar}"/>

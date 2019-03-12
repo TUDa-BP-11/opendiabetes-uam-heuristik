@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import de.opendiabetes.nsapi.NSApi;
 import de.opendiabetes.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -20,6 +21,7 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 
 public class NightscoutImporter extends Importer {
     private final NightscoutImporterOptions options;
@@ -91,8 +93,11 @@ public class NightscoutImporter extends Importer {
                     entries.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, date, o.get("rate").getAsDouble(), o.get("duration").getAsDouble()));
                     valid = true;
                 }
-                if (!valid && options.requireValidData())
-                    throw new NightscoutDataException("invalid source data, could not identify vault entry type");
+                if (!valid) {
+                    if (options.requireValidData())
+                        throw new NightscoutDataException("invalid source data, could not identify vault entry type");
+                    else NSApi.LOGGER.log(Level.WARNING, "Could not parse JSON Object: " + o.toString());
+                }
             }
         } catch (NumberFormatException | IllegalStateException | NullPointerException e) {
             throw new NightscoutDataException("invalid source data", e);

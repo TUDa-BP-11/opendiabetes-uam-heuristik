@@ -78,6 +78,8 @@ class NSApiTest {
         assertNotNull(status);
         assertTrue(status.isStatusOk());      // tests should break if status is not ok
         assertTrue(status.isApiEnabled());    // tests should break if api is not enabled
+
+        assertTrue(api.checkStatusOk());
     }
 
     @Test
