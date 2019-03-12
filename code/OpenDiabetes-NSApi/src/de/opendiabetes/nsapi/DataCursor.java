@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 
+import static de.opendiabetes.nsapi.NSApi.LOGGER;
+
 /**
  * A buffer for Nightscout data. Lazily loads objects from the server as needed. The internal buffer is refreshed
  * if it runs out of objects until the server does not return any more data.
@@ -68,6 +70,7 @@ public class DataCursor implements Iterator<JsonElement> {
 
     /**
      * Checks if there is more data. May block the thread to request new data from the Nightscout server.
+     * Logs exceptions using {@link NSApi#LOGGER}.
      *
      * @return true if there is more data
      */
@@ -97,7 +100,7 @@ public class DataCursor implements Iterator<JsonElement> {
 
             return array.size() > 0;
         } catch (NightscoutIOException | NightscoutServerException | IllegalStateException e) {
-            Main.logger().log(Level.SEVERE, e, e::getMessage);
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
             return false;
         }
     }

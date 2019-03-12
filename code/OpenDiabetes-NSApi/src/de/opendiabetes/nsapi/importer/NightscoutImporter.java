@@ -65,7 +65,7 @@ public class NightscoutImporter extends Importer {
 
                 // BG measurements
                 if (o.has("type") && o.get("type").getAsString().equals("sgv")) {
-                    Date date = new Date(o.get("date").getAsLong());
+                    Date date = TimestampUtils.createCleanTimestamp(new Date(o.get("date").getAsLong()));
                     entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, date, o.get("sgv").getAsDouble()));
                     valid = true;
                 }
