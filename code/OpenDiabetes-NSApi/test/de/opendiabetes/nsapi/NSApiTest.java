@@ -173,7 +173,7 @@ class NSApiTest {
             List<VaultEntry> list = entry.getValue();
             int end = list.get(0).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
             int start = list.get(list.size() - 1).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
-            String regex = "T{" + start + ".." + end + "}";
+            String regex = String.format("T{%02d..%02d}", start, end);
             List<VaultEntry> slice = api.getSlice("entries", "dateString", "sgv", date.toString(), regex).getVaultEntries();
             assertIterableEquals(list, slice);
         }
