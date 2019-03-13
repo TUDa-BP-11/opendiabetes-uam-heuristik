@@ -1,4 +1,4 @@
-package de.opendiabetes.parser;
+package de.opendiabetes.vault.parser;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
