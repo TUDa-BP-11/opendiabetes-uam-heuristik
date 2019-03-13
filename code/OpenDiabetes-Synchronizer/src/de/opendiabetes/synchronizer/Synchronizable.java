@@ -2,7 +2,7 @@ package de.opendiabetes.synchronizer;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import de.opendiabetes.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.NSApi;
 
 /**
  * A Synchronizable represents a Nightscout data type that can be obtained (GET) and uploaded (POST) via an API path.

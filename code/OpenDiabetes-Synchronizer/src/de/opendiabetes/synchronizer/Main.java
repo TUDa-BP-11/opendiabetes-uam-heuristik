@@ -1,17 +1,17 @@
 package de.opendiabetes.synchronizer;
 
 import com.martiansoftware.jsap.*;
-import de.opendiabetes.nsapi.NSApi;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
-import de.opendiabetes.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
 import java.io.IOException;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static de.opendiabetes.nsapi.Main.*;
-import static de.opendiabetes.nsapi.NSApi.LOGGER;
+import static de.opendiabetes.vault.nsapi.Main.*;
+import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
 
 public class Main {
     // All parameters
@@ -89,12 +89,12 @@ public class Main {
         // setup arguments
         JSAP jsap = new JSAP();
         registerArguments(jsap);
-        JSAPResult config = de.opendiabetes.nsapi.Main.initArguments(jsap, args);
+        JSAPResult config = de.opendiabetes.vault.nsapi.Main.initArguments(jsap, args);
         if (config == null)
             return;
 
         // init
-        de.opendiabetes.nsapi.Main.initLogger(config);
+        de.opendiabetes.vault.nsapi.Main.initLogger(config);
         NSApi read = new NSApi(config.getString("host-read"), config.getString("secret-read"));
         if (!read.checkStatusOk())
             return;

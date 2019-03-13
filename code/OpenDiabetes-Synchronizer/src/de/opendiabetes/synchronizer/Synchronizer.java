@@ -3,15 +3,19 @@ package de.opendiabetes.synchronizer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import de.opendiabetes.nsapi.DataCursor;
-import de.opendiabetes.nsapi.NSApi;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
-import de.opendiabetes.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.vault.nsapi.DataCursor;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.NSApiTools;
+import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
+
+import static de.opendiabetes.vault.nsapi.Main.P_LATEST;
+import static de.opendiabetes.vault.nsapi.Main.P_OLDEST;
 
 public class Synchronizer {
     private NSApi read;
@@ -21,8 +25,8 @@ public class Synchronizer {
     private int batchSize;
 
     public Synchronizer(NSApi read, NSApi write) {
-        this(read, write, ZonedDateTime.parse(de.opendiabetes.nsapi.Main.P_OLDEST.getDefault()[0]),
-                ZonedDateTime.parse(de.opendiabetes.nsapi.Main.P_LATEST.getDefault()[0]), 100);
+        this(read, write, ZonedDateTime.parse(P_OLDEST.getDefault()[0]),
+                ZonedDateTime.parse(P_LATEST.getDefault()[0]), 100);
     }
 
     public Synchronizer(NSApi read, NSApi write, TemporalAccessor oldest, TemporalAccessor latest, int batchSize) {
@@ -74,8 +78,8 @@ public class Synchronizer {
                     lastCompare = null;
                     break;  // break out of inner loop
                 } else {
-                    ZonedDateTime currentDate = NSApi.getZonedDateTime(currentDateString);
-                    ZonedDateTime compareDate = NSApi.getZonedDateTime(compareDateString);
+                    ZonedDateTime currentDate = NSApiTools.getZonedDateTime(currentDateString);
+                    ZonedDateTime compareDate = NSApiTools.getZonedDateTime(compareDateString);
                     if (currentDate.isAfter(compareDate)) {
                         lastCompare = compare;
                         break;  // break out of inner loop
@@ -121,7 +125,7 @@ public class Synchronizer {
                     o.remove("_id");
             }
         }
-        for (JsonArray array : NSApi.split(synchronizable.getMissing(), batchSize))
+        for (JsonArray array : NSApiTools.split(synchronizable.getMissing(), batchSize))
             write.createPost(synchronizable.getApiPath())
                     .setBody(array.toString())
                     .send();

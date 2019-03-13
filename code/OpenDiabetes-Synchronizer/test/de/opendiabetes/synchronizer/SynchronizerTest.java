@@ -1,21 +1,15 @@
 package de.opendiabetes.synchronizer;
 
-import de.opendiabetes.nsapi.NSApi;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
-import de.opendiabetes.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
 
@@ -51,25 +45,6 @@ public class SynchronizerTest {
     static void tearDown() throws IOException {
         read.close();
         write.close();
-    }
-
-    @ParameterizedTest
-    @CsvSource(value = {
-            "entries, dateString",
-            "treatments, created_at",
-            "devicestatus, created_at"
-    })
-    void testMissingZero(String apiPath, String dateField) throws NightscoutIOException, NightscoutServerException {
-        ZonedDateTime oldest = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"));
-        // prevent testing with data that was just uploaded by another test, because Nightscout gets confused with caching
-        ZonedDateTime latest = ZonedDateTime.now().minus(1, ChronoUnit.DAYS);
-        Synchronizer synchronizer = new Synchronizer(read, write, oldest, latest, 100);
-        Synchronizable sync = new Synchronizable(apiPath, dateField);
-        synchronizer.findMissing(sync);
-        if (sync.getMissingCount() > 0)
-            synchronizer.postMissing(sync);
-        synchronizer.findMissing(sync);
-        assertEquals(0, sync.getMissingCount());
     }
 
     @Test
