@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import de.opendiabetes.vault.nsapi.exception.NightscoutDataException;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -29,12 +30,12 @@ public class ProfileParser implements Parser<Profile> {
         if (element.isJsonArray()) {
             JsonArray array = element.getAsJsonArray();
             if (array.size() == 0)
-                throw new RuntimeException("No profile found!");
+                throw new NightscoutDataException("No profile found!");
             element = array.get(0);
         }
 
         if (!element.isJsonObject())
-            throw new RuntimeException("No profile found!");
+            throw new NightscoutDataException("No profile found!");
 
         JsonObject object = element.getAsJsonObject().getAsJsonObject("store").getAsJsonObject("Default");
         ZoneId timezone = ZoneId.of(object.get("timezone").getAsString());

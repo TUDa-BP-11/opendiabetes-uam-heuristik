@@ -22,38 +22,38 @@ import java.util.stream.Collectors;
 public class Main {
     // All parameters
     // Nightscout
-    private static final Parameter P_HOST = new FlaggedOption("host")
+    public static final Parameter P_HOST = new FlaggedOption("host")
             .setStringParser(JSAP.STRING_PARSER)
             .setRequired(true)
             .setShortFlag('h')
             .setLongFlag("host")
             .setHelp("Your Nightscout host URL. Make sure to include the port.");
-    private static final Parameter P_SECRET = new FlaggedOption("secret")
+    public static final Parameter P_SECRET = new FlaggedOption("secret")
             .setStringParser(JSAP.STRING_PARSER)
             .setRequired(true)
             .setShortFlag('s')
             .setLongFlag("secret")
             .setHelp("Your Nightscout API secret.");
     // Actions
-    private static final Parameter P_STATUS = new Switch("status")
+    public static final Parameter P_STATUS = new Switch("status")
             .setLongFlag("status")
             .setHelp("Prints the Nightscout server status and exists.");
-    private static final Parameter P_POST = new FlaggedOption("post")
+    public static final Parameter P_POST = new FlaggedOption("post")
             .setStringParser(new TypeSetParser())
             .setShortFlag('p')
             .setLongFlag("post")
             .setHelp("Uploads data to your Nightscout server. Specify one or more of the following: cgm, bolus, meal, basal, all");
-    private static final Parameter P_GET = new FlaggedOption("get")
+    public static final Parameter P_GET = new FlaggedOption("get")
             .setStringParser(new TypeSetParser())
             .setShortFlag('g')
             .setLongFlag("get")
             .setHelp("Downloads data from your Nightscout server. Specify one or more of the following: cgm, bolus, meal, basal, all");
-    private static final Parameter P_FILE = new FlaggedOption("file")
+    public static final Parameter P_FILE = new FlaggedOption("file")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('f')
             .setLongFlag("file")
             .setHelp("Loads data from a file");
-    private static final Parameter P_OVERWRITE = new Switch("overwrite")
+    public static final Parameter P_OVERWRITE = new Switch("overwrite")
             .setShortFlag('o')
             .setLongFlag("overwrite")
             .setHelp("Overwrite existing files");
@@ -68,7 +68,7 @@ public class Main {
             .setDefault("1970-01-01T00:00:00.000Z")
             .setHelp("The oldest date and time to load data");
     // Tuning
-    private static final Parameter P_MERGEWINDOW = new FlaggedOption("mergewindow")
+    public static final Parameter P_MERGEWINDOW = new FlaggedOption("mergewindow")
             .setStringParser(JSAP.INTEGER_PARSER)
             .setLongFlag("merge-window")
             .setDefault("60")
@@ -168,11 +168,6 @@ public class Main {
         // init
         initLogger(config);
         List<VaultEntry> data;
-
-        if (!config.contains("host") || !config.contains("secret")) {
-            NSApi.LOGGER.log(Level.WARNING, "Please specify your Nightscout host and API secret:\n%s\n%s", new Object[]{P_HOST.getSyntax(), P_SECRET.getSyntax()});
-            return;
-        }
 
         // start
         NSApi api = new NSApi(config.getString("host"), config.getString("secret"));
@@ -284,9 +279,12 @@ public class Main {
                 + "server time:   " + status.getServerTime();
     }
 
+    /**
+     * Parses the post and get arguments to a set of {@link VaultEntryType VaultEntryTypes} for filtering
+     */
     private static class TypeSetParser extends StringParser {
         @Override
-        public Object parse(String s) throws ParseException {
+        public Set<VaultEntryType> parse(String s) throws ParseException {
             Set<VaultEntryType> types = new HashSet<>();
             for (String type : s.toLowerCase().split(",")) {
                 switch (type.trim()) {
@@ -316,11 +314,14 @@ public class Main {
         }
     }
 
+    /**
+     * Parses the latest and oldest arguments to ZonedDateTime
+     */
     private static class IsoDateTimeParser extends StringParser {
         @Override
-        public Object parse(String s) throws ParseException {
+        public ZonedDateTime parse(String s) throws ParseException {
             try {
-                return NSApi.getZonedDateTime(s);
+                return NSApiTools.getZonedDateTime(s);
             } catch (NightscoutIOException e) {
                 throw new ParseException(e);
             }

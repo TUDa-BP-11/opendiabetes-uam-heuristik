@@ -126,8 +126,8 @@ public class NightscoutExporter extends Exporter {
 
     private void addProperties(JsonObject object, VaultEntry entry, boolean setEventType) {
         String dateString;
-        SimpleDateFormat formatEntry = NSApi.craeteSimpleDateFormatEntry();
-        SimpleDateFormat formatTreatment = NSApi.craeteSimpleDateFormatTreatment();
+        SimpleDateFormat formatEntry = NSApi.createSimpleDateFormatEntry();
+        SimpleDateFormat formatTreatment = NSApi.createSimpleDateFormatTreatment();
         switch (entry.getType()) {
             case GLUCOSE_CGM:
                 object.addProperty("type", "sgv");

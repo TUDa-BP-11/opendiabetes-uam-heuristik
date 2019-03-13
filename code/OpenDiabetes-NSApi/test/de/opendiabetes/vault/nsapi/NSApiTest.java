@@ -1,6 +1,5 @@
 package de.opendiabetes.vault.nsapi;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -18,7 +17,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -95,7 +93,7 @@ class NSApiTest {
         // split into three batches
         api.postEntries(entries, 4);
 
-        SimpleDateFormat format = NSApi.craeteSimpleDateFormatEntry();
+        SimpleDateFormat format = NSApi.createSimpleDateFormatEntry();
         GetBuilder builder = api.getEntries()
                 .find("dateString").lte(format.format(entries.get(0).getTimestamp()))
                 .find("dateString").gte(format.format(entries.get(entries.size() - 1).getTimestamp()))
@@ -128,7 +126,7 @@ class NSApiTest {
         // split into three batches
         api.postTreatments(treatments, 4);
 
-        SimpleDateFormat format = NSApi.craeteSimpleDateFormatTreatment();
+        SimpleDateFormat format = NSApi.createSimpleDateFormatTreatment();
         GetBuilder builder = api.getTreatments()
                 .find("created_at").lte(format.format(treatments.get(0).getTimestamp()))
                 .find("created_at").gte(format.format(treatments.get(treatments.size() - 1).getTimestamp()))
@@ -297,65 +295,5 @@ class NSApiTest {
             actual.add(cursor.next());
         }
         assertEquals(expected.size(), actual.size());
-    }
-
-    @Test
-    void testSplit() {
-        Random random = new Random();
-        int size = 50 + random.nextInt(100);
-        int batchSize = size / (2 + random.nextInt(3));
-
-        // test with list of random integers
-        List<Integer> list = random.ints(size).boxed().collect(Collectors.toList());
-        List<List<Integer>> partitions = NSApi.split(list, batchSize);
-        List<Integer> newList = new ArrayList<>();
-        partitions.forEach(newList::addAll);
-        assertIterableEquals(list, newList);
-
-        // test with json array of random integers
-        JsonArray array = random.ints(size).collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
-        List<JsonArray> arrayPartitions = NSApi.split(array, batchSize);
-        JsonArray newArray = new JsonArray();
-        arrayPartitions.forEach(newArray::addAll);
-        assertIterableEquals(array, newArray);
-    }
-
-    @Test
-    void testGetZonedDatetime() throws NightscoutIOException {
-        ZonedDateTime now = LocalDateTime.now().atZone(ZoneId.of("UTC"));
-
-        // test that all information is kept
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-        assertEquals(now.toInstant(), NSApi.getZonedDateTime(formatter.format(now)).toInstant());
-
-        // test that timezone is restored to UTC
-        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
-        assertEquals(now, NSApi.getZonedDateTime(formatter.format(now)));
-
-        // remove milliseconds, should be set to 0
-        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        assertEquals(
-                now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS),
-                NSApi.getZonedDateTime(formatter.format(now))
-        );
-
-        // remove milliseconds, should be set to 0, but keep timezone
-        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
-        assertEquals(
-                now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS).toInstant(),
-                NSApi.getZonedDateTime(formatter.format(now)).toInstant()
-        );
-
-        // remove seconds and milliseconds, should be set to 0
-        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        assertEquals(
-                now.minus(now.get(ChronoField.SECOND_OF_MINUTE), ChronoUnit.SECONDS)
-                        .minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS),
-                NSApi.getZonedDateTime(formatter.format(now))
-        );
-
-        // time is missing, should throw exception
-        String broken = DateTimeFormatter.ISO_DATE.format(ZonedDateTime.now());
-        assertThrows(NightscoutIOException.class, () -> NSApi.getZonedDateTime(broken));
     }
 }

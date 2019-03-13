@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.nsapi;
 
+import com.google.gson.JsonArray;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
@@ -15,9 +16,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,6 +44,17 @@ public class NSApiToolsTest {
         if (!Files.isDirectory(testdata))
             fail("Could not find testdata directory!");
         test1 = Paths.get(testdata.toString(), "test1.json");
+    }
+
+    @Test
+    void testFileNotFound() {
+        assertThrows(NightscoutIOException.class, () -> NSApiTools.loadDataFromFile("invalid path"));
+    }
+
+    @Test
+    void testDirectory() {
+        assertThrows(NightscoutIOException.class, () -> NSApiTools.loadDataFromFile(testdata.toString()));
+        assertThrows(NightscoutIOException.class, () -> NSApiTools.writeDataToFile(testdata.toString(), Collections.emptyList()));
     }
 
     @Test
@@ -87,5 +104,65 @@ public class NSApiToolsTest {
         Thread.sleep(1000);
         assertDoesNotThrow(() -> NSApiTools.writeDataToFile(test2.toString(), data, true, new NightscoutExporter()));
         assertTrue(lastModifield.compareTo(Files.getLastModifiedTime(test2)) < 0);
+    }
+
+    @Test
+    void testSplit() {
+        Random random = new Random();
+        int size = 50 + random.nextInt(100);
+        int batchSize = size / (2 + random.nextInt(3));
+
+        // test with list of random integers
+        List<Integer> list = random.ints(size).boxed().collect(Collectors.toList());
+        List<List<Integer>> partitions = NSApiTools.split(list, batchSize);
+        List<Integer> newList = new ArrayList<>();
+        partitions.forEach(newList::addAll);
+        assertIterableEquals(list, newList);
+
+        // test with json array of random integers
+        JsonArray array = random.ints(size).collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
+        List<JsonArray> arrayPartitions = NSApiTools.split(array, batchSize);
+        JsonArray newArray = new JsonArray();
+        arrayPartitions.forEach(newArray::addAll);
+        assertIterableEquals(array, newArray);
+    }
+
+    @Test
+    void testGetZonedDatetime() throws NightscoutIOException {
+        ZonedDateTime now = LocalDateTime.now().atZone(ZoneId.of("UTC"));
+
+        // test that all information is kept
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        assertEquals(now.toInstant(), NSApiTools.getZonedDateTime(formatter.format(now)).toInstant());
+
+        // test that timezone is restored to UTC
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        assertEquals(now, NSApiTools.getZonedDateTime(formatter.format(now)));
+
+        // remove milliseconds, should be set to 0
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        assertEquals(
+                now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS),
+                NSApiTools.getZonedDateTime(formatter.format(now))
+        );
+
+        // remove milliseconds, should be set to 0, but keep timezone
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
+        assertEquals(
+                now.minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS).toInstant(),
+                NSApiTools.getZonedDateTime(formatter.format(now)).toInstant()
+        );
+
+        // remove seconds and milliseconds, should be set to 0
+        formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        assertEquals(
+                now.minus(now.get(ChronoField.SECOND_OF_MINUTE), ChronoUnit.SECONDS)
+                        .minus(now.get(ChronoField.MILLI_OF_SECOND), ChronoUnit.MILLIS),
+                NSApiTools.getZonedDateTime(formatter.format(now))
+        );
+
+        // time is missing, should throw exception
+        String broken = DateTimeFormatter.ISO_DATE.format(ZonedDateTime.now());
+        assertThrows(NightscoutIOException.class, () -> NSApiTools.getZonedDateTime(broken));
     }
 }
