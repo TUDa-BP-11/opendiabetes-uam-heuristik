@@ -287,7 +287,7 @@ class NSApiTest {
 
     @Test
     void testDataCursor() throws NightscoutIOException, NightscoutServerException {
-        ZonedDateTime latest = ZonedDateTime.now();
+        ZonedDateTime latest = ZonedDateTime.now().minus(1, ChronoUnit.HOURS);
         ZonedDateTime oldest = ZonedDateTime.parse("2017-01-01T00:00:00.000Z");
         int batchSize = 20 + (int) (Math.random() * 100);
         List<VaultEntry> expected = api.getEntries(latest, oldest, batchSize);
