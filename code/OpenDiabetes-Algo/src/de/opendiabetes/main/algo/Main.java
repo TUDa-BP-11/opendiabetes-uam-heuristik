@@ -28,10 +28,12 @@ public class Main {
         ProfileParser profileParser = new ProfileParser();
 
         String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
+        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
+        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
+
         Profile profile = profileParser.parseFile(profilePath);
         profile.toZulu();
 
-        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> treatments = new ArrayList<>();
 
         NightscoutImporter importer = new NightscoutImporter();
@@ -66,7 +68,6 @@ public class Main {
 
         List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
 
-        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = new ArrayList<>();
         try (InputStream stream = new FileInputStream(entriesPath)) {
             entries = importer.importData(stream);
