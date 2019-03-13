@@ -2,6 +2,7 @@ package de.opendiabetes.parser;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.parser.TreatmentMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

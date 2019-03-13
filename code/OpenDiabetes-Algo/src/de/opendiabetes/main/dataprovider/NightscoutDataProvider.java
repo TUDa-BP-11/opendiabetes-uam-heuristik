@@ -2,13 +2,13 @@ package de.opendiabetes.main.dataprovider;
 
 import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.main.math.BasalCalculator;
-import de.opendiabetes.nsapi.GetBuilder;
-import de.opendiabetes.nsapi.NSApi;
-import de.opendiabetes.nsapi.exception.NightscoutIOException;
-import de.opendiabetes.nsapi.exception.NightscoutServerException;
-import de.opendiabetes.parser.Profile;
-import de.opendiabetes.parser.Status;
-import de.opendiabetes.parser.TreatmentMapper;
+import de.opendiabetes.vault.nsapi.GetBuilder;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.vault.parser.Profile;
+import de.opendiabetes.vault.parser.Status;
+import de.opendiabetes.vault.parser.TreatmentMapper;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 

@@ -1,8 +1,8 @@
 package de.opendiabetes.main.dataprovider;
 
-import de.opendiabetes.nsapi.exporter.NightscoutExporter;
-import de.opendiabetes.nsapi.exporter.NightscoutExporterOptions;
-import de.opendiabetes.parser.Profile;
+import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.vault.nsapi.exporter.NightscoutExporterOptions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;

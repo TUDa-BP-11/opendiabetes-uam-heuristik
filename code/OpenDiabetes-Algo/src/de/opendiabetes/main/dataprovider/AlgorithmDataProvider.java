@@ -1,7 +1,7 @@
 package de.opendiabetes.main.dataprovider;
 
 
-import de.opendiabetes.parser.Profile;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
