@@ -54,23 +54,24 @@ public class CGMPlotter {
 
         List<Double> bolusValues = new ArrayList<>();
         List<Double> bolusTimes = new ArrayList<>();
-        for (VaultEntry a : bolusTreatments) {
-            bolusValues.add(a.getValue()); // -a.getValue() * profile.getSensitivity()
-            bolusTimes.add(a.getTimestamp().getTime() / 1000.0);
-        }
+        generatePointsToDraw(bolusTreatments, bolusValues, bolusTimes);
 
         List<Double> mealValues = new ArrayList<>();
         List<Double> mealTimes = new ArrayList<>();
-        for (VaultEntry a : meals) {
-            mealValues.add(a.getValue()); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
-            mealTimes.add(a.getTimestamp().getTime() / 1000.0);
-        }
+        generatePointsToDraw(meals, mealValues, mealTimes);
 
         List<Double> bgTimes = new ArrayList<>();
         List<Double> algoTimes = new ArrayList<>();
         List<Double> bgValues = new ArrayList<>();
         List<Double> noMealValues = new ArrayList<>();
         List<Double> algoValues = new ArrayList<>();
+        List<Double> firstToLast = new ArrayList<>();
+        List<Double> zeros = new ArrayList<>();
+        firstToLast.add(entries.get(0).getTimestamp().getTime() / 1000.0);
+        firstToLast.add(entries.get(entries.size() - 1).getTimestamp().getTime() / 1000.0);
+        zeros.add(0.0);
+        zeros.add(0.0);
+
         double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
         double startTime = getStartTime(entries, meals, absorptionTime);
         double offset = 0;
@@ -107,17 +108,31 @@ public class CGMPlotter {
         plt.plot().addDates(bgTimes).add(bgValues).color("blue").label("cgm"); //.label("Testlabel")
         plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
         plt.plot().addDates(algoTimes).add(algoValues).linestyle("--").label("predicted values");//.color("cyan").linestyle("--");
-        plt.title("CGM");
+        plt.plot().addDates(firstToLast).add(zeros).linestyle("");
+        //plt.title("CGM");
+        //plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").label("meals").marker("x");
+
+
         plt.legend().loc(2);
         plt.subplot(2,1,2);
-        plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").label("meals").marker("x");
-        plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("o");
-        plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
-        plt.title("Meals");
+        //plt.hist().add(mealTimes).weights(mealValues).bottom(0).color("red").label("meals").bins(100);
+        //plt.hist().add(bolusTimes).weights(bolusValues).bottom(0).color("green").label("bolus").bins(100);
+        //plt.hist().add(basalTimes).weights(basalValues).color("cyan").label("basal").bins(100);
+
+
+
+        //plt.plot().addDates(new ArrayList<>()).add(new ArrayList<>()).label("meals").color("red");
+        plt.plot().addDates(firstToLast).add(zeros).linestyle("");
+        plt.plot().addDates(mealTimes).add(mealValues).color("red").label("meals").marker("_").linestyle("").markersize("3");
+        plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("_").markersize("3");
+        //plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
+        //plt.title("Meals");
         plt.legend().loc(2);
+
 
 
     }
+
 
     public void plotError(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
             List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
@@ -311,5 +326,22 @@ public class CGMPlotter {
             }
         }
         return startTime;
+    }
+
+
+    private void generatePointsToDraw(List<VaultEntry> vaultEntries, List<Double> values, List<Double> times) {
+        for (VaultEntry a : vaultEntries) {
+            if (a.getValue() > 0) {
+                for (double i = 0; i <= a.getValue(); i += 0.1) {
+                    values.add(i); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
+                    times.add(a.getTimestamp().getTime() / 1000.0);
+                }
+            } else {
+                for (double i = 0; i >= a.getValue(); i -= 0.1) {
+                    values.add(i); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
+                    times.add(a.getTimestamp().getTime() / 1000.0);
+                }
+            }
+        }
     }
 }
