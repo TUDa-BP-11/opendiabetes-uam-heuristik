@@ -133,6 +133,9 @@ public class Main {
         return LOGGER;
     }
 
+    /**
+     * Parses what should be synchronized
+     */
     private static class SychronizableParser extends StringParser {
         @Override
         public Synchronizable parse(String s) throws ParseException {
