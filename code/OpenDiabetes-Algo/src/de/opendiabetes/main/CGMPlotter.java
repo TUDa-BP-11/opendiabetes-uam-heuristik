@@ -101,16 +101,21 @@ public class CGMPlotter {
             noMealValues.add(ve.getValue() + noMealPredict + offset);
         }
 
+        plt.subplot(2,1,1);
         plt.xlabel("time");
         plt.ylabel("mg/dl");
         plt.plot().addDates(bgTimes).add(bgValues).color("blue").label("cgm"); //.label("Testlabel")
         plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
-        plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").label("meals").marker("x");
-        plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("o");
-        plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
         plt.plot().addDates(algoTimes).add(algoValues).linestyle("--").label("predicted values");//.color("cyan").linestyle("--");
         plt.title("CGM");
         plt.legend().loc(2);
+        plt.subplot(2,1,2);
+        plt.plot().addDates(mealTimes).add(mealValues).color("red").linestyle("").label("meals").marker("x");
+        plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("o");
+        plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
+        plt.title("Meals");
+        plt.legend().loc(2);
+
 
     }
 
