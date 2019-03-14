@@ -30,18 +30,10 @@
     -->
     <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
     <property name="nsapi.jar" value="OpenDiabetes-NSApi.jar"/>
-    <available property="nsapi.available" file="${nsapi.dir}/dist/${nsapi.jar}"/>
 
-    <target name="full" depends="clean, init, compile, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
+    <target name="full" depends="clean, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
 
-    <target name="compile-nsapi" unless="nsapi.available" description="Builds the engine, unless it already exists">
-        <!-- don't overwrite properties in engine build, build as if it was executed on its own -->
-        <ant dir="${nsapi.dir}" target="jar" usenativebasedir="true" inheritall="false"/>
-    </target>
-
-    <target name="-pre-compile" depends="compile-nsapi" description="Unjars all dependencies. Builds the engine if necessary"/>
-
-    <target name="-pre-jar" depends="init, compile-nsapi">
+    <target name="-pre-jar" depends="init">
         <unjar dest="${build.classes.dir}" overwrite="false">
             <filelist dir="${nsapi.dir}/dist">
                 <file name="${nsapi.jar}"/>

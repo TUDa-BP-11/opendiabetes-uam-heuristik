@@ -1,4 +1,4 @@
-package de.opendiabetes.synchronizer;
+package de.opendiabetes.vault.synchronizer;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

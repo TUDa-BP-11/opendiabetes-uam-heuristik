@@ -1,4 +1,4 @@
-package de.opendiabetes.synchronizer;
+package de.opendiabetes.vault.synchronizer;
 
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.nsapi.NSApi;
