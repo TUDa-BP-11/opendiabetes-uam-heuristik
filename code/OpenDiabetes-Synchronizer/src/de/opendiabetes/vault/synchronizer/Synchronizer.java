@@ -47,11 +47,11 @@ public class Synchronizer {
 
     /**
      * Finds all missing entries in the target NS instance. Nightscout returns entries in
-     * order from latest to oldest, therefore we actually compare in the same order
+     * order from latest to oldest, therefore we actually compare in the same order.
      *
      * @param synchronizable The Synchronizable that will be tested.
      */
-    public void findMissing(Synchronizable synchronizable) throws NightscoutIOException, NightscoutServerException {
+    public void findMissing(Synchronizable synchronizable) throws NightscoutIOException {
         synchronizable.reset();
 
         String dateField = synchronizable.getDateField();
@@ -60,19 +60,23 @@ public class Synchronizer {
 
         JsonObject lastCompare = null;
         while (readCursor.hasNext()) {
+            // the current object that we are looking for in the write instance
             JsonObject current = readCursor.next();
             String currentDateString = current.get(dateField).getAsString();
+
             synchronizable.incrFindCount();
             boolean found = false;
 
-            // compare if the last entry was not found or if the write cursor has more objects
+            // compare if the last object was not found or if the write cursor has more objects
             while (lastCompare != null || writeCursor.hasNext()) {
+                // if the last object was not found compare again, else get the next object from the write instance
                 JsonObject compare;
                 if (lastCompare == null)
                     compare = writeCursor.next();
                 else compare = lastCompare;
                 String compareDateString = compare.get(dateField).getAsString();
 
+                // if the dates equal we found the target
                 if (currentDateString.equals(compareDateString)) {
                     found = true;
                     lastCompare = null;
@@ -80,14 +84,16 @@ public class Synchronizer {
                 } else {
                     ZonedDateTime currentDate = NSApiTools.getZonedDateTime(currentDateString);
                     ZonedDateTime compareDate = NSApiTools.getZonedDateTime(compareDateString);
+                    // if the current object is after the compared object we know that it must be missing
                     if (currentDate.isAfter(compareDate)) {
                         lastCompare = compare;
                         break;  // break out of inner loop
                     }
                 }
-                // keep going until current is either found or before the next compare
+                // keep going until current is either found or definitely missing
                 lastCompare = null;
             }
+
             if (found) {
                 Main.logger().log(Level.FINE, "- %s IS NOT missing", current.get(dateField).getAsString());
             } else {

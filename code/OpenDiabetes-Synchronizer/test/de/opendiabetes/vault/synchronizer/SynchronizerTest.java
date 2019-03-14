@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +21,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+/**
+ * Why there are sleeps in here:
+ * The Nightscout api is as a Node.JS express server that serves its data from an underlying MongoDB database. It seems
+ * to utilize multiple threads to accomplish this and the different threads don't always know of changes that were just
+ * made in another thread. This is noticeable here, as sending data to Nightscout and then requesting it immediately
+ * afterwards sometimes returns the inserted data and sometimes it does not. In any case the data gets saved to the
+ * database eventually so we are using {@link Thread#sleep(long)} here to minimize the risk of these tests failing
+ * because of multithreading issues.
+ */
 public class SynchronizerTest {
     private static NSApi read;
     private static NSApi write;
@@ -52,17 +63,17 @@ public class SynchronizerTest {
 
     @Test
     void testMissingEntry() throws NightscoutIOException, NightscoutServerException, InterruptedException {
-        Synchronizer synchronizer = new Synchronizer(read, write);
+        Synchronizer synchronizer = new Synchronizer(read, write, ZonedDateTime.now().minus(6, ChronoUnit.HOURS), ZonedDateTime.now(), 100);
         Synchronizable sync = new Synchronizable("entries", "dateString");
         synchronizer.findMissing(sync);
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
+        // see class doc
         synchronizer.getReadApi().postEntries(Collections.singletonList(
-                // set one minute in the past to prevent issues with clocks out of sync
-                new VaultEntry(VaultEntryType.GLUCOSE_CGM, TimestampUtils.createCleanTimestamp(new Date(System.currentTimeMillis() - 60 * 1000)), 80)
+                new VaultEntry(VaultEntryType.GLUCOSE_CGM, TimestampUtils.createCleanTimestamp(new Date(System.currentTimeMillis() - 60 * 60 * 1000)), 80)
         ));
-        // sleep to give Nightscout a chance to sort out its cache
-        Thread.sleep(1000);
+        // see class doc
+        Thread.sleep(5000);
         synchronizer.findMissing(sync);
 
         assertEquals(found + 1, sync.getFindCount());
@@ -84,12 +95,12 @@ public class SynchronizerTest {
         synchronizer.findMissing(sync);
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
+        // see class doc
         synchronizer.getReadApi().postTreatments(Collections.singletonList(
-                // set one minute in the past to prevent issues with clocks out of sync
-                new VaultEntry(VaultEntryType.BOLUS_NORMAL, TimestampUtils.createCleanTimestamp(new Date(System.currentTimeMillis() - 60 * 1000)), 4)
+                new VaultEntry(VaultEntryType.BOLUS_NORMAL, TimestampUtils.createCleanTimestamp(new Date(System.currentTimeMillis() - 60 * 60 * 1000)), 4)
         ));
-        // sleep to give Nightscout a chance to sort out its cache
-        Thread.sleep(1000);
+        // see class doc
+        Thread.sleep(5000);
         synchronizer.findMissing(sync);
 
         assertEquals(found + 1, sync.getFindCount());
