@@ -97,14 +97,14 @@ public class CGMPlotter {
             algoValues.add(startValue + algoPredict);
             algoTimes.add((ve.getTimestamp().getTime()) / 1000.0);
 
-            noMealValues.add(ve.getValue() + noMealPredict + offset);
+            //noMealValues.add(ve.getValue() + noMealPredict + offset);
         }
 
         plt.subplot(3,1,1);
         plt.xlabel("time");
         plt.ylabel("mg/dl");
         plt.plot().addDates(bgTimes).add(bgValues).color("blue").label("cgm"); //.label("Testlabel")
-        plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
+        //plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
         plt.plot().addDates(algoTimes).add(algoValues).linestyle("--").label("predicted values");//.color("cyan").linestyle("--");
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
 
@@ -142,8 +142,8 @@ public class CGMPlotter {
         plt.ylabel("%");
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
         plt.plot().addDates(errorTimes).add(errorValues).label("relative error");//.color("magenta").linestyle("--");
-        plt.plot().addDates(errorTimes).add(Collections.nCopies(errorValues.size(), 10)).color("black").label("fault tolerance");//.linestyle("--");
-        plt.plot().addDates(errorTimes).add(Collections.nCopies(errorValues.size(), -10)).color("black");
+        plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), 10)).color("black").label("fault tolerance");//.linestyle("--");
+        plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), -10)).color("black");
         if (plotHist) {
             this.errorValues.addAll(errorValues);
         }
