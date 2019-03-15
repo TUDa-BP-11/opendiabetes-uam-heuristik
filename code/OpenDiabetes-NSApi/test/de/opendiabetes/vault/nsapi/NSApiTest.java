@@ -174,7 +174,9 @@ class NSApiTest {
             int end = list.get(0).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
             int start = list.get(list.size() - 1).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
             String regex = String.format("T{%02d..%02d}", start, end);
-            List<VaultEntry> slice = api.getSlice("entries", "dateString", "sgv", date.toString(), regex).getVaultEntries();
+            List<VaultEntry> slice = api.getSlice("entries", "dateString", "sgv", date.toString(), regex)
+                    .count(list.size() + 10)
+                    .getVaultEntries();
             assertIterableEquals(list, slice);
         }
     }
