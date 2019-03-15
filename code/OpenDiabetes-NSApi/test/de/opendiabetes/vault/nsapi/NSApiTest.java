@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -283,9 +284,10 @@ class NSApiTest {
         assertThrows(NightscoutServerException.class, () -> api.createGet("this is an invalid path").getRaw());
     }
 
-    @Test
-    void testDataCursor() throws NightscoutIOException, NightscoutServerException {
-        ZonedDateTime latest = ZonedDateTime.now().minus(1, ChronoUnit.HOURS);
+    @ParameterizedTest
+    @ValueSource(ints = {5, 10, 15, 20, 30, 35, 45, 50, 55, 60})
+    void testDataCursor(int minutesPast) throws NightscoutIOException, NightscoutServerException {
+        ZonedDateTime latest = ZonedDateTime.now().minus(minutesPast, ChronoUnit.MINUTES);
         ZonedDateTime oldest = ZonedDateTime.parse("2017-01-01T00:00:00.000Z");
         int batchSize = 20 + (int) (Math.random() * 100);
         List<VaultEntry> expected = api.getEntries(latest, oldest, batchSize);
@@ -293,6 +295,15 @@ class NSApiTest {
         List<JsonObject> actual = new ArrayList<>();
         while (cursor.hasNext()) {
             actual.add(cursor.next());
+        }
+        if (expected.size() != actual.size()) {
+            Set<Date> dates = new HashSet<>();
+            for (VaultEntry e : expected) {
+                if (!dates.add(e.getTimestamp()))
+                    System.out.println("Found two entries at the same date: " + e.getTimestamp());
+            }
+
+            fail();
         }
         assertEquals(expected.size(), actual.size());
     }
