@@ -68,7 +68,6 @@ public class SynchronizerTest {
         synchronizer.findMissing(sync);
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
-        // see class doc
         synchronizer.getReadApi().postEntries(Collections.singletonList(
                 new VaultEntry(VaultEntryType.GLUCOSE_CGM, TimestampUtils.createCleanTimestamp(new Date(System.currentTimeMillis() - 60 * 60 * 1000)), 80)
         ));
@@ -95,7 +94,6 @@ public class SynchronizerTest {
         synchronizer.findMissing(sync);
         int found = sync.getFindCount();
         int missing = sync.getMissingCount();
-        // see class doc
         synchronizer.getReadApi().postTreatments(Collections.singletonList(
                 new VaultEntry(VaultEntryType.BOLUS_NORMAL, TimestampUtils.createCleanTimestamp(new Date(System.currentTimeMillis() - 60 * 60 * 1000)), 4)
         ));
