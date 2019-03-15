@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="OpenDiabetes-NSApi" default="default" basedir=".">
-    <description>Builds, tests, and runs the project OpenDiabetes-NSApi.</description>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="OpenDiabetes-Synchronizer" default="default" basedir=".">
+    <description>Builds, tests, and runs the project OpenDiabetes-Synchronizer.</description>
     <import file="nbproject/build-impl.xml"/>
     <!--
     There exist several targets which are by default empty and which can be 
     used for execution of your tasks. These targets are usually executed 
     before and after some main targets. They are: 
-
       -pre-init:                 called before initialization of project properties
       -post-init:                called after initialization of project properties
       -pre-compile:              called before javac compilation
@@ -21,21 +28,15 @@
       -post-jar:                 called after JAR building
       -post-clean:               called after cleaning build products
     -->
-
-    <!-- OpenDiabetesVault-Engine properties -->
-    <property name="engine.dir" value="${basedir}/../OpenDiabetesVault-Engine"/>
-    <property name="engine.jar" value="OpenDiabetesVault-Engine.jar"/>
+    <property name="nsapi.dir" value="${basedir}/../OpenDiabetes-NSApi"/>
+    <property name="nsapi.jar" value="OpenDiabetes-NSApi.jar"/>
 
     <target name="full" depends="clean, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
 
     <target name="-pre-jar" depends="init">
         <unjar dest="${build.classes.dir}" overwrite="false">
-            <filelist dir="${engine.dir}/dist">
-                <file name="${engine.jar}"/>
-            </filelist>
-            <filelist dir="${libraries.dir}">
-                <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
-                <file name="JSAP-2.1.jar"/>
+            <filelist dir="${nsapi.dir}/dist">
+                <file name="${nsapi.jar}"/>
             </filelist>
         </unjar>
     </target>
