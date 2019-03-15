@@ -21,10 +21,10 @@ public class CGMPlotter {
     private Plot plt;
     private Plot diffPlt;
     private Plot histPlt;
-    private List<Double> errorValues = new ArrayList<>();
     private boolean plotPlot = false;
     private boolean plotDiff = false;
     private boolean plotHist = false;
+    private List<Double> errorValues = new ArrayList<>();
 
     public CGMPlotter() {
         plt = Plot.create();
@@ -65,6 +65,9 @@ public class CGMPlotter {
         List<Double> algoValues = new ArrayList<>();
         List<Double> firstToLast = new ArrayList<>();
         List<Double> zeros = new ArrayList<>();
+
+        List<Double> errorTimes = new ArrayList<>();
+        List<Double> errorValues = new ArrayList<>();
         firstToLast.add(entries.get(0).getTimestamp().getTime() / 1000.0);
         firstToLast.add(entries.get(entries.size() - 1).getTimestamp().getTime() / 1000.0);
         zeros.add(0.0);
@@ -98,6 +101,9 @@ public class CGMPlotter {
             algoTimes.add((ve.getTimestamp().getTime()) / 1000.0);
 
             //noMealValues.add(ve.getValue() + noMealPredict + offset);
+
+            errorValues.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
+            errorTimes.add(ve.getTimestamp().getTime() / 1000.0);
         }
 
         plt.subplot(3,1,1);
@@ -122,21 +128,7 @@ public class CGMPlotter {
 
 
 
-        //plot error
-        List<Double> errorTimes = new ArrayList<>();
-        List<Double> errorValues = new ArrayList<>();
-        for (VaultEntry ve : entries) {
-            if (ve.getTimestamp().getTime() < startTime) {
-                continue;
-            }
-            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    meals, bolusTreatments, basalTreatments,
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
-            errorValues.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
-            errorTimes.add(ve.getTimestamp().getTime() / 1000.0);
-        }
-
+        // plot error
         plt.subplot(3,1,3);
         plt.xlabel("time");
         plt.ylabel("%");
