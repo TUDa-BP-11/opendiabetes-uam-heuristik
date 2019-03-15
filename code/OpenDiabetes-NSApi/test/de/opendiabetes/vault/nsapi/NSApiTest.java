@@ -287,7 +287,7 @@ class NSApiTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {5, 10, 15, 20, 30, 35, 45, 50, 55, 60})
+    @ValueSource(ints = {5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60})
     void testDataCursor(int minutesPast) throws NightscoutIOException, NightscoutServerException {
         ZonedDateTime latest = ZonedDateTime.now().minus(minutesPast, ChronoUnit.MINUTES);
         ZonedDateTime oldest = ZonedDateTime.parse("2017-01-01T00:00:00.000Z");
