@@ -35,6 +35,7 @@
             </filelist>
             <filelist dir="${libraries.dir}">
                 <file name="unirest-java-1.4.10-SNAPSHOT-jar-with-dependencies.jar"/>
+                <file name="JSAP-2.1.jar"/>
             </filelist>
         </unjar>
     </target>
