@@ -3,10 +3,10 @@ package de.opendiabetes.main.algo;
 import de.opendiabetes.main.CGMPlotter;
 import de.opendiabetes.main.math.BasalCalculator;
 import de.opendiabetes.main.util.Snippet;
-import de.opendiabetes.parser.Profile;
-import de.opendiabetes.parser.ProfileParser;
-import de.opendiabetes.parser.TreatmentMapper;
-import de.opendiabetes.nsapi.importer.NightscoutImporter;
+import de.opendiabetes.vault.parser.Profile;
+import de.opendiabetes.vault.parser.ProfileParser;
+import de.opendiabetes.vault.parser.TreatmentMapper;
+import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
@@ -27,23 +27,26 @@ public class Main {
 
         ProfileParser profileParser = new ProfileParser();
 
-        String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
+        String profilePath = "/Users/saso/Desktop/Studium/bp/Datensatz/profile_2017-07-10_to_2017-11-08.json";
+        String treatmentPath = "/Users/saso/Desktop/Studium/bp/Datensatz/treatments_7_11.json";
+        String entriesPath = "/Users/saso/Desktop/Studium/bp/Datensatz/entries_7_11.json";
+
         Profile profile = profileParser.parseFile(profilePath);
         profile.toZulu();
 
-        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> treatments = new ArrayList<>();
 
         NightscoutImporter importer = new NightscoutImporter();
         try (InputStream stream = new FileInputStream(treatmentPath)) {
             treatments = importer.importData(stream);
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Main.class.getName()).log(Level.WARNING, null, ex);
         }
 
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
         List<VaultEntry> bolusTreatment = new ArrayList<>();
+        List<VaultEntry> mealTreatment = new ArrayList<>();
 
         for (VaultEntry treatment : treatments) {
             switch (treatment.getType()) {
@@ -52,6 +55,9 @@ public class Main {
                     break;
                 case BOLUS_NORMAL:
                     bolusTreatment.add(treatment);
+                    break;
+                case MEAL_MANUAL:
+                    mealTreatment.add(treatment);
                     break;
                 default:
                     System.out.println("de.opendiabetes.main.algo.Main.main() " + treatment.getType());
@@ -62,7 +68,6 @@ public class Main {
 
         List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
 
-        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
         List<VaultEntry> entries = new ArrayList<>();
         try (InputStream stream = new FileInputStream(entriesPath)) {
             entries = importer.importData(stream);

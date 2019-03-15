@@ -15,13 +15,13 @@ import java.util.List;
 
 import static java.lang.Math.pow;
 
-public class QRAlgo extends Algorithm {
+public class QRDiffAlgo extends Algorithm {
 
-    public QRAlgo(long absorptionTime, long insulinDuration, Profile profile) {
+    public QRDiffAlgo(long absorptionTime, long insulinDuration, Profile profile) {
         super(absorptionTime, insulinDuration, profile);
     }
 
-    public QRAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
+    public QRDiffAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         super(absorptionTime, insulinDuration, dataProvider);
     }
 
@@ -54,6 +54,7 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
+        double nextValue;
         for (int i = 0; i < glucose.size(); i++) {
 
             nkbg = new ArrayRealVector();
@@ -62,74 +63,69 @@ public class QRAlgo extends Algorithm {
             albg = new ArrayList();
             alPred = new ArrayList();
             alTimes = new ArrayList();
-
+            double mse = Double.POSITIVE_INFINITY;
             current = glucose.get(i);
-            System.out.println(current.getTimestamp());
-            currentTime = current.getTimestamp().getTime() / 60000;
 
-            if (currentTime > estimatedTimeAccepted) {
+            currentTime = current.getTimestamp().getTime();
 
-                currentLimit = currentTime + absorptionTime / 6;
+            currentLimit = currentTime + absorptionTime / 2 * 60000;
+            currentValue = current.getValue();
 
-                currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-                //currentValue = Filter.getAverage(glucose, i, 5, absorptionTime / 3);
-                //currentValue = current.getValue();
-                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                        basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                for (int j = i; j < glucose.size(); j++) {
+            currentPrediction = Predictions.predict(currentTime, mealTreatments, bolusTreatments,
+                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
 
-                    next = glucose.get(j);
-                    nextTime = next.getTimestamp().getTime() / 60000;
-                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
-                    //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
-                    //double nextValue = next.getValue();
-                    if (nextTime <= currentLimit) {
+            for (int j = i + 1; j < glucose.size(); j++) {
 
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+                next = glucose.get(j);
+                nextTime = next.getTimestamp().getTime();
 
-//                        deltaBg = next.getValue() - currentValue - (nextPrediction - currentPrediction);
-                        deltaBg = next.getValue() - nextPrediction;
-                        times = times.append(nextTime - currentTime);
-                        nkbg = nkbg.append(deltaBg);
-                    }
+                if (nextTime <= currentLimit) {
+
+                    nextValue = next.getValue();
+                    nextPrediction = Predictions.predict(nextTime, mealTreatments, bolusTreatments,
+                            basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+
+                    deltaBg = (nextValue - nextPrediction) - (currentValue - currentPrediction);
+                    times = times.append(nextTime - currentTime);
+                    nkbg = nkbg.append(deltaBg);
+                    currentValue = nextValue;
+                    currentPrediction = nextPrediction;
                 }
+            }
 
-                if (times.getDimension() >= 3) {
-                    matrix = new Array2DRowRealMatrix(times.getDimension(), 2); //3
-//                    matrix.setColumnVector(1, times);
-                    matrix.setColumnVector(0, times.ebeMultiply(times));
-                    times.set(1);
-                    matrix.setColumnVector(1, times); //2
+            if (times.getDimension() >= 3) {
+                matrix = new Array2DRowRealMatrix(times.getDimension(), 2);
+                matrix.setColumnVector(0, times);
+                times.set(1);
+                matrix.setColumnVector(1, times);
 
-                    DecompositionSolver solver = new QRDecomposition(matrix).getSolver();
-                    RealVector solution = solver.solve(nkbg);
-                    double alpha;//, beta, gamma;
-                    alpha = solution.getEntry(0);
-//                    beta = solution.getEntry(1);
+                DecompositionSolver solver = new QRDecomposition(matrix).getSolver();
+                RealVector solution = solver.solve(nkbg);
+                double alpha, beta;//, gamma;
+                alpha = solution.getEntry(0);
+                beta = solution.getEntry(1);
 //                    gamma = solution.getEntry(2);
 //                    assert (alpha > 0);
 //                    double error = gamma - pow(beta, 2) / (4 * alpha);
-//                    estimatedTime = (long) (currentTime - beta / (2 * alpha));
-                    estimatedTime = currentTime;
-                    double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
+                double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (4 * profile.getSensitivity());
 
-//                    System.out.println("Date: " + new Date(estimatedTime * 60000) + " Carbs: " + estimatedCarbs);
-//                    if (currentTime - estimatedTime < absorptionTime / 2
-//                            && estimatedTime < lastTime) {
-//                    if (estimatedCarbs >= 5 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
-//                            ) {
-                    estimatedTimeAccepted = estimatedTime;
-                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                            estimatedCarbs);
-                    mealTreatments.add(meal);
+                estimatedTime = (long) (currentTime - beta / alpha);
+//                    System.out.println("Date: " + new Date(estimatedTime) + " Carbs: " + estimatedCarbs);
+                if (currentTime - estimatedTime < absorptionTime / 2 * 60000
+                        && estimatedTime - currentTime < absorptionTime / 2 * 60000) {
+                    if (estimatedCarbs >= 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
+                            ) {
+                        estimatedTimeAccepted = estimatedTime;
+                        meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                                TimestampUtils.createCleanTimestamp(new Date(estimatedTime)),
+                                estimatedCarbs);
+                        mealTreatments.add(meal);
 
 //                        } else if (currentLimit < absorptionTime / 2) {
 //                            currentLimit += absorptionTime / 6;
 //                        } else {
 //                            break;
-//                    }
+                    }
 //                        int j_max = mealTreatments.size();
 //                        double tempValue = estimatedCarbs;
 //                        ArrayList<VaultEntry> temps = new ArrayList<>();
@@ -144,9 +140,9 @@ public class QRAlgo extends Algorithm {
 //                                break;
 //                            }
 //                        }
-//                    }
                 }
             }
+
         }
         return mealTreatments;
 //        ArrayList<VaultEntry> mealsMA = new ArrayList<>();

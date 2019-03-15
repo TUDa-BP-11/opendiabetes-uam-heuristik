@@ -3,7 +3,7 @@ package de.opendiabetes.main.algo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.math.Filter;
 import de.opendiabetes.main.math.Predictions;
-import de.opendiabetes.parser.Profile;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.TimestampUtils;

@@ -1,4 +1,4 @@
-package de.opendiabetes.parser;
+package de.opendiabetes.vault.parser;
 
 import de.opendiabetes.vault.parser.Profile;
 import org.junit.jupiter.api.Test;

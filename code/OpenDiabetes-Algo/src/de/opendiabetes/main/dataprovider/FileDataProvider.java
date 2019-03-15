@@ -3,10 +3,10 @@ package de.opendiabetes.main.dataprovider;
 import de.opendiabetes.main.algo.Main;
 import de.opendiabetes.main.exception.DataProviderException;
 import de.opendiabetes.main.math.BasalCalculator;
-import de.opendiabetes.nsapi.importer.NightscoutImporter;
-import de.opendiabetes.parser.Profile;
-import de.opendiabetes.parser.ProfileParser;
-import de.opendiabetes.parser.TreatmentMapper;
+import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
+import de.opendiabetes.vault.parser.Profile;
+import de.opendiabetes.vault.parser.ProfileParser;
+import de.opendiabetes.vault.parser.TreatmentMapper;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 

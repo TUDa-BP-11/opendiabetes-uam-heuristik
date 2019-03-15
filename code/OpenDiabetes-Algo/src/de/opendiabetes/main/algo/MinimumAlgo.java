@@ -3,7 +3,7 @@ package de.opendiabetes.main.algo;
 import de.opendiabetes.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.main.math.Filter;
 import de.opendiabetes.main.math.Predictions;
-import de.opendiabetes.parser.Profile;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.TimestampUtils;
@@ -35,12 +35,12 @@ public class MinimumAlgo extends Algorithm {
             for (int j = i + 1; j < glucose.size(); j++) {
                 VaultEntry next = glucose.get(j);
                 long dTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-                if (dTime > 30 || dTime > absorptionTime) {
+                if (dTime > absorptionTime / 4) {
                     break;
                 }
                 double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                double deltaBg = Filter.getMedian(glucose, j, 5, absorptionTime / 3) - Filter.getMedian(glucose, i, 5, absorptionTime / 3);
+                double deltaBg = Filter.getMedian(glucose, j, 3, absorptionTime / 4) - Filter.getMedian(glucose, i, 3, absorptionTime / 4);
                 //double deltaBg = Filter.getAverage(glucose, j, 5, absorptionTime / 3) - Filter.getAverage(glucose, i, 5, absorptionTime / 3);
                 //double deltaBg = next.getValue() - current.getValue();
                 double deltaPrediction = (nextPrediction - currentPrediction);
