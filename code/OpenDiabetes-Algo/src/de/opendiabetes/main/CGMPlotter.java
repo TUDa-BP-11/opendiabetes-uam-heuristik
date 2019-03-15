@@ -42,6 +42,7 @@ public class CGMPlotter {
             List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
             double sensitivity, int insDuration, double carbratio, int absorptionTime) {
 
+        /*
         plotPlot = true;
         List<Double> basalValues = new ArrayList<>();
         List<Double> basalTimes = new ArrayList<>();
@@ -150,7 +151,7 @@ public class CGMPlotter {
         plt.legend().loc(2);
 
 
-
+    */
     }
 
 
@@ -238,6 +239,7 @@ public class CGMPlotter {
     }
 
     public void showAll() {
+        /*
         try {
             if (plotPlot) {
                 plt.show();
@@ -271,7 +273,7 @@ public class CGMPlotter {
             }
         } catch (IOException | PythonExecutionException ex) {
             Logger.getLogger(de.opendiabetes.main.CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        }*/
     }
 
     private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
