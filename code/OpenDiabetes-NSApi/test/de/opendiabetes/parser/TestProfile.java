@@ -1,5 +1,6 @@
 package de.opendiabetes.parser;
 
+import de.opendiabetes.vault.parser.Profile;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;
