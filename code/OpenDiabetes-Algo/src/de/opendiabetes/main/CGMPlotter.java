@@ -74,21 +74,26 @@ public class CGMPlotter {
         zeros.add(0.0);
         zeros.add(0.0);
 
-        double startValue = 0; //getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
-//        double startTime = getStartTime(entries, meals, absorptionTime);
-//        double offset = 0;
+        double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+        double startTime = getStartTime(entries, meals, absorptionTime);
+        double offset = 0;
         for (VaultEntry ve : entries) {
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
             bgValues.add(ve.getValue());
 
-//            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
-//                    new ArrayList<>(), bolusTreatments, basalTreatments,
-//                    sensitivity, insDuration,
-//                    carbratio, absorptionTime);
-//            if (ve.getTimestamp().getTime() < startTime) {
-//                offset = - noMealPredict;
-//                continue;
-//            }
+
+            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
+                    new ArrayList<>(), bolusTreatments, basalTreatments,
+                    sensitivity, insDuration,
+                    carbratio, absorptionTime);
+
+
+
+
+            if (ve.getTimestamp().getTime() < startTime) {
+                offset = - noMealPredict;
+                continue;
+            }
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
@@ -108,14 +113,14 @@ public class CGMPlotter {
         //plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
         plt.plot().addDates(algoTimes).add(algoValues).linestyle("--").label("predicted values");//.color("cyan").linestyle("--");
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
-//        plt.legend().loc(0);
+        plt.legend().loc(2);
 
         plt.subplot(3, 1, 2);
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
         plt.plot().addDates(mealTimes).add(mealValues).color("red").label("meals").marker("_").linestyle("").markersize("3");
         plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("_").markersize("3");
         //plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
-//        plt.legend().loc(0);
+        plt.legend().loc(2);
 
         // plot error
         plt.subplot(3, 1, 3);
@@ -128,7 +133,7 @@ public class CGMPlotter {
         if (plotHist) {
             this.errorValues.addAll(errorValues);
         }
-//        plt.legend().loc(0);
+        plt.legend().loc(2);
 
     }
 
