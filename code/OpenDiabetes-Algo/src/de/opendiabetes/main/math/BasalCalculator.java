@@ -10,6 +10,16 @@ import java.util.List;
 
 public class BasalCalculator {
 
+    /**
+     * Calculates the difference between Temp Basal Treatments and the basal rates given in the profile.
+     * The result is in units per minute.
+     *
+     * @param basalTreatments sorted list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
+     * @param profile nightscout profile
+     * @return list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     */
     public static List<VaultEntry> calcBasals(List<VaultEntry> basalTreatments, Profile profile) {
         List<VaultEntry> result = new ArrayList<>();
         if (profile.getBasalProfiles().size() < 1) {
@@ -38,6 +48,14 @@ public class BasalCalculator {
         return result;
     }
 
+    /**
+     * Calculate the difference between Temp Basal Treatments and the basal rates.
+     * Is called recursively if one of the given times is exceeded.
+     *
+     * @param entry entry to add
+     * @param list result list
+     * @param profile nightscout profile
+     */
     private static void addBasal(VaultEntry entry, List<VaultEntry> list, Profile profile) {
         if (entry.getValue2() <= 0) {
             return;
