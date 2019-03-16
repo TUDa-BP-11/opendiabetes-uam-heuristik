@@ -75,7 +75,7 @@ public class CGMPlotter {
         zeros.add(0.0);
 
         double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
-        double startTime = getStartTime(entries, meals, absorptionTime);
+        double startTime = getStartTime(entries, insDuration, absorptionTime);
         double offset = 0;
         for (VaultEntry ve : entries) {
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
@@ -262,22 +262,14 @@ public class CGMPlotter {
     }
 
     private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-            List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-            double sensitivity, int insDuration, double carbratio, int absorptionTime) {
-        double startTime = entries.get(0).getTimestamp().getTime();
-        double firstValidMealTime = startTime;
-        for (int i = 0; i < meals.size(); i++) {
-            VaultEntry meal = meals.get(i);
-            if (startTime + absorptionTime * 60000 < meal.getTimestamp().getTime()) {
-                firstValidMealTime = meal.getTimestamp().getTime();
-                break;
-            }
-        }
+                                 List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+                                 double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+        double startTime = getStartTime(entries, insDuration, absorptionTime);
 
         double startValue = entries.get(0).getValue();
-        for (int i = 0; i < entries.size() - 1; i++) {
+        for (int i = 0; i < entries.size() ; i++) {
             startValue = entries.get(i).getValue() - Predictions.predict(entries.get(i).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
-            if (entries.get(i + 1).getTimestamp().getTime() > firstValidMealTime) {
+            if (entries.get(i).getTimestamp().getTime() >= startTime) {
                 break;
             }
         }
@@ -285,19 +277,12 @@ public class CGMPlotter {
         return startValue;
     }
 
-    private double getStartTime(List<VaultEntry> entries, List<VaultEntry> meals, int absorptionTime) {
+    private double getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
         double startTime = entries.get(0).getTimestamp().getTime();
-        double firstValidMealTime = startTime;
-        for (int i = 0; i < meals.size(); i++) {
-            VaultEntry meal = meals.get(i);
-            if (startTime + absorptionTime * 60000 < meal.getTimestamp().getTime()) {
-                firstValidMealTime = meal.getTimestamp().getTime();
-                break;
-            }
-        }
+        double firstValidTime = startTime + Math.max(insDuration , absorptionTime) * 60000;
         for (int i = 0; i < entries.size() - 1; i++) {
             startTime = entries.get(i).getTimestamp().getTime();
-            if (entries.get(i + 1).getTimestamp().getTime() > firstValidMealTime) {
+            if (entries.get(i + 1).getTimestamp().getTime() > firstValidTime) {
                 break;
             }
         }
