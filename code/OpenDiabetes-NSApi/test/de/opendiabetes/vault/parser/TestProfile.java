@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestProfile {
     @Test
-    public void testOneBasalTime() {
+    public void testOnlyOneEntry() {
         ZoneId zone = ZoneId.of("GMT+1");
         Random random = new Random();
         double sens = 1 + random.nextInt(45);
@@ -111,7 +111,7 @@ public class TestProfile {
     }
 
     @Test
-    public void testLessEntries() {
+    public void testRemovingEntries() {
         ZoneId zone = ZoneId.of("GMT+6");
         List<Profile.BasalProfile> basalProfileList = new ArrayList<>();
         basalProfileList.add(new Profile.BasalProfile(LocalTime.of(0, 0), 0.5));
@@ -144,7 +144,7 @@ public class TestProfile {
     }
 
     @Test
-    public void testMoreEntries() {
+    public void testAddingEntries() {
         ZoneId zone = ZoneId.of("GMT+7");
         List<Profile.BasalProfile> basalProfileList = new ArrayList<>();
         basalProfileList.add(new Profile.BasalProfile(LocalTime.of(0, 0), 0.7));
