@@ -9,6 +9,7 @@ import de.opendiabetes.vault.container.VaultEntry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,26 +74,21 @@ public class CGMPlotter {
         zeros.add(0.0);
         zeros.add(0.0);
 
-        double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
-        double startTime = getStartTime(entries, meals, absorptionTime);
-        double offset = 0;
+        double startValue = 0; //getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+//        double startTime = getStartTime(entries, meals, absorptionTime);
+//        double offset = 0;
         for (VaultEntry ve : entries) {
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
             bgValues.add(ve.getValue());
 
-
-            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    new ArrayList<>(), bolusTreatments, basalTreatments,
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
-
-
-
-
-            if (ve.getTimestamp().getTime() < startTime) {
-                offset = - noMealPredict;
-                continue;
-            }
+//            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
+//                    new ArrayList<>(), bolusTreatments, basalTreatments,
+//                    sensitivity, insDuration,
+//                    carbratio, absorptionTime);
+//            if (ve.getTimestamp().getTime() < startTime) {
+//                offset = - noMealPredict;
+//                continue;
+//            }
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
@@ -101,35 +97,28 @@ public class CGMPlotter {
             algoTimes.add((ve.getTimestamp().getTime()) / 1000.0);
 
             //noMealValues.add(ve.getValue() + noMealPredict + offset);
-
             errorValues.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
             errorTimes.add(ve.getTimestamp().getTime() / 1000.0);
         }
 
-        plt.subplot(3,1,1);
+        plt.subplot(3, 1, 1);
         plt.xlabel("time");
         plt.ylabel("mg/dl");
         plt.plot().addDates(bgTimes).add(bgValues).color("blue").label("cgm"); //.label("Testlabel")
         //plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
         plt.plot().addDates(algoTimes).add(algoValues).linestyle("--").label("predicted values");//.color("cyan").linestyle("--");
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
+//        plt.legend().loc(0);
 
-
-        plt.legend().loc(2);
-        plt.subplot(3,1,2);
-
-
+        plt.subplot(3, 1, 2);
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
         plt.plot().addDates(mealTimes).add(mealValues).color("red").label("meals").marker("_").linestyle("").markersize("3");
         plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("_").markersize("3");
         //plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
-        plt.legend().loc(2);
-
-
-
+//        plt.legend().loc(0);
 
         // plot error
-        plt.subplot(3,1,3);
+        plt.subplot(3, 1, 3);
         plt.xlabel("time");
         plt.ylabel("%");
         plt.plot().addDates(firstToLast).add(zeros).linestyle("");
@@ -139,12 +128,9 @@ public class CGMPlotter {
         if (plotHist) {
             this.errorValues.addAll(errorValues);
         }
-        plt.legend().loc(2);
-
-
+//        plt.legend().loc(0);
 
     }
-
 
     public void plotError(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
             List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
@@ -156,17 +142,17 @@ public class CGMPlotter {
             double sensitivity, int insDuration,
             double carbratio, int absorptionTime) {
         plotDiff = true;
-        List<Double> basalValues= new ArrayList<>();
-        List<Double> basalTimes= new ArrayList<>();
-        List<Double> bolusValues= new ArrayList<>();
-        List<Double> bolusTimes= new ArrayList<>();
-        List<Double> mealValues= new ArrayList<>();
-        List<Double> mealTimes= new ArrayList<>();
+        List<Double> basalValues = new ArrayList<>();
+        List<Double> basalTimes = new ArrayList<>();
+        List<Double> bolusValues = new ArrayList<>();
+        List<Double> bolusTimes = new ArrayList<>();
+        List<Double> mealValues = new ArrayList<>();
+        List<Double> mealTimes = new ArrayList<>();
 
-        List<Double> bgTimes= new ArrayList<>();
-        List<Double> bgValues= new ArrayList<>();
-        List<Double> algoValues= new ArrayList<>();
-        List<Double> noMealValues= new ArrayList<>();
+        List<Double> bgTimes = new ArrayList<>();
+        List<Double> bgValues = new ArrayList<>();
+        List<Double> algoValues = new ArrayList<>();
+        List<Double> noMealValues = new ArrayList<>();
 
         for (VaultEntry a : s.getBasals()) {
             basalValues.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
@@ -251,7 +237,11 @@ public class CGMPlotter {
                 double rms = Math.sqrt(MeanSquareError);
                 System.out.printf("Bias: %.3g%%\n", MeanError);
                 System.out.printf("RootMeanSquareError: %.3g%%\n", rms);
-                System.out.printf("MaxError: %.3g%%\n", Collections.max(errorValues));
+
+                System.out.printf("MaxError: %.3g%%\n", Collections.max(errorValues, (Double o1, Double o2) -> {
+                    Double result = Math.abs(o1) - Math.abs(o2);
+                    return result > 0 ? 1 : result < 0 ? -1 : 0;
+                }));
 //                System.out.println("Varianz: " + (MeanSquareError - MeanError * MeanError));
 //                System.out.println("Standardabweichung: " + Math.sqrt(MeanSquareError - MeanError * MeanError));
 
@@ -308,7 +298,6 @@ public class CGMPlotter {
         }
         return startTime;
     }
-
 
     private void generatePointsToDraw(List<VaultEntry> vaultEntries, List<Double> values, List<Double> times) {
         for (VaultEntry a : vaultEntries) {

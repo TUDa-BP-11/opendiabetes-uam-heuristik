@@ -1,5 +1,6 @@
 package de.opendiabetes.main.algo;
 
+import com.github.sh0nk.matplotlib4j.Plot;
 import de.opendiabetes.main.CGMPlotter;
 import de.opendiabetes.main.math.BasalCalculator;
 import de.opendiabetes.main.util.Snippet;
@@ -26,10 +27,11 @@ public class Main {
     public static void main(String[] args) {
 
         ProfileParser profileParser = new ProfileParser();
+String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
 
-        String profilePath = "/Users/saso/Desktop/Studium/bp/Datensatz/profile_2017-07-10_to_2017-11-08.json";
-        String treatmentPath = "/Users/saso/Desktop/Studium/bp/Datensatz/treatments_7_11.json";
-        String entriesPath = "/Users/saso/Desktop/Studium/bp/Datensatz/entries_7_11.json";
+String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
+
+String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
 
         Profile profile = profileParser.parseFile(profilePath);
         profile.toZulu();
@@ -76,12 +78,12 @@ public class Main {
         }
         entries.sort(new SortVaultEntryByDate());
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 6 * 60 * 60000, 0 * insDuration * 60000, 1); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 1 * insDuration * 60000, 10); //Integer.MAX_VALUE
 
 //        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
-        Algorithm algo = new QRAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new LMAlgo(absorptionTime, insDuration, profile);
 
         int i = 0;
 
@@ -97,6 +99,7 @@ public class Main {
             List<VaultEntry> meals = algo.calculateMeals();
 
             System.out.println("Found meals:" + meals.size());
+           
 
             cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);

@@ -1,9 +1,12 @@
 package de.opendiabetes.main.math;
 
-
 import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 
 public class Predictions {
 
@@ -68,7 +71,7 @@ public class Predictions {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
-        } else if ( timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
+        } else if (timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
             IOBWeight = 0;
         } else {
 
@@ -93,7 +96,7 @@ public class Predictions {
 
         }
         return IOBWeight;
-        
+
     }
 
     /**
@@ -190,4 +193,57 @@ public class Predictions {
                 deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
     }
      */
+    public static RealVector cumulativeMealPredict(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbRatio, long absorptionTime) {
+        int N = mealTimes.getDimension();
+        int Nt = times.getDimension();
+        RealVector Y = new ArrayRealVector(Nt);
+        double t0, carbsAmount;
+        for (int i = 0; i < N; i++) {
+            t0 = mealTimes.getEntry(i);
+            carbsAmount = mealValues.getEntry(i);
+            for (int j = 0; j < Nt; j++) {
+                Y.addToEntry(j, deltaBGC(times.getEntry(j) - t0, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime));
+            }
+        }
+        return Y;
+    }
+
+    public static RealMatrix Jacobian(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbratio, long absorptionTime) {
+        int N = mealTimes.getDimension();
+        RealMatrix J = new Array2DRowRealMatrix(times.getDimension(), 2 * N);
+        double t0, carbsAmount;
+        for (int i = 0; i < N; i++) {
+            t0 = mealTimes.getEntry(i);
+            carbsAmount = mealValues.getEntry(i);
+            J.setColumn(i, carbsOnBoard_dt0(times, t0, carbsAmount, insSensitivityFactor, carbratio, absorptionTime));
+            J.setColumn(i + N, carbsOnBoard_dx(times, t0, insSensitivityFactor, carbratio, absorptionTime));
+        }
+        return J;
+    }
+
+    private static double[] carbsOnBoard_dt0(RealVector times, double t0, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorbtionTime) {
+        double[] cob_dt0 = new double[times.getDimension()];
+        double dt;
+        double c = insSensitivityFactor / carbRatio * carbsAmount * 4 / absorbtionTime;
+        for (int i = 0; i < times.getDimension(); i++) {
+
+            dt = times.getEntry(i) - t0;
+            if (dt < 0 || dt > absorbtionTime) {
+                cob_dt0[i] = 0;
+            } else if (dt < absorbtionTime / 2) {
+                cob_dt0[i] = -c * dt / absorbtionTime;
+            } else if (dt >= absorbtionTime / 2) {
+                cob_dt0[i] = c * (dt / absorbtionTime - 1);
+            }
+        }
+        return cob_dt0;
+    }
+
+    private static double[] carbsOnBoard_dx(RealVector times, double t0, double insSensitivityFactor, double carbRatio, long absorbtionTime) {
+        double[] cob_dx = new double[times.getDimension()];
+        for (int i = 0; i < times.getDimension(); i++) {
+            cob_dx[i] = insSensitivityFactor / carbRatio * Predictions.carbsOnBoard(times.getEntry(i) - t0, absorbtionTime);
+        }
+        return cob_dx;
+    }
 }
