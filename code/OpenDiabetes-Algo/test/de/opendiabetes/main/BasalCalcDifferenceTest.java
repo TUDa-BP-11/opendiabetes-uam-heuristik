@@ -1,6 +1,6 @@
 package de.opendiabetes.main;
 
-import de.opendiabetes.main.math.BasalCalculator;
+import de.opendiabetes.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
-public class TestBasalCalculator {
+public class BasalCalcDifferenceTest {
 
     private static final long ONE_MINUTE = 60 * 1000;
     private static final double DELTA = 1e-15;
@@ -25,7 +25,7 @@ public class TestBasalCalculator {
     @Test
     public void noBasalProfile() {
         assertThrows(IllegalArgumentException.class, () ->
-                BasalCalculator.calcBasals(new ArrayList<>(), new Profile(ZoneId.of("Zulu"), 0, 0, new ArrayList<>())));
+                BasalCalculatorTools.calcBasalDifference(new ArrayList<>(), new Profile(ZoneId.of("Zulu"), 0, 0, new ArrayList<>())));
     }
 
     @Test
@@ -45,7 +45,7 @@ public class TestBasalCalculator {
         Profile.BasalProfile basalProfile = new Profile.BasalProfile(LocalTime.of(0, 0), random.nextDouble());
         basalProfiles.add(basalProfile);
         Profile profile = new Profile(ZoneId.of("Zulu"), 0, 0, basalProfiles);
-        List<VaultEntry> result = BasalCalculator.calcBasals(testTreatments, profile);
+        List<VaultEntry> result = BasalCalculatorTools.calcBasalDifference(testTreatments, profile);
 
         assertEquals(size, result.size());
         for (int i = 0; i < size; i++) {
@@ -67,7 +67,7 @@ public class TestBasalCalculator {
 
         List<VaultEntry> testTreatments = new ArrayList<>();
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(0), 0, 60));
-        List<VaultEntry> result = BasalCalculator.calcBasals(testTreatments, profile);
+        List<VaultEntry> result = BasalCalculatorTools.calcBasalDifference(testTreatments, profile);
 
         assertEquals(3, result.size());
         assertEquals(0, result.get(0).getTimestamp().getTime());
@@ -81,7 +81,7 @@ public class TestBasalCalculator {
 
         testTreatments = new ArrayList<>();
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(0), 6, 60));
-        result = BasalCalculator.calcBasals(testTreatments, profile);
+        result = BasalCalculatorTools.calcBasalDifference(testTreatments, profile);
 
         assertEquals(3, result.size());
         assertEquals(0, result.get(0).getTimestamp().getTime());
@@ -107,7 +107,7 @@ public class TestBasalCalculator {
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(0), random.nextDouble() * 5, 20));
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(20 * ONE_MINUTE), random.nextDouble() * 5, 20));
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(40 * ONE_MINUTE), random.nextDouble() * 5, 20));
-        List<VaultEntry> result = BasalCalculator.calcBasals(testTreatments, profile);
+        List<VaultEntry> result = BasalCalculatorTools.calcBasalDifference(testTreatments, profile);
 
         assertEquals(4, result.size());
         VaultEntry entry = testTreatments.get(0);
@@ -135,12 +135,12 @@ public class TestBasalCalculator {
 
         testTreatments = new ArrayList<>();
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(), 0, 0));
-        result = BasalCalculator.calcBasals(testTreatments, profile);
+        result = BasalCalculatorTools.calcBasalDifference(testTreatments, profile);
         assertEquals(0, result.size());
 
         testTreatments = new ArrayList<>();
         testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date((24 * 60 * ONE_MINUTE) - (10 * ONE_MINUTE)), random.nextDouble(), 20));
-        result = BasalCalculator.calcBasals(testTreatments, profile);
+        result = BasalCalculatorTools.calcBasalDifference(testTreatments, profile);
         assertEquals(2, result.size());
         entry = testTreatments.get(0);
         resBasal = result.get(0);

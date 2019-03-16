@@ -1,5 +1,6 @@
-package de.opendiabetes.vault.parser;
+package de.opendiabetes.main;
 
+import de.opendiabetes.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,7 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestTreatmentMapper {
+public class AdjustBasalTreatmentsTest {
 
     private static final long ONE_MINUTE = 60 * 1000;
     private static final double DELTA = 1e-15;
@@ -29,7 +30,7 @@ public class TestTreatmentMapper {
         testList.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, date, 30, 30));
 
 
-        List<VaultEntry> result = TreatmentMapper.adjustBasalTreatments(testList);
+        List<VaultEntry> result = BasalCalculatorTools.adjustBasalTreatments(testList);
         assertEquals(4, result.size());
         assertEquals(30, result.get(0).getValue2());
         assertEquals(5, result.get(0).getValue());
@@ -54,7 +55,7 @@ public class TestTreatmentMapper {
             testList.add(entry);
         }
 
-        List<VaultEntry> resultList = TreatmentMapper.adjustBasalTreatments(new ArrayList<>(testList));
+        List<VaultEntry> resultList = BasalCalculatorTools.adjustBasalTreatments(new ArrayList<>(testList));
         assertEquals(testList.size(), resultList.size());
         for (int i = 0; i < size - 1; i++) {
             assertEquals(testList.get(i).getValue2() * 20 / 60, resultList.get(i).getValue2());
@@ -78,7 +79,7 @@ public class TestTreatmentMapper {
             testList.add(entry);
         }
 
-        List<VaultEntry> resultList = TreatmentMapper.adjustBasalTreatments(new ArrayList<>(testList));
+        List<VaultEntry> resultList = BasalCalculatorTools.adjustBasalTreatments(new ArrayList<>(testList));
         assertEquals(testList.size(), resultList.size());
 
         for (int i = 0; i < size - 1; i++) {

@@ -2,11 +2,10 @@ package de.opendiabetes.main.dataprovider;
 
 import de.opendiabetes.main.algo.Main;
 import de.opendiabetes.main.exception.DataProviderException;
-import de.opendiabetes.main.math.BasalCalculator;
+import de.opendiabetes.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
-import de.opendiabetes.vault.parser.TreatmentMapper;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 
@@ -134,7 +133,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
                     .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
-            basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(list), getProfile());
+            basals = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(list), getProfile());
         }
         return basals;
     }

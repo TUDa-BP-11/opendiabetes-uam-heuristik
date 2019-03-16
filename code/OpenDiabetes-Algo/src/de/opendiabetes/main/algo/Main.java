@@ -1,12 +1,10 @@
 package de.opendiabetes.main.algo;
 
-import com.github.sh0nk.matplotlib4j.Plot;
 import de.opendiabetes.main.CGMPlotter;
-import de.opendiabetes.main.math.BasalCalculator;
+import de.opendiabetes.main.math.BasalCalculatorTools;
 import de.opendiabetes.main.util.Snippet;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
-import de.opendiabetes.vault.parser.TreatmentMapper;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
@@ -68,7 +66,7 @@ String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390
 
         }
 
-        List<VaultEntry> basals = BasalCalculator.calcBasals(TreatmentMapper.adjustBasalTreatments(basalTreatments), profile);
+        List<VaultEntry> basals = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
 
         List<VaultEntry> entries = new ArrayList<>();
         try (InputStream stream = new FileInputStream(entriesPath)) {
