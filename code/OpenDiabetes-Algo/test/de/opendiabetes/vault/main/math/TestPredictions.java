@@ -1,4 +1,4 @@
-package de.opendiabetes.vault.main;
+package de.opendiabetes.vault.main.math;
 
 import de.opendiabetes.vault.main.math.Predictions;
 import org.junit.jupiter.api.BeforeAll;
