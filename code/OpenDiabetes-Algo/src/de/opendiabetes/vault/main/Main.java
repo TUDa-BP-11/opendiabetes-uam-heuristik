@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.main;
 
+import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.main.algo.Algorithm;
 import de.opendiabetes.vault.main.algo.MinimumAlgo;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
@@ -8,6 +9,7 @@ import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.nsapi.NSApi;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,20 +21,47 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+
+import static de.opendiabetes.vault.nsapi.Main.initArguments;
+import static de.opendiabetes.vault.nsapi.Main.initLogger;
 
 public class Main {
+    // All parameters
+
+    public static final Parameter P_ALGO = new FlaggedOption("Algorithm")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('a')
+            .setLongFlag("algorithm")
+            .setHelp("Algorithm that should be used");
 
     /**
-     * The thread running the algorithm
+     * Registers all arguments to the given JSAP instance
+     *
+     * @param jsap your JSAP instance
      */
-    private static Thread main;
+    private static void registerArguments(JSAP jsap) {
+        try {
+            jsap.registerParameter(P_ALGO);
 
-    /**
-     * The input thread parsing commands
-     */
-    private static Input input;
+        } catch (JSAPException e) {
+            NSApi.LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
+        }
+    }
 
     public static void main(String[] args) {
+
+        // setup arguments
+        JSAP jsap = new JSAP();
+        registerArguments(jsap);
+        JSAPResult config = initArguments(jsap, args);
+        if (config == null)
+            return;
+
+        // init
+        initLogger(config);
+
+        /*
         // Main control
         Properties config = null;
         String dataProviderName = "demo";
@@ -65,7 +94,7 @@ public class Main {
                     arg = arg.substring(1);
                     switch (arg.toLowerCase()) {
                         case "config":
-                            config = getPropertiesFileValue(arg, args, i);
+                            //config = getPropertiesFileValue(arg, args, i);
                             i++;
                             break;
                         case "data":
@@ -150,7 +179,7 @@ public class Main {
 
         // Set up data provider
         if (config != null) {
-            if (lastest == null && config.getProperty("latest") != null) {
+            if (lastest == null && config. != null) {
                 lastest = parseDateTime("latest", config.getProperty("latest"));
             }
             if (oldest == null && config.getProperty("oldest") != null) {
@@ -220,11 +249,11 @@ public class Main {
                 return;
         }
 
-        /*
+
         algorithm.setAbsorptionTime(absorptionTime);
         algorithm.setInsulinDuration(insulinDuration);
         algorithm.setDataProvider(dataProvider);
-        */
+
 
         List<VaultEntry> data = new ArrayList<>();
         data.addAll(new ArrayList<>(dataProvider.getBolusTreatments()));
@@ -232,27 +261,11 @@ public class Main {
 
         // Start
         boolean debugFinal = debug;
-        main = new Thread(() -> {
-            List<VaultEntry> meals = algorithm.calculateMeals();
-            Log.logInfo("Calculated %d meals:", meals.size());
 
-            // export as csv
-            // data.addAll(meals);
-            // data.sort(Comparator.comparing(VaultEntry::getTimestamp));
-            // data.forEach(e -> Log.logInfo("%s", e.toString()));
-            // exportCsv(data);
-
-            try {
-                dataProvider.close();
-            } catch (DataProviderException e) {
-                logException("Exception in data provider", e, debugFinal);
-            }
-        });
-        main.start();
 
         //TODO: necessary?
         //input = new Input();
-        //input.run();
+        //input.run();*/
     }
 
     private static String getValue(String arg, String[] args, int i) {
@@ -338,14 +351,6 @@ public class Main {
                 e.printStackTrace();
             }
         }
-    }
-
-    public static Thread getMain() {
-        return main;
-    }
-
-    public static Input getInput() {
-        return input;
     }
 
     /*
