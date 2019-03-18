@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.main;
 
+import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.Algorithm;
 import de.opendiabetes.vault.main.algo.MinimumAlgo;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
@@ -7,7 +8,6 @@ import de.opendiabetes.vault.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;
-import de.opendiabetes.vault.container.VaultEntry;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,19 +19,11 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+
+import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
 
 public class Main {
-
-    /**
-     * The thread running the algorithm
-     */
-    private static Thread main;
-
-    /**
-     * The input thread parsing commands
-     */
-    private static Input input;
-
     public static void main(String[] args) {
         // Main control
         Properties config = null;
@@ -144,7 +136,7 @@ public class Main {
                 }
             }
         } catch (IllegalArgumentException e) {
-            logException("Error while parsing arguments", e, debug);
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
@@ -198,14 +190,11 @@ public class Main {
                     dataProvider = new NightscoutDataProvider(host, secret, batchSize, lastest, oldest);
                     break;
                 default:
-                    Log.logError("Unknown dataprovider " + dataProviderName);
+                    LOGGER.log(Level.WARNING, "Unknown dataprovider " + dataProviderName);
                     return;
             }
-        } catch (DataProviderException e) {
-            logException("Error in data provider", e, debug);
-            return;
-        } catch (IllegalArgumentException e) {
-            logException("Error while reading config", e, debug);
+        } catch (DataProviderException | IllegalArgumentException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
@@ -216,7 +205,7 @@ public class Main {
                 algorithm = new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
                 break;
             default:
-                Log.logError("Unknown algorithm " + algorithmName);
+                LOGGER.log(Level.WARNING, "Unknown algorithm " + algorithmName);
                 return;
         }
 
@@ -231,28 +220,20 @@ public class Main {
         data.addAll(new ArrayList<>(dataProvider.getGlucoseMeasurements()));
 
         // Start
-        boolean debugFinal = debug;
-        main = new Thread(() -> {
-            List<VaultEntry> meals = algorithm.calculateMeals();
-            Log.logInfo("Calculated %d meals:", meals.size());
+        List<VaultEntry> meals = algorithm.calculateMeals();
+        LOGGER.log(Level.INFO, "Calculated %d meals:", meals.size());
 
-            // export as csv
-            // data.addAll(meals);
-            // data.sort(Comparator.comparing(VaultEntry::getTimestamp));
-            // data.forEach(e -> Log.logInfo("%s", e.toString()));
-            // exportCsv(data);
+        // export as csv
+        // data.addAll(meals);
+        // data.sort(Comparator.comparing(VaultEntry::getTimestamp));
+        // data.forEach(e -> Log.logInfo("%s", e.toString()));
+        // exportCsv(data);
 
-            try {
-                dataProvider.close();
-            } catch (DataProviderException e) {
-                logException("Exception in data provider", e, debugFinal);
-            }
-        });
-        main.start();
-
-        //TODO: necessary?
-        //input = new Input();
-        //input.run();
+        try {
+            dataProvider.close();
+        } catch (DataProviderException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
     }
 
     private static String getValue(String arg, String[] args, int i) {
@@ -273,11 +254,11 @@ public class Main {
             throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
         }
     }
-    
+
     private static long getLongValue(String arg, String[] args, int i) {
         return parseLong(arg, getValue(arg, args, i));
     }
-    
+
     private static long parseLong(String arg, String value) {
         try {
             return Long.parseLong(value);
@@ -327,25 +308,6 @@ public class Main {
         } catch (IOException e) {
             throw new IllegalArgumentException("IOException while reading config file: " + e.getMessage(), e);
         }
-    }
-
-    private static void logException(String message, Exception e, boolean debug) {
-        Log.logError(message + ": " + e.getMessage());
-        if (debug) {
-            if (e.getCause() != null) {
-                e.getCause().printStackTrace();
-            } else {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static Thread getMain() {
-        return main;
-    }
-
-    public static Input getInput() {
-        return input;
     }
 
     /*
