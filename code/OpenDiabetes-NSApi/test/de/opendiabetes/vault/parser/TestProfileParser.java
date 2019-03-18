@@ -18,7 +18,7 @@ public class TestProfileParser {
         int basals = 1 + random.nextInt(9);
         LocalTime[] basalTimes = new LocalTime[basals];
         double[] basalValues = new double[basals];
-        String input = "[{" +
+        StringBuilder input = new StringBuilder().append("[{" +
                 "  \"store\": {" +
                 "    \"Default\": {" +
                 "      \"sens\": [" +
@@ -28,18 +28,18 @@ public class TestProfileParser {
                 "          \"value\": \"" + sensitivity + "\"" +
                 "        }" +
                 "      ]," +
-                "      \"basal\": [";
+                "      \"basal\": [");
         for (int i = 0; i < basals; i++) {
             basalTimes[i] = LocalTime.of(random.nextInt(24), random.nextInt(60));
             basalValues[i] = random.nextDouble() * 2;
-            input += "{" +
+            input.append("{" +
                     "\"time\": \"" + basalTimes[i].toString() + "\"," +
                     "\"value\": \"" + basalValues[i] + "\"" +
-                    "}";
+                    "}");
             if (i < basals - 1)
-                input += ",";
+                input.append(",");
         }
-        input += "      ]," +
+        input.append("      ]," +
                 "      \"carbratio\": [" +
                 "        {" +
                 "          \"time\": \"00:00\"," +
@@ -50,9 +50,9 @@ public class TestProfileParser {
                 "      \"timezone\": \"" + zone.toString() + "\"" +
                 "    }" +
                 "  }" +
-                "}]";
+                "}]");
 
-        Profile profile = new ProfileParser().parse(input);
+        Profile profile = new ProfileParser().parse(input.toString());
         assertEquals(zone, profile.getTimezone());
         assertEquals(sensitivity, profile.getSensitivity());
         assertEquals(carbratio, profile.getCarbratio());
