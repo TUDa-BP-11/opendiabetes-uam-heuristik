@@ -1,4 +1,4 @@
-package de.opendiabetes.vault.main;
+package de.opendiabetes.vault.main.math;
 
 import de.opendiabetes.vault.main.math.Filter;
 import de.opendiabetes.vault.container.VaultEntry;
