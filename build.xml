@@ -2,7 +2,7 @@
 <project name="OpenDiabetes-UAM" default="all" basedir=".">
     <description>Builds and tests all the modules of this project. To build all modules, execute target "all"</description>
 
-    <target name="all" depends="Engine, NSApi, Synchronizer"/>
+    <target name="all" depends="Engine, NSApi, Synchronizer, Algo"/>
 
     <target name="Engine">
         <ant dir="code/OpenDiabetesVault-Engine" target="jar"/>
@@ -14,5 +14,17 @@
 
     <target name="Synchronizer" depends="NSApi">
         <ant dir="code/OpenDiabetes-Synchronizer" target="full"/>
+    </target>
+
+    <target name="Algo" depends="NSApi">
+        <ant dir="code/OpenDiabetes-Algo" target="full"/>
+    </target>
+
+    <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
+             classpath="lib/checkstyle-8.17-all.jar"/>
+    <target name="checkstyle">
+        <checkstyle config="checkstyle.xml">
+            <fileset dir="code" includes="**/*.java"/>
+        </checkstyle>
     </target>
 </project>
