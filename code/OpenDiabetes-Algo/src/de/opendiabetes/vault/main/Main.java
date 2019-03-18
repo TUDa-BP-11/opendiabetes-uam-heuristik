@@ -25,6 +25,7 @@ import java.util.logging.Level;
 
 import static de.opendiabetes.vault.nsapi.Main.initArguments;
 import static de.opendiabetes.vault.nsapi.Main.initLogger;
+import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
 
 public class Main {
     // All parameters
@@ -94,7 +95,7 @@ public class Main {
                     arg = arg.substring(1);
                     switch (arg.toLowerCase()) {
                         case "config":
-                            //config = getPropertiesFileValue(arg, args, i);
+                            config = getPropertiesFileValue(arg, args, i);
                             i++;
                             break;
                         case "data":
@@ -173,13 +174,13 @@ public class Main {
                 }
             }
         } catch (IllegalArgumentException e) {
-            logException("Error while parsing arguments", e, debug);
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
         // Set up data provider
         if (config != null) {
-            if (lastest == null && config. != null) {
+            if (lastest == null && config.getProperty("latest") != null) {
                 lastest = parseDateTime("latest", config.getProperty("latest"));
             }
             if (oldest == null && config.getProperty("oldest") != null) {
@@ -227,14 +228,11 @@ public class Main {
                     dataProvider = new NightscoutDataProvider(host, secret, batchSize, lastest, oldest);
                     break;
                 default:
-                    Log.logError("Unknown dataprovider " + dataProviderName);
+                    LOGGER.log(Level.WARNING, "Unknown dataprovider " + dataProviderName);
                     return;
             }
-        } catch (DataProviderException e) {
-            logException("Error in data provider", e, debug);
-            return;
-        } catch (IllegalArgumentException e) {
-            logException("Error while reading config", e, debug);
+        } catch (DataProviderException | IllegalArgumentException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
@@ -245,7 +243,7 @@ public class Main {
                 algorithm = new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
                 break;
             default:
-                Log.logError("Unknown algorithm " + algorithmName);
+                LOGGER.log(Level.WARNING, "Unknown algorithm " + algorithmName);
                 return;
         }
 
@@ -260,12 +258,20 @@ public class Main {
         data.addAll(new ArrayList<>(dataProvider.getGlucoseMeasurements()));
 
         // Start
-        boolean debugFinal = debug;
+        List<VaultEntry> meals = algorithm.calculateMeals();
+        LOGGER.log(Level.INFO, "Calculated %d meals:", meals.size());
 
+        // export as csv
+        // data.addAll(meals);
+        // data.sort(Comparator.comparing(VaultEntry::getTimestamp));
+        // data.forEach(e -> Log.logInfo("%s", e.toString()));
+        // exportCsv(data);
 
-        //TODO: necessary?
-        //input = new Input();
-        //input.run();*/
+        try {
+            dataProvider.close();
+        } catch (DataProviderException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }*/
     }
 
     private static String getValue(String arg, String[] args, int i) {
@@ -286,11 +292,11 @@ public class Main {
             throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
         }
     }
-    
+
     private static long getLongValue(String arg, String[] args, int i) {
         return parseLong(arg, getValue(arg, args, i));
     }
-    
+
     private static long parseLong(String arg, String value) {
         try {
             return Long.parseLong(value);
@@ -339,17 +345,6 @@ public class Main {
             throw new IllegalArgumentException("Cannot find config file at " + value, e);
         } catch (IOException e) {
             throw new IllegalArgumentException("IOException while reading config file: " + e.getMessage(), e);
-        }
-    }
-
-    private static void logException(String message, Exception e, boolean debug) {
-        Log.logError(message + ": " + e.getMessage());
-        if (debug) {
-            if (e.getCause() != null) {
-                e.getCause().printStackTrace();
-            } else {
-                e.printStackTrace();
-            }
         }
     }
 

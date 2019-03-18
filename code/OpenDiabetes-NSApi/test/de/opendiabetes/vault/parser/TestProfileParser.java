@@ -18,7 +18,7 @@ public class TestProfileParser {
         int basals = 1 + random.nextInt(9);
         LocalTime[] basalTimes = new LocalTime[basals];
         double[] basalValues = new double[basals];
-        StringBuffer input = new StringBuffer().append("[{" +
+        StringBuilder input = new StringBuilder().append("[{" +
                 "  \"store\": {" +
                 "    \"Default\": {" +
                 "      \"sens\": [" +
