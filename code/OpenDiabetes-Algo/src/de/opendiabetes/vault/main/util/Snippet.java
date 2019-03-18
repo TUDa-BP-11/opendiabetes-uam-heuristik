@@ -8,7 +8,6 @@ import java.util.List;
 
 public class Snippet {
 
-    public static final long TIME_MAX = 4 * 60 * 60 * 1000;  // 4 hours
     public static final long TIME_MAX_GAP = 5 * 60 * 1000;   // 5 minutes
     public static final long TIME_MIN = 2 * 60 * 60 * 1000;  // 2 hours
 
@@ -22,9 +21,9 @@ public class Snippet {
     public static List<Snippet> getSnippets(List<VaultEntry> entries,
             List<VaultEntry> boli,
             List<VaultEntry> basals,
-            long snippetLength,
-            long insDuration,
-            int n_snippets) {
+            long snippetLength, // 3h bg
+            long treatmentsInAdvance, // plus 3h vorher noch insulin => 6h gesamt, die letzten 3h bg werden berücksichtigt
+            int n_snippets) { // so viele snippets
         List<Snippet> snippets = new ArrayList<>();
 
         if (entries.isEmpty()) {
@@ -67,12 +66,12 @@ public class Snippet {
         }
         for (VaultEntry e : boli) {
             for (Snippet s : snippets) {
-                s.addBolus(e, insDuration);
+                s.addBolus(e, treatmentsInAdvance);
             }
         }
         for (VaultEntry e : basals) {
             for (Snippet s : snippets) {
-                s.addBasal(e, insDuration);
+                s.addBasal(e, treatmentsInAdvance);
             }
         }
         System.out.println("Created " + snippets.size() + " snippets");
