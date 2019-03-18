@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Representation of a Nightscout Profile.
+ */
 public class Profile {
     private ZoneId timezone;
     private final double sensitivity;
@@ -37,11 +40,13 @@ public class Profile {
         return basalProfiles;
     }
 
-    public void setBasalProfiles(List<BasalProfile> basalProfiles) {
-        this.basalProfiles = basalProfiles;
-    }
-
+    /**
+     * Changes the timezone of the profile to the zulu timezone,
+     * adjusting given basal rates accordingly.
+     */
     public void toZulu() {
+
+        basalProfiles.sort(new BasalProfileComparator());
 
         int offset = -timezone.getRules().getOffset(Instant.EPOCH).getTotalSeconds() / 60;
         List<Profile.BasalProfile> list = new ArrayList<>();
