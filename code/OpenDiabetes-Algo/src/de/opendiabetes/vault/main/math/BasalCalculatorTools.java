@@ -4,6 +4,7 @@ import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -55,19 +56,22 @@ public class BasalCalculatorTools {
 
     /**
      * Calculates the difference between Temp Basal Treatments and the basal rates given in the profile.
-     * The result is in units per minute.
+     * The values of the resulting List is in units per minute.
      *
-     * @param basalTreatments sorted list of VaultEntries with type
+     * @param basalTreatments list of VaultEntries with type
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
-     * @param profile nightscout profile
+     * @param profile nightscout profile with Timezone Zulu
      * @return list of VaultEntries with type
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public static List<VaultEntry> calcBasalDifference(List<VaultEntry> basalTreatments, Profile profile) {
-        List<VaultEntry> result = new ArrayList<>();
+        if (!profile.getTimezone().equals(ZoneId.of("Zulu"))){
+            throw new IllegalArgumentException("profile Timezone should be Zulu, make sure to run toZulu() before.");
+        }
         if (profile.getBasalProfiles().size() < 1) {
             throw new IllegalArgumentException("profile must have at least 1 entry in basalProfiles.");
         }
+        List<VaultEntry> result = new ArrayList<>();
         if (profile.getBasalProfiles().size() == 1) {
             double basalRate = profile.getBasalProfiles().get(0).getValue();
             for (VaultEntry entry : basalTreatments) {
