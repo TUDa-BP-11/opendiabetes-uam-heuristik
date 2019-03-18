@@ -56,7 +56,7 @@ public class BasalCalculatorTools {
 
     /**
      * Calculates the difference between Temp Basal Treatments and the basal rates given in the profile.
-     * The result is in units per minute.
+     * The values of the resulting List is in units per minute.
      *
      * @param basalTreatments list of VaultEntries with type
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
