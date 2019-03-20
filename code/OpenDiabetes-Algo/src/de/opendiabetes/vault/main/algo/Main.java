@@ -76,7 +76,7 @@ String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390
         }
         entries.sort(new SortVaultEntryByDate());
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 1 * insDuration * 60000, 10); //Integer.MAX_VALUE
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 1 * insDuration * 60000, 4); //Integer.MAX_VALUE
 
 //        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
@@ -100,8 +100,6 @@ String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390
            
 
             cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
-                    profile.getCarbratio(), absorptionTime);
-            cgpm.plotError(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
                     profile.getCarbratio(), absorptionTime);
         }
 
