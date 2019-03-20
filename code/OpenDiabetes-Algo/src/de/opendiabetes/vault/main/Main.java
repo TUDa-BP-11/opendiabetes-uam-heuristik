@@ -23,18 +23,47 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
-import static de.opendiabetes.vault.nsapi.Main.initArguments;
-import static de.opendiabetes.vault.nsapi.Main.initLogger;
+import static de.opendiabetes.vault.nsapi.Main.*;
 import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
 
 public class Main {
     // All parameters
 
-    public static final Parameter P_ALGO = new FlaggedOption("Algorithm")
+    public static final Parameter P_ALGO = new FlaggedOption("algorithm")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('a')
             .setLongFlag("algorithm")
             .setHelp("Algorithm that should be used");
+    public static final Parameter P_TARGET = new FlaggedOption("target")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('t')
+            .setLongFlag("target")
+            .setHelp("Target Nightscout server URL. Make sure to include the port.");
+    public static final Parameter P_TARGET_SECRET = new FlaggedOption("targetsecret")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('z')
+            .setLongFlag("targetsecret")
+            .setHelp("target Nightscout server API secret.");
+    public static final Parameter P_OUTPUT_FILE = new FlaggedOption("output")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('o')
+            .setLongFlag("output")
+            .setHelp("file where the meals should saved in");
+    public static final Parameter P_INPUT_ENTRIES = new FlaggedOption("entries")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('e')
+            .setLongFlag("entries")
+            .setHelp("path to file of blood glucose values");
+    public static final Parameter P_INPUT_TREATMENTS = new FlaggedOption("treatments")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setRequired(true)
+            .setShortFlag('t')
+            .setLongFlag("treatments")
+            .setHelp("path to file of treatments");
+
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -44,6 +73,20 @@ public class Main {
     private static void registerArguments(JSAP jsap) {
         try {
             jsap.registerParameter(P_ALGO);
+            jsap.registerParameter(P_HOST);
+            jsap.registerParameter(P_SECRET);
+            jsap.registerParameter(P_TARGET);
+            jsap.registerParameter(P_TARGET_SECRET);
+            jsap.registerParameter(P_OUTPUT_FILE);
+            jsap.registerParameter(P_INPUT_ENTRIES);
+            jsap.registerParameter(P_INPUT_TREATMENTS);
+
+            jsap.registerParameter(P_LATEST);
+            jsap.registerParameter(P_OLDEST);
+            jsap.registerParameter(P_OVERWRITE);
+
+            jsap.registerParameter(P_VERBOSE);
+            jsap.registerParameter(P_DEBUG);
 
         } catch (JSAPException e) {
             NSApi.LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
@@ -61,6 +104,29 @@ public class Main {
 
         // init
         initLogger(config);
+
+        AlgorithmDataProvider dataProvider = null;
+        if (config.contains("host")){
+            if (config.contains("entries") || config.contains("treatments")){
+                NSApi.LOGGER.warning("Cannot get input from files and server at the same time!");
+                return;
+            }
+            //dataProvider = new NightscoutDataProvider(); //TODO
+
+        }
+        if (config.contains("entries") ^ config.contains("treatments")){
+            NSApi.LOGGER.warning("Please specify a path to your file of blood glucose values and your file of treatments");
+            return;
+        }
+
+        if (config.contains("entries") && config.contains("treatments")){
+            //dataProvider = new FileDataProvider(); //TODO
+        }
+
+        if(!config.contains("host") && !config.contains("entries") && !config.contains("treatments")){
+            NSApi.LOGGER.warning("Please specify the input source (files or server)"); //TODO
+            return;
+        }
 
         /*
         // Main control
