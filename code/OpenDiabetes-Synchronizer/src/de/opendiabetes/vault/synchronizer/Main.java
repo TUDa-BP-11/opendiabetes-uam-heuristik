@@ -6,6 +6,8 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,9 +53,31 @@ public class Main {
             })
             .setUsageName("apiPath[:dateField]")
             .setHelp("Define what data will be synchronized. Can be declared multiple times. Default date field is 'created_at'.");
+    private static final Parameter P_LATEST = new FlaggedOption("latest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("latest")
+            .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+            .setHelp("The latest date and time to load data");
+    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("oldest")
+            .setDefault("1970-01-01T00:00:00.000Z")
+            .setHelp("The oldest date and time to load data");
+    private static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("batch-size")
+            .setDefault("100")
+            .setHelp("How many entries should be loaded at once.");
     private static final Parameter P_WITH_IDS = new Switch("with-ids")
             .setLongFlag("with-ids")
             .setHelp("Set this to keep the '_id' fields of objects when uploading them to the write server.");
+    //Debug
+    private static final Parameter P_VERBOSE = new Switch("verbose")
+            .setShortFlag('v')
+            .setHelp("Sets logging to verbose");
+    private static final Parameter P_DEBUG = new Switch("debug")
+            .setShortFlag('d')
+            .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
     /**
      * Registers all arguments to the given JSAP instance
