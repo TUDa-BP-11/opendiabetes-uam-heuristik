@@ -22,67 +22,67 @@ import java.util.stream.Collectors;
 public class Main {
     // All parameters
     // Nightscout
-    public static final Parameter P_HOST = new FlaggedOption("host")
+    private static final Parameter P_HOST = new FlaggedOption("host")
             .setStringParser(JSAP.STRING_PARSER)
             .setRequired(true)
             .setShortFlag('h')
             .setLongFlag("host")
             .setHelp("Your Nightscout host URL. Make sure to include the port.");
-    public static final Parameter P_SECRET = new FlaggedOption("secret")
+    private static final Parameter P_SECRET = new FlaggedOption("secret")
             .setStringParser(JSAP.STRING_PARSER)
             .setRequired(true)
             .setShortFlag('s')
             .setLongFlag("secret")
             .setHelp("Your Nightscout API secret.");
     // Actions
-    public static final Parameter P_STATUS = new Switch("status")
+    private static final Parameter P_STATUS = new Switch("status")
             .setLongFlag("status")
             .setHelp("Prints the Nightscout server status and exists.");
-    public static final Parameter P_POST = new FlaggedOption("post")
+    private static final Parameter P_POST = new FlaggedOption("post")
             .setStringParser(new TypeSetParser())
             .setShortFlag('p')
             .setLongFlag("post")
             .setHelp("Uploads data to your Nightscout server. Specify one or more of the following: cgm, bolus, meal, basal, all");
-    public static final Parameter P_GET = new FlaggedOption("get")
+    private static final Parameter P_GET = new FlaggedOption("get")
             .setStringParser(new TypeSetParser())
             .setShortFlag('g')
             .setLongFlag("get")
             .setHelp("Downloads data from your Nightscout server. Specify one or more of the following: cgm, bolus, meal, basal, all");
-    public static final Parameter P_FILE = new FlaggedOption("file")
+    private static final Parameter P_FILE = new FlaggedOption("file")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('f')
             .setLongFlag("file")
             .setHelp("Loads data from a file");
-    public static final Parameter P_OVERWRITE = new Switch("overwrite")
+    private static final Parameter P_OVERWRITE = new Switch("overwrite")
             .setShortFlag('o')
             .setLongFlag("overwrite")
             .setHelp("Overwrite existing files");
-    public static final Parameter P_LATEST = new FlaggedOption("latest")
+    private static final Parameter P_LATEST = new FlaggedOption("latest")
             .setStringParser(new IsoDateTimeParser())
             .setLongFlag("latest")
             .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
             .setHelp("The latest date and time to load data");
-    public static final Parameter P_OLDEST = new FlaggedOption("oldest")
+    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
             .setStringParser(new IsoDateTimeParser())
             .setLongFlag("oldest")
             .setDefault("1970-01-01T00:00:00.000Z")
             .setHelp("The oldest date and time to load data");
     // Tuning
-    public static final Parameter P_MERGEWINDOW = new FlaggedOption("mergewindow")
+    private static final Parameter P_MERGEWINDOW = new FlaggedOption("mergewindow")
             .setStringParser(JSAP.INTEGER_PARSER)
             .setLongFlag("merge-window")
             .setDefault("60")
             .setHelp("Set the maximum amount of seconds two entries can be apart from one another for them to be considered the same entry.");
-    public static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+    private static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
             .setStringParser(JSAP.INTEGER_PARSER)
             .setLongFlag("batch-size")
             .setDefault("100")
             .setHelp("How many entries should be loaded at once.");
     // Debugging
-    public static final Parameter P_VERBOSE = new Switch("verbose")
+    private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
             .setHelp("Sets logging to verbose");
-    public static final Parameter P_DEBUG = new Switch("debug")
+    private static final Parameter P_DEBUG = new Switch("debug")
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
@@ -317,7 +317,7 @@ public class Main {
     /**
      * Parses the latest and oldest arguments to ZonedDateTime
      */
-    private static class IsoDateTimeParser extends StringParser {
+    public static class IsoDateTimeParser extends StringParser {
         @Override
         public ZonedDateTime parse(String s) throws ParseException {
             try {

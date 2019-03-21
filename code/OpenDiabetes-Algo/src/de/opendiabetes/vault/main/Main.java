@@ -15,6 +15,7 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -22,73 +23,107 @@ import static de.opendiabetes.vault.nsapi.Main.*;
 
 public class Main {
     // All parameters
-
-    public static final Parameter P_ALGO = new FlaggedOption("algorithm")
+    //Data Source
+    private static final Parameter P_HOST = new FlaggedOption("host")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('h')
+            .setLongFlag("host")
+            .setHelp("Your Nightscout host URL. Make sure to include the port.");
+    private static final Parameter P_SECRET = new FlaggedOption("secret")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('s')
+            .setLongFlag("secret")
+            .setHelp("Your Nightscout API secret.");
+    private static final Parameter P_ENTRIES_FILE = new FlaggedOption("entries")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('e')
+            .setLongFlag("entries")
+            .setHelp("Path to file with the blood glucose values");
+    private static final Parameter P_TREATMENTS_FILE = new FlaggedOption("treatments")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('f')
+            .setLongFlag("treatments")
+            .setHelp("File with the basal and bolus insulin treatments");
+    private static final Parameter P_PROFILE_FILE = new FlaggedOption("profile")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('p')
+            .setLongFlag("profile")
+            .setHelp("Path to a nightscout profile");
+    //Algoorithm Parameters
+    private static final Parameter P_ALGO = new FlaggedOption("algorithm")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('a')
             .setDefault("LM")
             .setRequired(true)
             .setLongFlag("algorithm")
             .setHelp("Algorithm that should be used");
-    public static final Parameter P_TARGET_HOST = new FlaggedOption("target-host")
-            .setStringParser(JSAP.STRING_PARSER)
-            .setRequired(true)
-            .setShortFlag('H')
-            .setLongFlag("target-host")
-            .setHelp("URL of the Nightscout server that you want to upload meals to. Make sure to include the port.");
-    private static final Parameter P_TARGET_SECRET = new FlaggedOption("target-secret")
-            .setStringParser(JSAP.STRING_PARSER)
-            .setRequired(true)
-            .setShortFlag('S')
-            .setLongFlag("target-secret")
-            .setHelp("API secret of the target Nightscout server.");
-    public static final Parameter P_OUTPUT_FILE = new FlaggedOption("output-file")
-            .setStringParser(JSAP.STRING_PARSER)
-            .setRequired(true)
-            .setShortFlag('o')
-            .setLongFlag("output-file")
-            .setHelp("File where the meals should saved in");
-    public static final Parameter P_ENTRIES_FILE = new FlaggedOption("entries")
-            .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('e')
-            .setLongFlag("entries")
-            .setHelp("Path to file with the blood glucose values");
-    public static final Parameter P_TREATMENTS_FILE = new FlaggedOption("treatments")
-            .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('t')
-            .setLongFlag("treatments")
-            .setHelp("File with the basal and bolus insulin treatments");
-    public static final Parameter P_PROFILE_FILE = new FlaggedOption("profile")
-            .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('p')
-            .setLongFlag("profile")
-            .setHelp("Path to a nightscout profile");
-    public static final Parameter P_OVERWRITE_OUTPUT = new Switch("overwrite")
-            .setLongFlag("overwrite")
-            .setHelp("Overwrite existing file");
-    public static final Parameter P_CONSOLE = new Switch("console")
-            .setShortFlag('c')
-            .setLongFlag("console")
-            .setHelp("Prints the result on the console");
-    public static final Parameter P_ABSORPTION_TIME = new FlaggedOption("absorptionTime")
+    private static final Parameter P_ABSORPTION_TIME = new FlaggedOption("absorptionTime")
+            .setStringParser(JSAP.INTEGER_PARSER)
             .setShortFlag('t')
             .setLongFlag("absorption-time")
             .setRequired(true)
             .setDefault("120")
             .setHelp("Time to absorb a meal in minutes");
-    public static final Parameter P_INSULIN_DURATION = new FlaggedOption("insDuration")
-            .setShortFlag('d')
+    private static final Parameter P_INSULIN_DURATION = new FlaggedOption("insDuration")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setShortFlag('i')
             .setLongFlag("insulin-duration")
             .setRequired(true)
             .setDefault("180")
             .setHelp("Duration of used Insulin");
-    public static final Parameter P_UPLOAD_ALL = new Switch("upload-all")
+    //Output
+    private static final Parameter P_TARGET_HOST = new FlaggedOption("target-host")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('H')
+            .setLongFlag("target-host")
+            .setHelp("URL of the Nightscout server that you want to upload meals to. Make sure to include the port.");
+    private static final Parameter P_TARGET_SECRET = new FlaggedOption("target-secret")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('S')
+            .setLongFlag("target-secret")
+            .setHelp("API secret of the target Nightscout server.");
+    private static final Parameter P_OUTPUT_FILE = new FlaggedOption("output-file")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('o')
+            .setLongFlag("output-file")
+            .setHelp("File where the meals should saved in");
+    private static final Parameter P_CONSOLE = new Switch("console")
+            .setShortFlag('c')
+            .setLongFlag("console")
+            .setHelp("Prints the result on the console");
+    private static final Parameter P_PLOT = new Switch("plot")
+            .setLongFlag("plot")
+            .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
+    //Options and tuning
+    private static final Parameter P_OVERWRITE_OUTPUT = new Switch("overwrite")
+            .setLongFlag("overwrite")
+            .setHelp("Overwrite existing file");
+    private static final Parameter P_UPLOAD_ALL = new Switch("upload-all")
             .setLongFlag("upload-all")
             .setHelp("Upload meals, bg-values, bolus and basal treatments");
-    public static final Parameter P_PLOT = new Switch("plot")
-            .setLongFlag("plot")
-            .setShortFlag('p')
-            .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
+    private static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("batch-size")
+            .setDefault("100")
+            .setHelp("How many entries should be loaded at once.");
+    private static final Parameter P_LATEST = new FlaggedOption("latest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("latest")
+            .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+            .setHelp("The latest date and time to load data");
+    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("oldest")
+            .setDefault("1970-01-01T00:00:00.000Z")
+            .setHelp("The oldest date and time to load data");
+    // Debugging
+    private static final Parameter P_VERBOSE = new Switch("verbose")
+            .setShortFlag('v')
+            .setHelp("Sets logging to verbose");
+    private static final Parameter P_DEBUG = new Switch("debug")
+            .setShortFlag('d')
+            .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
+
 
 
     /**
@@ -98,24 +133,24 @@ public class Main {
      */
     private static void registerArguments(JSAP jsap) {
         try {
-            jsap.registerParameter(P_ALGO);
-            jsap.registerParameter(P_TARGET_HOST);
-            jsap.registerParameter(P_TARGET_SECRET);
+            jsap.registerParameter(P_HOST);
+            jsap.registerParameter(P_SECRET);
             jsap.registerParameter(P_ENTRIES_FILE);
             jsap.registerParameter(P_TREATMENTS_FILE);
             jsap.registerParameter(P_PROFILE_FILE);
-            jsap.registerParameter(P_OUTPUT_FILE);
+
+            jsap.registerParameter(P_ALGO);
             jsap.registerParameter(P_ABSORPTION_TIME);
             jsap.registerParameter(P_INSULIN_DURATION);
 
-            jsap.registerParameter(P_OVERWRITE_OUTPUT);
+            jsap.registerParameter(P_TARGET_HOST);
+            jsap.registerParameter(P_TARGET_SECRET);
+            jsap.registerParameter(P_OUTPUT_FILE);
             jsap.registerParameter(P_CONSOLE);
-            jsap.registerParameter(P_UPLOAD_ALL);
             jsap.registerParameter(P_PLOT);
 
-            jsap.registerParameter(P_HOST);
-            jsap.registerParameter(P_SECRET);
-
+            jsap.registerParameter(P_OVERWRITE_OUTPUT);
+            jsap.registerParameter(P_UPLOAD_ALL);
             jsap.registerParameter(P_LATEST);
             jsap.registerParameter(P_OLDEST);
             jsap.registerParameter(P_BATCHSIZE);
@@ -159,6 +194,11 @@ public class Main {
 
         if (config.contains("target-host") && !config.contains("target-secret")) {
             NSApi.LOGGER.warning("Please specify the API secret of the target Nightscout server.");
+            return;
+        }
+
+        if(!config.contains("target-host") && !config.getBoolean("console") && !config.getBoolean("plot") && config.contains("output-file")){
+            NSApi.LOGGER.warning("Please specify at least one output for the results.");
             return;
         }
 
