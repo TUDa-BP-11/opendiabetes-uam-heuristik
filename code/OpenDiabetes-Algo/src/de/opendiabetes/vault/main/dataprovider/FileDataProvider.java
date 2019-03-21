@@ -165,6 +165,7 @@ public class FileDataProvider implements AlgorithmDataProvider {
         if (profile == null) {
             ProfileParser parser = new ProfileParser();
             profile = parser.parseFile(profilePath);
+            profile.toZulu();
         }
         return profile;
     }
