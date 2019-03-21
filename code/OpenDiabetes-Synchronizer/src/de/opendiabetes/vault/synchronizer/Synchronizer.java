@@ -11,11 +11,9 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
-
-import static de.opendiabetes.vault.nsapi.Main.P_LATEST;
-import static de.opendiabetes.vault.nsapi.Main.P_OLDEST;
 
 public class Synchronizer {
     private NSApi read;
@@ -25,8 +23,8 @@ public class Synchronizer {
     private int batchSize;
 
     public Synchronizer(NSApi read, NSApi write) {
-        this(read, write, ZonedDateTime.parse(P_OLDEST.getDefault()[0]),
-                ZonedDateTime.parse(P_LATEST.getDefault()[0]), 100);
+        this(read, write, ZonedDateTime.parse(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)),
+                ZonedDateTime.parse("1970-01-01T00:00:00.000Z"), 100);
     }
 
     public Synchronizer(NSApi read, NSApi write, TemporalAccessor oldest, TemporalAccessor latest, int batchSize) {
