@@ -175,7 +175,7 @@ public class Main {
         // init
         initLogger(config);
 
-        AlgorithmDataProvider dataProvider = null;
+
         if (someFilesSet(config) && !allFilesSet(config)) {
             NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
             return;
@@ -202,16 +202,17 @@ public class Main {
             return;
         }
 
+        AlgorithmDataProvider dataProvider = null;
         try {
             if (config.contains("host")) {
                 dataProvider = new NightscoutDataProvider(config.getString("host"), config.getString("secret"),
                         config.getInt("batchsize"), (ZonedDateTime) config.getObject("latest"),
-                        (ZonedDateTime) config.getObject("latest"));
+                        (ZonedDateTime) config.getObject("oldest"));
             } else if (allFilesSet(config)) {
 
                 dataProvider = new FileDataProvider(null, config.getString("entries"), config.getString("treatments"),
                         config.getString("profile"), (ZonedDateTime) config.getObject("latest"),
-                        (ZonedDateTime) config.getObject("latest"));
+                        (ZonedDateTime) config.getObject("oldest"));
             }
         } catch (DataProviderException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
