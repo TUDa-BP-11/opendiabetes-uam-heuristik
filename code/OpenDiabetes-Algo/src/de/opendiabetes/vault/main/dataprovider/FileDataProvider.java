@@ -15,9 +15,11 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -34,7 +36,9 @@ public class FileDataProvider implements AlgorithmDataProvider {
 
     private List<VaultEntry> entries;
     private List<VaultEntry> treatments;
-    private List<VaultEntry> basals;
+    private List<VaultEntry> bolusTreatments;
+    private List<VaultEntry> basalDiffs;
+    private List<VaultEntry> rawBasals;
     private Profile profile;
     private NightscoutImporter importer;
 
@@ -90,6 +94,22 @@ public class FileDataProvider implements AlgorithmDataProvider {
     }
 
     @Override
+    public List<VaultEntry> getRawBasalTreatments(){
+        if (treatments == null)
+        readTreatments();
+        if (rawBasals == null) {
+            rawBasals = treatments.stream()
+                    .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
+                    .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                    .filter(e -> e.getTimestamp().toInstant().isAfter(Instant.from(oldest)))
+                    .filter(e -> e.getTimestamp().toInstant().isBefore(Instant.from(latest)))
+                    .collect(Collectors.toList());
+        }
+
+        return rawBasals;
+    }
+
+    @Override
     public List<VaultEntry> getGlucoseMeasurements() {
         if (entries == null) {
             List<VaultEntry> list = new ArrayList<>();
@@ -100,6 +120,8 @@ public class FileDataProvider implements AlgorithmDataProvider {
             }
             entries = list.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.GLUCOSE_CGM))
+                    .filter(e -> e.getTimestamp().toInstant().isAfter(Instant.from(oldest)))
+                    .filter(e -> e.getTimestamp().toInstant().isBefore(Instant.from(latest)))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
         }
@@ -118,24 +140,24 @@ public class FileDataProvider implements AlgorithmDataProvider {
     public List<VaultEntry> getBolusTreatments() {
         if (treatments == null)
             readTreatments();
-        return treatments.stream()
-                .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
-                .sorted(Comparator.comparing(VaultEntry::getTimestamp))
-                .collect(Collectors.toList());
+        if(bolusTreatments == null)
+
+
+            bolusTreatments = treatments.stream()
+                    .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
+                    .filter(e -> e.getTimestamp().toInstant().isAfter(Instant.from(oldest)))
+                    .filter(e -> e.getTimestamp().toInstant().isBefore(Instant.from(latest)))
+                    .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                    .collect(Collectors.toList());
+        return bolusTreatments;
     }
 
     @Override
-    public List<VaultEntry> getBasalTratments() {
-        if (treatments == null)
-            readTreatments();
-        if (basals == null) {
-            List<VaultEntry> list = treatments.stream()
-                    .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
-                    .sorted(Comparator.comparing(VaultEntry::getTimestamp))
-                    .collect(Collectors.toList());
-            basals = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(list), getProfile());
+    public List<VaultEntry> getBasalDifferences() {
+        if (rawBasals == null || basalDiffs == null){
+            basalDiffs = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(getRawBasalTreatments()), getProfile());
         }
-        return basals;
+        return basalDiffs;
     }
 
     @Override

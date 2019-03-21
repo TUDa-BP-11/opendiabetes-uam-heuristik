@@ -22,11 +22,18 @@ public interface AlgorithmDataProvider {
     List<VaultEntry> getBolusTreatments();
 
     /**
-     * Get a list of insulin bolus treatments for calculation
+     * Get a list of unmodified basal treatments
+     *
+     * @return @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
+     */
+    List<VaultEntry> getRawBasalTreatments();
+
+    /**
+     * Get a a list of differences between your temp basal Treatments and the basal rate in the profile
      *
      * @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
-    List<VaultEntry> getBasalTratments();
+    List<VaultEntry> getBasalDifferences();
 
     /**
      * @return The Nightscout profile to use

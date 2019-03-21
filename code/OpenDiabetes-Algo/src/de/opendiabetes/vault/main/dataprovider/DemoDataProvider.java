@@ -49,7 +49,12 @@ public class DemoDataProvider implements AlgorithmDataProvider {
     }
 
     @Override
-    public List<VaultEntry> getBasalTratments() {
+    public List<VaultEntry> getRawBasalTreatments() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<VaultEntry> getBasalDifferences() {
         return Collections.emptyList();
     }
 
