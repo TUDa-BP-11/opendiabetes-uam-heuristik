@@ -14,6 +14,12 @@ script:
   - ant -lib lib/junit
   - cat code/*/dist/TEST-*.txt
 
+deploy:
+  provider: script
+  script: bash deploy-javadoc.sh
+  on:
+    branch: gh-pages
+
 env:
   global:
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
