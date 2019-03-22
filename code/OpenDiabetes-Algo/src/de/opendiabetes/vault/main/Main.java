@@ -125,7 +125,6 @@ public class Main {
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
 
-
     /**
      * Registers all arguments to the given JSAP instance
      *
@@ -197,39 +196,23 @@ public class Main {
             return;
         }
 
-        if(!config.contains("target-host") && !config.getBoolean("console") && !config.getBoolean("plot") && config.contains("output-file")){
+        if (!config.contains("target-host") && !config.getBoolean("console") && !config.getBoolean("plot") && config.contains("output-file")) {
             NSApi.LOGGER.warning("Please specify at least one output for the results.");
             return;
         }
 
-        AlgorithmDataProvider dataProvider = null;
+        AlgorithmDataProvider dataProvider;
         try {
-            if (config.contains("host")) {
-                dataProvider = new NightscoutDataProvider(config.getString("host"), config.getString("secret"),
-                        config.getInt("batchsize"), (ZonedDateTime) config.getObject("latest"),
-                        (ZonedDateTime) config.getObject("oldest"));
-            } else if (allFilesSet(config)) {
-
-                dataProvider = new FileDataProvider(null, config.getString("entries"), config.getString("treatments"),
-                        config.getString("profile"), (ZonedDateTime) config.getObject("latest"),
-                        (ZonedDateTime) config.getObject("oldest"));
-            }
+            dataProvider = chooseDataProvider(config);
         } catch (DataProviderException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
-        Algorithm algorithm;
-        int absorptionTime = config.getInt("absorptionTime");
-        int insulinDuration = config.getInt("insDuration");
+        Algorithm algorithm = chooseAlgorithm(config, dataProvider);
 
-        switch (config.getString("algorithm").toLowerCase()) {
-            //TODO
-            case "LM":
-                algorithm = new LMAlgo(absorptionTime, insulinDuration, dataProvider);
-                break;
-            default:
-                algorithm = new LMAlgo(absorptionTime, insulinDuration, dataProvider);
+        if (algorithm == null){
+            return;
         }
 
         List<VaultEntry> meals = algorithm.calculateMeals();
@@ -271,6 +254,35 @@ public class Main {
 
 
         dataProvider.close();
+    }
+
+    private static AlgorithmDataProvider chooseDataProvider(JSAPResult config) {
+        if (config.contains("host")) {
+            return new NightscoutDataProvider(config.getString("host"), config.getString("secret"),
+                    config.getInt("batchsize"), (ZonedDateTime) config.getObject("latest"),
+                    (ZonedDateTime) config.getObject("oldest"));
+        }
+        if (allFilesSet(config)) {
+            return new FileDataProvider(null, config.getString("entries"), config.getString("treatments"),
+                    config.getString("profile"), (ZonedDateTime) config.getObject("latest"),
+                    (ZonedDateTime) config.getObject("oldest"));
+        }
+        return null;
+    }
+
+    private static Algorithm chooseAlgorithm(JSAPResult config, AlgorithmDataProvider dataProvider) {
+
+        int absorptionTime = config.getInt("absorptionTime");
+        int insulinDuration = config.getInt("insDuration");
+
+        switch (config.getString("algorithm").toLowerCase()) {
+            //TODO
+            case "LM":
+                return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
+            default:
+                NSApi.LOGGER.warning("There is no Algorithm with the name: " + config.getString("algorithm"));
+        }
+        return null;
     }
 
     private static boolean allFilesSet(JSAPResult config) {
