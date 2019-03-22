@@ -251,7 +251,10 @@ public class Main {
         }
 
         if (config.getBoolean("plot")) {
-            //TODO
+            CGMPlotter cgpm = new CGMPlotter(false);
+            cgpm.plot(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
+                    dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            cgpm.showAll();
         }
 
 
@@ -278,7 +281,6 @@ public class Main {
         int insulinDuration = config.getInt("insDuration");
 
         switch (config.getString("algorithm").toLowerCase()) {
-            //TODO
             case "lm":
                 return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
             case "min":
