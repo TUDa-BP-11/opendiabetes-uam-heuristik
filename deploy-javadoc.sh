@@ -2,9 +2,6 @@
 
 ant generate-javadoc
 
-eval `ssh-agent -s`
-ssh-add github_deploy_key
-
 cd doc
 
 git init
