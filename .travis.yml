@@ -1,7 +1,7 @@
 language: java
 
 before_install:
-  - openssl aes-256-cbc -K $encrypted_45abb2cc142e_key -iv $encrypted_45abb2cc142e_iv -in github_deploy_key.enc -out github_deploy_key -d
+  - openssl aes-256-cbc -md sha256 -K $encrypted_45abb2cc142e_key -iv $encrypted_45abb2cc142e_iv -in github_deploy_key.enc -out github_deploy_key -d
   - chmod 600 github_deploy_key
   - eval `ssh-agent -s`
   - ssh-add github_deploy_key
