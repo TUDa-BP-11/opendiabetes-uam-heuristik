@@ -216,9 +216,17 @@ public class Main {
 
         List<VaultEntry> meals = algorithm.calculateMeals();
 
+        //Logging
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
+        
+        NSApi.LOGGER.log(Level.FINE, "calculated meals");
+        for (VaultEntry meal: meals){
+            NSApi.LOGGER.log(Level.FINE, meal.toString());
+        }
+        //TODO logging error + max time diff etc.
 
+        //Output
         if (config.contains("output-file")) {
             try {
                 NSApiTools.writeDataToFile(config.getString("output-file"), meals, config.getBoolean("overwrite"), new NightscoutExporter());
