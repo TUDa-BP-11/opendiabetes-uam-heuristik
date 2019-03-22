@@ -22,7 +22,7 @@ deploy:
   provider: script
   script: bash deploy-javadoc.sh
   on:
-    branch: javadoc
+    branch: master
 
 env:
   global:
