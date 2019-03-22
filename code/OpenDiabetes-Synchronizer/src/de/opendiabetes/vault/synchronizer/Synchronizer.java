@@ -23,8 +23,8 @@ public class Synchronizer {
     private int batchSize;
 
     public Synchronizer(NSApi read, NSApi write) {
-        this(read, write, ZonedDateTime.parse(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)),
-                ZonedDateTime.parse("1970-01-01T00:00:00.000Z"), 100);
+        this(read, write, ZonedDateTime.parse("1970-01-01T00:00:00.000Z"),
+                ZonedDateTime.parse(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)), 100);
     }
 
     public Synchronizer(NSApi read, NSApi write, TemporalAccessor oldest, TemporalAccessor latest, int batchSize) {
