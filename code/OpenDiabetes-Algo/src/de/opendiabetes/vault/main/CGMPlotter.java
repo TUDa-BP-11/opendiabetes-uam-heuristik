@@ -100,8 +100,8 @@ public class CGMPlotter {
 
 //        zeros.add(0.0);
 //        zeros.add(0.0);
-        double startValue = 0; //getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
-//        double startTime = getStartTime(entries, insDuration, absorptionTime);
+        double startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+        double startTime = getStartTime(entries, insDuration, absorptionTime);
 //        double offset = 0;
         for (VaultEntry ve : entries) {
             bgTimes.add((ve.getTimestamp().getTime()) / 1000.0);
@@ -111,10 +111,10 @@ public class CGMPlotter {
 //                    new ArrayList<>(), bolusTreatments, basalTreatments,
 //                    sensitivity, insDuration,
 //                    carbratio, absorptionTime);
-//            if (ve.getTimestamp().getTime() < startTime) {
+            if (ve.getTimestamp().getTime() < startTime) {
 //                offset = - noMealPredict;
-//                continue;
-//            }
+                continue;
+            }
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,
@@ -322,32 +322,32 @@ public class CGMPlotter {
         }
     }
     //      wirklich kein Startvalue fuer LMAlgo. 
-    //    private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-    //                                 List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-    //                                 double sensitivity, int insDuration, double carbratio, int absorptionTime) {
-    //        double startTime = getStartTime(entries, insDuration, absorptionTime);
-    //
-    //        double startValue = entries.get(0).getValue();
-    //        for (int i = 0; i < entries.size() ; i++) {
-    //            startValue = entries.get(i).getValue() - Predictions.predict(entries.get(i).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
-    //            if (entries.get(i).getTimestamp().getTime() >= startTime) {
-    //                break;
-    //            }
-    //        }
-    //
-    //        return startValue;
-    //    }
-    //    private double getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
-    //        double startTime = entries.get(0).getTimestamp().getTime();
-    //        double firstValidTime = startTime + Math.max(insDuration , absorptionTime) * 60000;
-    //        for (int i = 0; i < entries.size() - 1; i++) {
-    //            startTime = entries.get(i).getTimestamp().getTime();
-    //            if (entries.get(i + 1).getTimestamp().getTime() > firstValidTime) {
-    //                break;
-    //            }
-    //        }
-    //        return startTime;
-    //    }
+        private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
+                                     List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+                                     double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+            double startTime = getStartTime(entries, insDuration, absorptionTime);
+
+            double startValue = entries.get(0).getValue();
+            for (int i = 0; i < entries.size() ; i++) {
+                startValue = entries.get(i).getValue() - Predictions.predict(entries.get(i).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
+                if (entries.get(i).getTimestamp().getTime() >= startTime) {
+                    break;
+                }
+            }
+
+            return startValue;
+        }
+        private double getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
+            double startTime = entries.get(0).getTimestamp().getTime();
+            double firstValidTime = startTime + Math.max(insDuration , absorptionTime) * 60000;
+            for (int i = 0; i < entries.size() - 1; i++) {
+                startTime = entries.get(i).getTimestamp().getTime();
+                if (entries.get(i + 1).getTimestamp().getTime() > firstValidTime) {
+                    break;
+                }
+            }
+            return startTime;
+        }
 
     private void generatePointsToDraw(List<VaultEntry> vaultEntries, List<Double> values, List<Double> times) {
         for (VaultEntry a : vaultEntries) {
