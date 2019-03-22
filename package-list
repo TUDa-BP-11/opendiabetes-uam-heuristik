@@ -1,0 +1,7 @@
+de.opendiabetes.vault.nsapi
+de.opendiabetes.vault.nsapi.exception
+de.opendiabetes.vault.nsapi.exporter
+de.opendiabetes.vault.nsapi.importer
+de.opendiabetes.vault.nsapi.logging
+de.opendiabetes.vault.parser
+de.opendiabetes.vault.synchronizer
