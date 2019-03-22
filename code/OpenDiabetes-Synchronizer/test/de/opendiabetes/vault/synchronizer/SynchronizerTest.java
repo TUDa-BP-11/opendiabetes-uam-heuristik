@@ -11,7 +11,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -56,9 +55,8 @@ public class SynchronizerTest {
     }
 
     @AfterAll
-    static void tearDown() throws IOException {
-        read.close();
-        write.close();
+    static void tearDown() throws NightscoutIOException {
+        NSApi.shutdown();
     }
 
     @Test

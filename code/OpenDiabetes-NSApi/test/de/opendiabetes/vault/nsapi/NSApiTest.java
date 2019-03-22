@@ -15,7 +15,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.temporal.ChronoField;
@@ -48,8 +47,8 @@ class NSApiTest {
     }
 
     @AfterAll
-    static void tearDown() throws IOException {
-        api.close();
+    static void tearDown() throws NightscoutIOException {
+        NSApi.shutdown();
     }
 
     /**

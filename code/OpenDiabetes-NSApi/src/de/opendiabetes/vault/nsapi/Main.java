@@ -9,7 +9,6 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.vault.nsapi.logging.DebugFormatter;
-import de.opendiabetes.vault.parser.Status;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.time.ZonedDateTime;
@@ -18,6 +17,8 @@ import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
 
 public class Main {
     // All parameters
@@ -114,7 +115,7 @@ public class Main {
             jsap.registerParameter(P_VERBOSE);
             jsap.registerParameter(P_DEBUG);
         } catch (JSAPException e) {
-            NSApi.LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
+            LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
         }
     }
 
@@ -128,16 +129,16 @@ public class Main {
     public static JSAPResult initArguments(JSAP jsap, String[] args) {
         // send help message if executed without arguments
         if (args.length == 0) {
-            NSApi.LOGGER.log(Level.INFO, "Argument summary:\n%s", jsap.getHelp());
+            LOGGER.log(Level.INFO, "Argument summary:\n%s", jsap.getHelp());
             return null;
         }
 
         // parse arguments
         JSAPResult config = jsap.parse(args);
         if (!config.success()) {
-            NSApi.LOGGER.log(Level.WARNING, "Invalid arguments:");
-            config.getErrorMessageIterator().forEachRemaining(o -> NSApi.LOGGER.warning(o.toString()));
-            NSApi.LOGGER.info("For an argument summary execute without arguments.");
+            LOGGER.log(Level.WARNING, "Invalid arguments:");
+            config.getErrorMessageIterator().forEachRemaining(o -> LOGGER.warning(o.toString()));
+            LOGGER.info("For an argument summary execute without arguments.");
             return null;
         }
         return config;
@@ -150,10 +151,10 @@ public class Main {
      */
     public static void initLogger(JSAPResult config) {
         Level loglevel = config.getBoolean("verbose") ? Level.ALL : Level.INFO;
-        NSApi.LOGGER.setLevel(loglevel);
-        NSApi.LOGGER.getHandlers()[0].setLevel(loglevel);
+        LOGGER.setLevel(loglevel);
+        LOGGER.getHandlers()[0].setLevel(loglevel);
         if (config.getBoolean("debug")) {
-            NSApi.LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
+            LOGGER.getHandlers()[0].setFormatter(new DebugFormatter());
         }
     }
 
@@ -175,25 +176,25 @@ public class Main {
             return;
 
         if (config.getBoolean("status")) {
-            NSApi.LOGGER.log(Level.INFO, "Nightscout server information:\n%s", api.printStatus());
+            LOGGER.log(Level.INFO, "Nightscout server information:\n%s", api.printStatus());
             return;
         }
 
         if (config.contains("post") && config.contains("get")) {
-            NSApi.LOGGER.warning("Cannot post and get at the same time!");
+            LOGGER.warning("Cannot post and get at the same time!");
             return;
         }
 
         if (config.contains("post")) {
             if (!config.contains("file")) {
-                NSApi.LOGGER.log(Level.WARNING, "Please specify a file as your data source: %s", P_FILE.getSyntax());
+                LOGGER.log(Level.WARNING, "Please specify a file as your data source: %s", P_FILE.getSyntax());
                 return;
             }
 
             try {
                 data = NSApiTools.loadDataFromFile(config.getString("file"), false);
             } catch (NightscoutIOException | NightscoutDataException e) {
-                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+                LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
             data = NSApiTools.filterData(data, (Set<VaultEntryType>) config.getObject("post"));
@@ -201,7 +202,7 @@ public class Main {
             Date oldest = Date.from(((ZonedDateTime) config.getObject("oldest")).toInstant());
             data = data.stream().filter(e -> e.getTimestamp().compareTo(oldest) >= 0 && e.getTimestamp().compareTo(latest) <= 0)
                     .collect(Collectors.toList());
-            NSApi.LOGGER.log(Level.INFO, "Loaded %d entries from file", data.size());
+            LOGGER.log(Level.INFO, "Loaded %d entries from file", data.size());
 
             List<VaultEntry> treatments = data.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.MEAL_MANUAL)
@@ -220,22 +221,25 @@ public class Main {
                     api.postEntries(entries, config.getInt("batchsize"));
                 }
             } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
-                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+                LOGGER.log(Level.SEVERE, e, e::getMessage);
+                shutdown();
                 return;
             }
+            shutdown();
+
             if (treatments.isEmpty()) {
-                NSApi.LOGGER.log(Level.INFO, "Successfully uploaded %d entries to your Nightscout server.", entries.size());
+                LOGGER.log(Level.INFO, "Successfully uploaded %d entries to your Nightscout server.", entries.size());
             } else if (entries.isEmpty()) {
-                NSApi.LOGGER.log(Level.INFO, "Successfully uploaded %d treatments to your Nightscout server.", treatments.size());
+                LOGGER.log(Level.INFO, "Successfully uploaded %d treatments to your Nightscout server.", treatments.size());
             } else {
-                NSApi.LOGGER.log(Level.INFO, "Successfully uploaded %d treatments and %d entries to your Nightscout server.", new Object[]{treatments.size(), entries.size()});
+                LOGGER.log(Level.INFO, "Successfully uploaded %d treatments and %d entries to your Nightscout server.", new Object[]{treatments.size(), entries.size()});
             }
             return;
         }
 
         if (config.contains("get")) {
             if (!config.contains("file")) {
-                NSApi.LOGGER.log(Level.WARNING, "Please specify a file as your data target: %s", P_FILE.getSyntax());
+                LOGGER.log(Level.WARNING, "Please specify a file as your data target: %s", P_FILE.getSyntax());
                 return;
             }
 
@@ -251,9 +255,12 @@ public class Main {
                         || types.contains(VaultEntryType.BASAL_MANUAL))
                     data.addAll(api.getTreatments(latest, oldest, config.getInt("batchsize")));
             } catch (NightscoutIOException | NightscoutServerException | NightscoutDataException e) {
-                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+                LOGGER.log(Level.SEVERE, e, e::getMessage);
+                shutdown();
                 return;
             }
+            shutdown();
+
             data = NSApiTools.filterData(data, types);
             data.sort(new SortVaultEntryByDate().reversed());
             try {
@@ -264,19 +271,19 @@ public class Main {
                         new NightscoutExporter(new NightscoutExporterOptions(config.getInt("mergewindow"), true))
                 );
             } catch (NightscoutIOException | NightscoutDataException e) {
-                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+                LOGGER.log(Level.SEVERE, e, e::getMessage);
                 return;
             }
-            NSApi.LOGGER.log(Level.INFO, "Successfully downloaded %d entries from your Nightscout server.", data.size());
+            LOGGER.log(Level.INFO, "Successfully downloaded %d entries from your Nightscout server.", data.size());
         }
     }
 
-    private static String getStatus(Status status) {
-        return "name:          " + status.getName() + "\n"
-                + "version:       " + status.getVersion() + "\n"
-                + "server status: " + status.getStatus() + "\n"
-                + "api enabled:   " + status.isApiEnabled() + "\n"
-                + "server time:   " + status.getServerTime();
+    private static void shutdown() {
+        try {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
+            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
     }
 
     /**
