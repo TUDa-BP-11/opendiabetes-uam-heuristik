@@ -2,6 +2,7 @@ language: java
 
 before_install:
   - openssl aes-256-cbc -K $encrypted_45abb2cc142e_key -iv $encrypted_45abb2cc142e_iv -in github_deploy_key.enc -out github_deploy_key -d
+  - chmod 600 github_deploy_key
   - eval `ssh-agent -s`
   - ssh-add github_deploy_key
   - echo -n | openssl s_client -connect scan.coverity.com:https | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
