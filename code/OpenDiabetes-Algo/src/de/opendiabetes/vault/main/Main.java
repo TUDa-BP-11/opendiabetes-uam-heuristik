@@ -2,8 +2,7 @@ package de.opendiabetes.vault.main;
 
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.main.algo.Algorithm;
-import de.opendiabetes.vault.main.algo.LMAlgo;
+import de.opendiabetes.vault.main.algo.*;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
@@ -211,11 +210,14 @@ public class Main {
 
         Algorithm algorithm = chooseAlgorithm(config, dataProvider);
 
-        if (algorithm == null){
+        if (algorithm == null) {
             return;
         }
 
         List<VaultEntry> meals = algorithm.calculateMeals();
+
+        int absorptionTime = config.getInt("absorptionTime");
+        int insulinDuration = config.getInt("insDuration");
 
         if (config.contains("output-file")) {
             try {
@@ -277,8 +279,18 @@ public class Main {
 
         switch (config.getString("algorithm").toLowerCase()) {
             //TODO
-            case "LM":
+            case "lm":
                 return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "min":
+                return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "filter":
+                return new FilterAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "poly":
+                return new PolyCurveFitterAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "qr":
+                return new QRAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "qrdiff":
+                return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
             default:
                 NSApi.LOGGER.warning("There is no Algorithm with the name: " + config.getString("algorithm"));
         }
