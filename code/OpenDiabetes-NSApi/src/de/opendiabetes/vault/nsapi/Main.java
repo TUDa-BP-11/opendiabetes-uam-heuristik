@@ -31,7 +31,6 @@ public class Main {
             .setHelp("Your Nightscout host URL. Make sure to include the port.");
     public static final Parameter P_SECRET = new FlaggedOption("secret")
             .setStringParser(JSAP.STRING_PARSER)
-            .setRequired(true)
             .setShortFlag('s')
             .setLongFlag("secret")
             .setHelp("Your Nightscout API secret.");
