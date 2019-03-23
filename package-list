@@ -1,0 +1,15 @@
+de.opendiabetes.vault.container
+de.opendiabetes.vault.examples
+de.opendiabetes.vault.exporter
+de.opendiabetes.vault.exporter.csv
+de.opendiabetes.vault.importer
+de.opendiabetes.vault.importer.validator
+de.opendiabetes.vault.main.math
+de.opendiabetes.vault.nsapi
+de.opendiabetes.vault.nsapi.exception
+de.opendiabetes.vault.nsapi.exporter
+de.opendiabetes.vault.nsapi.importer
+de.opendiabetes.vault.nsapi.logging
+de.opendiabetes.vault.parser
+de.opendiabetes.vault.synchronizer
+de.opendiabetes.vault.util
