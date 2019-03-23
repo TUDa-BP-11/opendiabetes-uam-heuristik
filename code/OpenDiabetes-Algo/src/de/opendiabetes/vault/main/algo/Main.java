@@ -8,8 +8,10 @@ import de.opendiabetes.vault.parser.ProfileParser;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
+import java.io.BufferedWriter;
 
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -19,17 +21,17 @@ import java.util.logging.Logger;
 
 public class Main {
 
-    private static final int absorptionTime = 120;
-    private static final int insDuration = 180;
+    private static final int ABSORBTION_TIME = 120;
+    private static final int INSULIN_DURATION = 180;
 
     public static void main(String[] args) {
 
         ProfileParser profileParser = new ProfileParser();
-String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
+        String profilePath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/profile_2017-07-10_to_2017-11-08.json";
 
-String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
+        String entriesPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/entries_2017-07-10_to_2017-11-08.json";
 
-String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
+        String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390014/direct-sharing-31/treatments_2017-07-10_to_2017-11-08.json";
 
         Profile profile = profileParser.parseFile(profilePath);
         profile.toZulu();
@@ -63,7 +65,6 @@ String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390
                     System.out.println("Main.main() " + treatment.getType());
                     break;
             }
-
         }
 
         List<VaultEntry> basals = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
@@ -76,19 +77,58 @@ String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390
         }
         entries.sort(new SortVaultEntryByDate());
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 3 * 60 * 60000, 1 * insDuration * 60000, 4); //Integer.MAX_VALUE
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./basal.csv"))) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("t,x\n");
+            for (VaultEntry ve : basals) {
+                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
+            }
+            writer.write(sb.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./bolus.csv"))) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("t,x\n");
+            for (VaultEntry ve : bolusTreatment) {
+                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
+            }
+            writer.write(sb.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./entries.csv"))) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("t,x\n");
+            for (VaultEntry ve : entries) {
+                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
+            }
+            writer.write(sb.toString());
+        } catch (IOException ex) {
+            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 6 * 60 * 60000, INSULIN_DURATION * 60000, 10); //Integer.MAX_VALUE
 
 //        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
 //        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
-        Algorithm algo = new LMAlgo(absorptionTime, insDuration, profile);
+        Algorithm algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
 
         int i = 0;
 
-        CGMPlotter cgpm = new CGMPlotter(true);
+        CGMPlotter cgpm = new CGMPlotter(true, true);
 
+        long TIME_MAX_GAP = 15 * 60000;   // 15 minutes
         for (Snippet s : snippets) {
-
+            if (s.getiExceededGap() > s.getEntries().size() / 10) {
+                Logger.getLogger(Main.class.getName()).log(Level.WARNING, "Skipped Snippet with {0} gaps.", s.getiExceededGap());
+                continue;
+            }
+            if (s.getlMaxGap() > TIME_MAX_GAP) {
+                Logger.getLogger(Main.class.getName()).log(Level.WARNING, "Skipped Snippet with gap of {0} min.", s.getlMaxGap() / 60000);
+                continue;
+            }
             algo.setGlucoseMeasurements(s.getEntries());
             algo.setBolusTreatments(s.getBoli());
             algo.setBasalTreatments(s.getBasals());
@@ -97,10 +137,9 @@ String treatmentPath = "/home/anna/Daten/Uni/14. Semester/BP/Dataset_Small/00390
             List<VaultEntry> meals = algo.calculateMeals();
 
             System.out.println("Found meals:" + meals.size());
-           
 
-            cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), insDuration,
-                    profile.getCarbratio(), absorptionTime);
+            cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), INSULIN_DURATION,
+                    profile.getCarbratio(), ABSORBTION_TIME);
         }
 
         cgpm.showAll();

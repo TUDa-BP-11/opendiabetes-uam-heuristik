@@ -5,10 +5,12 @@ import de.opendiabetes.vault.container.VaultEntry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Snippet {
 
-    public static final long TIME_MAX_GAP = 5 * 60 * 1000;   // 5 minutes
+    public static final long TIME_MAX_GAP = 10 * 60 * 1000;   // 5 minutes
     public static final long TIME_MIN = 2 * 60 * 60 * 1000;  // 2 hours
 
     private long first;
@@ -18,11 +20,14 @@ public class Snippet {
     private final List<VaultEntry> boli = new ArrayList<>();
     private final List<VaultEntry> basals = new ArrayList<>();
 
+    private int iExceededGap = 0;
+    private long lMaxGap = 0;
+
     public static List<Snippet> getSnippets(List<VaultEntry> entries,
             List<VaultEntry> boli,
             List<VaultEntry> basals,
-            long snippetLength, // 3h bg
-            long treatmentsInAdvance, // plus 3h vorher noch insulin => 6h gesamt, die letzten 3h bg werden berücksichtigt
+            long snippetLength, // 6h bg
+            long insulinDuration, // 3h insulin => 6h gesamt, die letzten 3h bg werden berücksichtigt
             int n_snippets) { // so viele snippets
         List<Snippet> snippets = new ArrayList<>();
 
@@ -37,9 +42,6 @@ public class Snippet {
         System.out.println("Found " + boli.size() + " boli in source");
         System.out.println("Found " + basals.size() + " basals in source");
 
-//        for (int i = 0; i < Math.min(5, entries.size()); i++){
-//            System.out.println(entries.get(i).getTimestamp());
-//        }
         Snippet current = new Snippet();
         for (VaultEntry e : entries) {
             if (current.isValid(e, snippetLength)) {
@@ -53,6 +55,7 @@ public class Snippet {
                 }
             } else {
                 if (current.isFull()) {
+                    Logger.getLogger(Snippet.class.getName()).log(Level.WARNING, "Snippet length only {0} min.", TIME_MIN / 60000);
                     snippets.add(current);
                 }
                 if (snippets.size() == n_snippets) {
@@ -64,16 +67,25 @@ public class Snippet {
                 }
             }
         }
-        for (VaultEntry e : boli) {
-            for (Snippet s : snippets) {
-                s.addBolus(e, treatmentsInAdvance);
+        for (Snippet s : snippets) {
+            for (VaultEntry e : boli) {
+                if (s.isInsulinLate(e)) {
+                    break;
+                }
+                if (s.isInsulinAfterFirst(e)) {
+                    s.addBolus(e);
+                }
+            }
+            for (VaultEntry e : basals) {
+                if (s.isInsulinLate(e)) {
+                    break;
+                }
+                if (s.isInsulinAfterFirst(e)) {
+                    s.addBasal(e);
+                }
             }
         }
-        for (VaultEntry e : basals) {
-            for (Snippet s : snippets) {
-                s.addBasal(e, treatmentsInAdvance);
-            }
-        }
+
         System.out.println("Created " + snippets.size() + " snippets");
         System.out.println("Current " + current.getEntries().size() + " entries");
         return snippets;
@@ -99,22 +111,39 @@ public class Snippet {
         last = entry.getTimestamp().getTime();
     }
 
-    public void addBasal(VaultEntry entry, long treatmentsInAdvance) {
-        if (entry.getTimestamp().getTime() <= last && first - treatmentsInAdvance <= entry.getTimestamp().getTime()) {
-            basals.add(entry);
-        }
+    public void addBasal(VaultEntry entry) {
+        basals.add(entry);
     }
 
-    public void addBolus(VaultEntry entry, long treatmentsInAdvance) {
-        if (entry.getTimestamp().getTime() <= last && first - treatmentsInAdvance <= entry.getTimestamp().getTime()) {
-            boli.add(entry);
-        }
+    public void addBolus(VaultEntry entry) {
+        boli.add(entry);
+    }
+
+    public boolean isInsulinLate(VaultEntry entry) {
+        return entry.getTimestamp().getTime() > last;
+    }
+
+    public boolean isInsulinAfterFirst(VaultEntry entry) {
+        return entry.getTimestamp().getTime() >= first;
     }
 
     public boolean isValid(VaultEntry entry, long snippetLength) {
-        return entries.isEmpty()
-                || (entry.getTimestamp().getTime() - last <= TIME_MAX_GAP
-                && entry.getTimestamp().getTime() - first <= snippetLength);
+        long lGap = entry.getTimestamp().getTime() - last;
+        if (entries.isEmpty()) {
+            return true;
+        }
+        if (entry.getTimestamp().getTime() - first <= snippetLength) {
+            if (lGap > TIME_MAX_GAP) {
+                iExceededGap++;
+                Logger.getLogger(Snippet.class.getName()).log(Level.WARNING, "Time Gap of {0} min.", lGap / 60000);
+                return false;
+            }
+            if (lGap > lMaxGap) {
+                lMaxGap = lGap;
+            }
+            return true;
+        }
+        return false;
     }
 
     public boolean isFull() {
@@ -179,4 +208,31 @@ public class Snippet {
 //            }
 //        }
 //    }
+    /**
+     * @return the first
+     */
+    public long getFirst() {
+        return first;
+    }
+
+    /**
+     * @return the last
+     */
+    public long getLast() {
+        return last;
+    }
+
+    /**
+     * @return the iExceededGap
+     */
+    public int getiExceededGap() {
+        return iExceededGap;
+    }
+
+    /**
+     * @return the lMaxGap
+     */
+    public long getlMaxGap() {
+        return lMaxGap;
+    }
 }
