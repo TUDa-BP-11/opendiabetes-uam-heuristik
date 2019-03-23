@@ -159,12 +159,10 @@ public class Main {
                         if (file.exists() && !file.delete())
                             throw new NightscoutIOException("Could not delete old file: " + path);
 
-                        try {
-                            JsonWriter writer = new JsonWriter(new FileWriter(file));
+                        try (JsonWriter writer = new JsonWriter(new FileWriter(file))){
                             writer.setIndent("  ");
                             Gson gson = new Gson();
                             gson.toJson(sync.getMissing(), writer);
-                            writer.close();
                         } catch (IOException e) {
                             LOGGER.log(Level.SEVERE, e, e::getMessage);
                         }
