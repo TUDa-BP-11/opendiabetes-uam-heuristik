@@ -77,36 +77,63 @@ public class NSApi {
         return format;
     }
 
+    /**
+     * The used rest api creates a background event loop and the application won't be able to exit until all threads
+     * are closed using this method.
+     *
+     * @throws NightscoutIOException if an exception occurs while closing the event loop.
+     */
+    public static void shutdown() throws NightscoutIOException {
+        try {
+            Unirest.shutdown();
+        } catch (IOException e) {
+            throw new NightscoutIOException("Could not shut down api", e);
+        }
+    }
+
     static {
         LOGGER = Logger.getLogger(NSApi.class.getName());
         Handler handler = new ConsoleHandler();
         handler.setFormatter(new DefaultFormatter());
         LOGGER.addHandler(handler);
         LOGGER.setUseParentHandlers(false);
+
+        Unirest.setDefaultHeader("accept", "application/json");
+        Unirest.setDefaultHeader("content-type", "application/json");
     }
 
     private String host;
     private String secret;
 
     /**
-     * Constructs a new NighScout API instance. Connects to the specified host and port, using the given token for all queries
+     * Constructs a new NighScout API instance. Connects to the specified host and port without an api secret.
+     *
+     * @param host Host to connect to
+     */
+    public NSApi(String host) {
+        this(host, null);
+    }
+
+    /**
+     * Constructs a new NighScout API instance. Connects to the specified host and port, using the given api secret for all queries
      *
      * @param host   Host to connect to
      * @param secret Your API-Secret
      */
     public NSApi(String host, String secret) {
         this.host = host + "/api/v1/";
-        this.secret = DigestUtils.sha1Hex(secret);
-        Unirest.setDefaultHeader("accept", "application/json");
-        Unirest.setDefaultHeader("content-type", "application/json");
-        Unirest.setDefaultHeader("API-SECRET", this.secret);
+        if (secret != null)
+            this.secret = DigestUtils.sha1Hex(secret);
     }
 
     /**
-     * Closes the connection to the NightScout API
+     * The used rest API creates a background event loop and the application won't be able to exit until all threads
+     * are closed using this method.
      *
      * @throws IOException if an exception occurs while closing the connection
+     * @deprecated use {@link NSApi#shutdown()} instead.
      */
+    @Deprecated
     public void close() throws IOException {
         Unirest.shutdown();
     }
@@ -143,7 +170,7 @@ public class NSApi {
         try {
             response = request.asBinary();
         } catch (UnirestException e) {
-            throw new NightscoutIOException("Exception while sending request to the server", e);
+            throw new NightscoutIOException(e.getMessage());
         }
         if (response.getStatus() != 200)
             throw new NightscoutServerException(response);
@@ -171,7 +198,10 @@ public class NSApi {
     // GET
 
     private HttpRequest get(String path) {
-        return Unirest.get(host + path);
+        HttpRequest request = Unirest.get(this.host + path);
+        if (this.secret != null)
+            request.header("API-SECRET", this.secret);
+        return request;
     }
 
     /**
@@ -341,7 +371,10 @@ public class NSApi {
     // POST
 
     private HttpRequestWithBody post(String path) {
-        return Unirest.post(host + path);
+        HttpRequestWithBody request = Unirest.post(this.host + path);
+        if (this.secret != null)
+            request.header("API-SECRET", this.secret);
+        return request;
     }
 
     public PostBuilder createPost(String path) {
@@ -417,7 +450,10 @@ public class NSApi {
     // DELETE
 
     private HttpRequest delete(String path, String id) {
-        return Unirest.delete(host + path + "/" + id);
+        HttpRequest request = Unirest.delete(this.host + path + "/" + id);
+        if (this.secret != null)
+            request.header("API-SECRET", this.secret);
+        return request;
     }
 
     /**

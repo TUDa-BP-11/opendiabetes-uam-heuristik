@@ -5,7 +5,6 @@ import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
-import java.io.IOException;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -122,8 +121,8 @@ public class Main {
             }
         }
         try {
-            synchronizer.close();
-        } catch (IOException e) {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
         LOGGER.log(Level.INFO, "Done!");
