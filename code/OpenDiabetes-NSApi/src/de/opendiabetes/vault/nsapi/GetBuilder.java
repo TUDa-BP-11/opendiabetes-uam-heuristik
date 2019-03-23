@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * Constructs a GET request to the Nightscout server.
+ * Builder for HTTP GET requests
  */
 public class GetBuilder {
     private final static NightscoutImporter IMPORTER = new NightscoutImporter();

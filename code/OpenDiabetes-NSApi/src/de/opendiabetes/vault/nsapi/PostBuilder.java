@@ -4,6 +4,9 @@ import com.mashape.unirest.request.HttpRequestWithBody;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
+/**
+ * Builder for HTTP POST requests
+ */
 public class PostBuilder {
     private final NSApi api;
     private HttpRequestWithBody request;

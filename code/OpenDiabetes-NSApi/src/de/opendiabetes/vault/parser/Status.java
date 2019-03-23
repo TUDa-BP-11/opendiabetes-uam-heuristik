@@ -9,6 +9,7 @@ public class Status {
     private String version;
     private String serverTime;
     private boolean apiEnabled;
+    private Settings settings;
 
     public String getStatus() {
         return status;
@@ -35,5 +36,13 @@ public class Status {
 
     public boolean isApiEnabled() {
         return apiEnabled;
+    }
+
+    public String[] getPlugins() {
+        return settings.enable;
+    }
+
+    private class Settings {
+        private String[] enable;
     }
 }

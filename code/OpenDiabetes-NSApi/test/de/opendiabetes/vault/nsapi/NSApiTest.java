@@ -79,7 +79,17 @@ class NSApiTest {
             ZonedDateTime bt = ZonedDateTime.from(formatter.parse(b.get(dateField).getAsString()));
             Duration between = Duration.between(at, bt).abs();
             if (between.getSeconds() < 60 && at.get(ChronoField.MINUTE_OF_HOUR) == at.get(ChronoField.MINUTE_OF_HOUR)) {
-                System.err.println("Found two objects in same minute: " + formatter.format(at));
+                System.err.print("Found two objects in same minute: " + formatter.format(at));
+
+                if (b.has("_id")) {
+                    System.err.print(". Trying to delete second object...");
+                    try {
+                        api.createDelete(apiPath, b.get("_id").getAsString()).getRaw();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.err.println();
             }
         }
         System.err.println();

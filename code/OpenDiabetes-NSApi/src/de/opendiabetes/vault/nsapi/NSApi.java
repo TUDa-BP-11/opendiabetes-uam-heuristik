@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
@@ -39,6 +41,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Implementation of the REST API provided by Nightscout
+ */
 public class NSApi {
     public final static Logger LOGGER;
     /**
@@ -377,6 +382,12 @@ public class NSApi {
         return request;
     }
 
+    /**
+     * Creates a {@link PostBuilder} for sending POST requests to the Nightscout server.
+     *
+     * @param path the API path used for this request.
+     * @return a new {@link PostBuilder}
+     */
     public PostBuilder createPost(String path) {
         return new PostBuilder(this, post(path));
     }
@@ -454,6 +465,20 @@ public class NSApi {
         if (this.secret != null)
             request.header("API-SECRET", this.secret);
         return request;
+    }
+
+    /**
+     * Creates a {@link GetBuilder} for sending DELETE requests to the Nightscout server.
+     * <br><br>
+     * <b style="color: red">WARNING EXPERIMENTAL!</b>
+     * <br><br>
+     * Use the {@link GetBuilder#getRaw() getRaw()} method of the returned builder to send the request and get the response as a JSON object.
+     *
+     * @param path the API path used for this request.
+     * @return a new {@link PostBuilder}
+     */
+    public GetBuilder createDelete(String path, String id) {
+        return new GetBuilder(this, delete(path, id));
     }
 
     /**
@@ -540,6 +565,13 @@ public class NSApi {
             LOGGER.log(Level.SEVERE, "Nightscout api is not enabled:\n%s", printStatus(status));
             return false;
         }
+        Duration timeDistance = Duration.between(Instant.parse(status.getServerTime()), Instant.now());
+        if (timeDistance.abs().getSeconds() > 1) {
+            if (timeDistance.isNegative())
+                LOGGER.log(Level.WARNING, "Nightscout server time is %d.%d second in the future!", new Object[]{-timeDistance.getSeconds() - 1, timeDistance.getNano() / 1000000});
+            else
+                LOGGER.log(Level.WARNING, "Nightscout server time is %d.%d seconds behind!", new Object[]{timeDistance.getSeconds(), timeDistance.getNano() / 1000000});
+        }
         return true;
     }
 
@@ -567,6 +599,7 @@ public class NSApi {
                 + "version:       " + status.getVersion() + "\n"
                 + "server status: " + status.getStatus() + "\n"
                 + "api enabled:   " + status.isApiEnabled() + "\n"
-                + "server time:   " + status.getServerTime();
+                + "server time:   " + status.getServerTime() + "\n"
+                + "plugins:       " + String.join(", ", status.getPlugins()) + "\n";
     }
 }

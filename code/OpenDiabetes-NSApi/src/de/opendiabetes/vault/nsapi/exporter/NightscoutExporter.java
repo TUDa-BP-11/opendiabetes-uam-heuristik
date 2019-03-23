@@ -20,6 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Exports {@link VaultEntry}s as JSON objects that can be uploaded to a Nightscout server.
+ */
 public class NightscoutExporter extends Exporter {
     private final NightscoutExporterOptions options;
     private final Gson gson;

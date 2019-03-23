@@ -23,6 +23,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
+/**
+ * Imports JSON objects from a Nightscout server as {@link VaultEntry}s.
+ */
 public class NightscoutImporter extends Importer {
     private final NightscoutImporterOptions options;
     private final JsonParser json;
