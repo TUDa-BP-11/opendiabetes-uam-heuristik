@@ -167,15 +167,24 @@ class NSApiTest {
             }));
         });
 
+        // for each day in the above entries get a slice
         for (Map.Entry<LocalDate, List<VaultEntry>> entry : entriesByDay.entrySet()) {
             LocalDate date = entry.getKey();
             List<VaultEntry> list = entry.getValue();
+            // get the slice with a regex for the hours of the entries of the day
             int end = list.get(0).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
             int start = list.get(list.size() - 1).getTimestamp().toInstant().atZone(ZoneId.of("UTC")).get(ChronoField.HOUR_OF_DAY);
             String regex = String.format("T{%02d..%02d}", start, end);
             List<VaultEntry> slice = api.getSlice("entries", "dateString", "sgv", date.toString(), regex)
                     .count(list.size() + 10)
                     .getVaultEntries();
+            // slice has to be a superset of list (may have more entries in the beginning or at the end)
+            assertTrue(slice.size() >= list.size());
+            // restrict to sublist of slice if necessary
+            if (slice.size() > list.size()) {
+                int i = slice.indexOf(list.get(0));
+                slice = slice.subList(i, i + list.size());
+            }
             assertIterableEquals(list, slice);
         }
     }
