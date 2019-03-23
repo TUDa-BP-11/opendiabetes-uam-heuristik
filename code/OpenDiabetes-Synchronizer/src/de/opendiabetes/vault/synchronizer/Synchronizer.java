@@ -8,7 +8,6 @@ import de.opendiabetes.vault.nsapi.NSApiTools;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.logging.Level;
@@ -114,10 +113,5 @@ public class Synchronizer {
             write.createPost(synchronizable.getApiPath())
                     .setBody(array.toString())
                     .send();
-    }
-
-    public void close() throws IOException {
-        read.close();
-        write.close();
     }
 }

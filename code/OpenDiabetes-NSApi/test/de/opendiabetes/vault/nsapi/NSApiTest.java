@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.nsapi;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
@@ -15,9 +16,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -33,7 +34,7 @@ class NSApiTest {
     private static Random random;
 
     @BeforeAll
-    static void setUp() {
+    static void setUp() throws NightscoutIOException, NightscoutServerException {
         String host = System.getenv("NS_HOST");
         String secret = System.getenv("NS_APISECRET");
         if (host == null)
@@ -45,11 +46,48 @@ class NSApiTest {
 
         api = new NSApi(host, secret);
         random = new Random();
+
+        checkDatabase("entries", "dateString", NSApi.DATETIME_FORMATTER_ENTRY);
+        checkDatabase("treatments", "created_at", NSApi.DATETIME_FORMATTER_TREATMENT);
+    }
+
+    static void checkDatabase(String apiPath, String dateField, DateTimeFormatter formatter) throws NightscoutIOException, NightscoutServerException {
+        JsonArray all = new JsonArray();
+        JsonArray fetched = null;
+        GetBuilder getBuilder;
+        String latestString = formatter.format(ZonedDateTime.now());
+        String oldestString = formatter.format(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC")));
+        do {
+            getBuilder = api.createGet(apiPath).count(200).find(dateField).gte(oldestString);
+            if (fetched == null)    // first fetch: lte, following fetches: lt
+                getBuilder.find(dateField).lte(latestString);
+            else getBuilder.find(dateField).lt(latestString);
+            fetched = getBuilder.getRaw().getAsJsonArray();
+            if (fetched.size() > 0) {
+                all.addAll(fetched);
+                latestString = fetched.get(fetched.size() - 1).getAsJsonObject().get(dateField).getAsString();
+            }
+        } while (fetched.size() > 0);
+
+        System.err.println("Checking api path " + apiPath + " for multiple objects in same minute...");
+        if (all.size() <= 1)
+            return;
+        for (int i = 0; i < all.size() - 1; i++) {
+            JsonObject a = all.get(i).getAsJsonObject();
+            JsonObject b = all.get(i + 1).getAsJsonObject();
+            ZonedDateTime at = ZonedDateTime.from(formatter.parse(a.get(dateField).getAsString()));
+            ZonedDateTime bt = ZonedDateTime.from(formatter.parse(b.get(dateField).getAsString()));
+            Duration between = Duration.between(at, bt).abs();
+            if (between.getSeconds() < 60 && at.get(ChronoField.MINUTE_OF_HOUR) == at.get(ChronoField.MINUTE_OF_HOUR)) {
+                System.err.println("Found two objects in same minute: " + formatter.format(at));
+            }
+        }
+        System.err.println();
     }
 
     @AfterAll
-    static void tearDown() throws IOException {
-        api.close();
+    static void tearDown() throws NightscoutIOException {
+        NSApi.shutdown();
     }
 
     /**
@@ -300,21 +338,12 @@ class NSApiTest {
     void testDataCursor(int minutesPast) throws NightscoutIOException, NightscoutServerException {
         ZonedDateTime latest = ZonedDateTime.now().minus(minutesPast, ChronoUnit.MINUTES);
         ZonedDateTime oldest = ZonedDateTime.parse("2017-01-01T00:00:00.000Z");
-        int batchSize = 20 + (int) (Math.random() * 100);
+        int batchSize = 20 + random.nextInt(100);
         List<VaultEntry> expected = api.getEntries(latest, oldest, batchSize);
         DataCursor cursor = new DataCursor(api, "entries", "dateString", latest, oldest, batchSize / 2);
         List<JsonObject> actual = new ArrayList<>();
         while (cursor.hasNext()) {
             actual.add(cursor.next());
-        }
-        if (expected.size() != actual.size()) {
-            Set<Date> dates = new HashSet<>();
-            for (VaultEntry e : expected) {
-                if (!dates.add(e.getTimestamp()))
-                    System.out.println("Found two entries at the same date: " + e.getTimestamp());
-            }
-
-            fail();
         }
         assertEquals(expected.size(), actual.size());
     }

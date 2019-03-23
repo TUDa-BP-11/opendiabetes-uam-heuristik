@@ -15,6 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import java.time.temporal.TemporalAccessor;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -176,8 +177,8 @@ public class Main {
             }
         }
         try {
-            synchronizer.close();
-        } catch (IOException e) {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
         LOGGER.log(Level.INFO, "Done!");
