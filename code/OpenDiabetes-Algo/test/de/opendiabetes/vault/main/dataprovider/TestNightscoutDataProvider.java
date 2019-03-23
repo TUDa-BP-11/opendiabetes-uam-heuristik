@@ -1,4 +1,4 @@
-package de.opendiabetes.vault.main;
+package de.opendiabetes.vault.main.dataprovider;
 
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;

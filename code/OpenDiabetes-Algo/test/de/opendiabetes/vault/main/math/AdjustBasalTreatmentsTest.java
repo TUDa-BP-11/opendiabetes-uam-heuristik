@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AdjustBasalTreatmentsTest {
 
@@ -46,10 +45,12 @@ public class AdjustBasalTreatmentsTest {
     @Test
     public void testRandomValues() {
         List<VaultEntry> testList = new ArrayList<>();
+        List<Date> dateList = new ArrayList<>();
         Random random = new Random();
         int size = 1 + random.nextInt(10);
         for (int i = 0; i < size; i++) {
             Date date = new Date(i * 20 * ONE_MINUTE);
+            dateList.add(date);
             VaultEntry entry = new VaultEntry(VaultEntryType.BASAL_MANUAL, date, random.nextDouble() * 100, 60);
             testList.add(entry);
         }
@@ -59,21 +60,21 @@ public class AdjustBasalTreatmentsTest {
         for (int i = 0; i < size - 1; i++) {
             assertEquals(testList.get(i).getValue2() * 20 / 60, resultList.get(i).getValue2());
             assertEquals(testList.get(i).getValue() * 20 / 60, resultList.get(i).getValue(), DELTA);
-            assertEquals(testList.get(i).getTimestamp().getTime(), resultList.get(i).getTimestamp().getTime());
         }
         assertEquals(testList.get(size - 1).getValue2(), resultList.get(size - 1).getValue2());
         assertEquals(testList.get(size - 1).getValue(), resultList.get(size - 1).getValue(), DELTA);
-        assertEquals(testList.get(size - 1).getTimestamp().getTime(), resultList.get(size - 1).getTimestamp().getTime());
     }
 
     @Test
     public void testRandomDuration() {
         List<VaultEntry> testList = new ArrayList<>();
+        List<Date> dateList = new ArrayList<>();
         Random random = new Random();
         int size = 1 + random.nextInt(30);
         Date date = new Date(0);
         for (int i = 0; i < size; i++) {
             date = new Date(date.getTime() + ((1 + random.nextInt(12)) * 5 * ONE_MINUTE)); // in steps of 5 min
+            dateList.add(date);
             VaultEntry entry = new VaultEntry(VaultEntryType.BASAL_MANUAL, date, random.nextDouble() * 100, random.nextInt(6) * 10);
             testList.add(entry);
         }
@@ -90,32 +91,9 @@ public class AdjustBasalTreatmentsTest {
                 assertEquals(testList.get(i).getValue2(), resultList.get(i).getValue2());
                 assertEquals(testList.get(i).getValue(), resultList.get(i).getValue(), DELTA);
             }
-            assertEquals(testList.get(i).getTimestamp().getTime(), resultList.get(i).getTimestamp().getTime());
         }
         assertEquals(testList.get(size - 1).getValue2(), resultList.get(size - 1).getValue2());
         assertEquals(testList.get(size - 1).getValue(), resultList.get(size - 1).getValue(), DELTA);
-        assertEquals(testList.get(size - 1).getTimestamp().getTime(), resultList.get(size - 1).getTimestamp().getTime());
-    }
 
-    @Test
-    public void testExceptions() {
-        //not sorted
-        List<VaultEntry> testList = new ArrayList<>();
-        testList.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(1000000), 2, 30));
-        testList.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(0), 2, 30));
-
-        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.adjustBasalTreatments(testList));
-
-        testList.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(2000000), 2, 30));
-        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.adjustBasalTreatments(testList));
-
-        //wrong type
-        List<VaultEntry> testList2 = new ArrayList<>();
-        testList2.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(0), 2, 30));
-
-        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.adjustBasalTreatments(testList2));
-
-        testList2.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(2000000), 2, 30));
-        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.adjustBasalTreatments(testList2));
     }
 }

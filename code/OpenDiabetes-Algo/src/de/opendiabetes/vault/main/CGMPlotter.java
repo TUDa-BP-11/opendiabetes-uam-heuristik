@@ -6,13 +6,10 @@ import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.main.util.Snippet;
 import de.opendiabetes.vault.container.VaultEntry;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

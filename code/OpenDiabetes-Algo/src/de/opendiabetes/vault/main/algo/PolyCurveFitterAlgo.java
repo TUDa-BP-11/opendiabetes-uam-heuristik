@@ -90,22 +90,24 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 }
                 // lsq = [c, b, a]
                 double[] lsq = pcf.fit(observations);
-                assert (lsq[2] > 0);
+                if (lsq[2] > 0) {
+
 //                double error = lsq[0] - pow(lsq[1], 2) / (4 * lsq[2]);
-                estimatedTime = (long) (-lsq[1] / (2 * lsq[2]));
-                double estimatedCarbs = lsq[2] * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
+                    estimatedTime = (long) (-lsq[1] / (2 * lsq[2]));
+                    double estimatedCarbs = lsq[2] * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
 //                if (currentTime - estimatedTime < absorptionTime / 2
 //                        && estimatedTime < lastTime) {
 //                    if (estimatedCarbs > 0
 //                            && estimatedCarbs < 200 // && error < 10
 //                            ) {
-                estimatedTimeAccepted = estimatedTime;
-                meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                        TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                        estimatedCarbs);
-                mealTreatments.add(meal);
+                    estimatedTimeAccepted = estimatedTime;
+                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                            estimatedCarbs);
+                    mealTreatments.add(meal);
 //                    }
 //                }
+                }
             }
             observations.clear();
         }

@@ -134,7 +134,7 @@ public abstract class Algorithm {
         this.setProfile(dataProvider.getProfile());
         this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
         this.setBolusTreatments(dataProvider.getBolusTreatments());
-        this.setBasalTreatments(dataProvider.getBasalTratments());
+        this.setBasalTreatments(dataProvider.getBasalDifferences());
     }
 
     /**

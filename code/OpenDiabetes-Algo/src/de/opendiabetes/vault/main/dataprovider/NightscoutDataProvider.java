@@ -29,7 +29,9 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
     private NSApi api;
     private List<VaultEntry> entries;
     private List<VaultEntry> treatments;
-    private List<VaultEntry> basals;
+    private List<VaultEntry> bolusTreatments;
+    private List<VaultEntry> basalDiffs;
+    private List<VaultEntry> rawBasals;
     private Profile profile;
 
     /**
@@ -146,24 +148,34 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
     public List<VaultEntry> getBolusTreatments() {
         if (treatments == null)
             fetchTreatments();
-        return treatments.stream()
-                .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
-                .sorted(Comparator.comparing(VaultEntry::getTimestamp))
-                .collect(Collectors.toList());
+        if(bolusTreatments == null)
+            bolusTreatments = treatments.stream()
+                    .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
+                    .sorted(Comparator.comparing(VaultEntry::getTimestamp))
+                    .collect(Collectors.toList());
+        return bolusTreatments;
     }
 
     @Override
-    public List<VaultEntry> getBasalTratments() {
+    public List<VaultEntry> getRawBasalTreatments() {
         if (treatments == null)
             fetchTreatments();
-        if (basals == null) {
-            List<VaultEntry> list = treatments.stream()
+        if(rawBasals == null){
+            rawBasals =  treatments.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
-            basals = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(list), getProfile());
         }
-        return basals;
+
+        return null;
+    }
+
+    @Override
+    public List<VaultEntry> getBasalDifferences() {
+        if (rawBasals == null || basalDiffs == null){
+            basalDiffs = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(getRawBasalTreatments()), getProfile());
+        }
+        return basalDiffs;
     }
 
     @Override

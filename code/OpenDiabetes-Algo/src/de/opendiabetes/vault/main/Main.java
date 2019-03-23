@@ -1,315 +1,319 @@
 package de.opendiabetes.vault.main;
 
+import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.main.algo.Algorithm;
-import de.opendiabetes.vault.main.algo.MinimumAlgo;
+import de.opendiabetes.vault.main.algo.*;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
-import de.opendiabetes.vault.main.dataprovider.DemoDataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.NSApiTools;
+import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
+import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
+import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.logging.Level;
 
-import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
+import static de.opendiabetes.vault.nsapi.Main.*;
 
 public class Main {
-    public static void main(String[] args) {
-        // Main control
-        Properties config = null;
-        String dataProviderName = "demo";
-        String algorithmName = "demo";
+    // All parameters
+    //Data Source
+    private static final Parameter P_HOST = new FlaggedOption("host")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('h')
+            .setLongFlag("host")
+            .setHelp("Your Nightscout host URL. Make sure to include the port.");
+    private static final Parameter P_SECRET = new FlaggedOption("secret")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('s')
+            .setLongFlag("secret")
+            .setHelp("Your Nightscout API secret.");
+    private static final Parameter P_ENTRIES_FILE = new FlaggedOption("entries")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('e')
+            .setLongFlag("entries")
+            .setHelp("Path to file with the blood glucose values");
+    private static final Parameter P_TREATMENTS_FILE = new FlaggedOption("treatments")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('f')
+            .setLongFlag("treatments")
+            .setHelp("File with the basal and bolus insulin treatments");
+    private static final Parameter P_PROFILE_FILE = new FlaggedOption("profile")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('p')
+            .setLongFlag("profile")
+            .setHelp("Path to a nightscout profile");
+    //Algoorithm Parameters
+    private static final Parameter P_ALGO = new FlaggedOption("algorithm")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('a')
+            .setDefault("LM")
+            .setRequired(true)
+            .setLongFlag("algorithm")
+            .setHelp("Algorithm that should be used");
+    private static final Parameter P_ABSORPTION_TIME = new FlaggedOption("absorptionTime")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setShortFlag('t')
+            .setLongFlag("absorption-time")
+            .setRequired(true)
+            .setDefault("120")
+            .setHelp("Time to absorb a meal in minutes");
+    private static final Parameter P_INSULIN_DURATION = new FlaggedOption("insDuration")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setShortFlag('i')
+            .setLongFlag("insulin-duration")
+            .setRequired(true)
+            .setDefault("180")
+            .setHelp("Duration of used Insulin");
+    //Output
+    private static final Parameter P_TARGET_HOST = new FlaggedOption("target-host")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('H')
+            .setLongFlag("target-host")
+            .setHelp("URL of the Nightscout server that you want to upload meals to. Make sure to include the port.");
+    private static final Parameter P_TARGET_SECRET = new FlaggedOption("target-secret")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('S')
+            .setLongFlag("target-secret")
+            .setHelp("API secret of the target Nightscout server.");
+    private static final Parameter P_OUTPUT_FILE = new FlaggedOption("output-file")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('o')
+            .setLongFlag("output-file")
+            .setHelp("File where the meals should saved in");
+    private static final Parameter P_CONSOLE = new Switch("console")
+            .setShortFlag('c')
+            .setLongFlag("console")
+            .setHelp("Prints the result on the console");
+    private static final Parameter P_PLOT = new Switch("plot")
+            .setLongFlag("plot")
+            .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
+    //Options and tuning
+    private static final Parameter P_OVERWRITE_OUTPUT = new Switch("overwrite")
+            .setLongFlag("overwrite")
+            .setHelp("Overwrite existing file");
+    private static final Parameter P_UPLOAD_ALL = new Switch("upload-all")
+            .setLongFlag("upload-all")
+            .setHelp("Upload meals, bg-values, bolus and basal treatments");
+    private static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("batch-size")
+            .setDefault("100")
+            .setHelp("How many entries should be loaded at once.");
+    private static final Parameter P_LATEST = new FlaggedOption("latest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("latest")
+            .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+            .setHelp("The latest date and time to load data");
+    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("oldest")
+            .setDefault("1970-01-01T00:00:00.000Z")
+            .setHelp("The oldest date and time to load data");
+    // Debugging
+    private static final Parameter P_VERBOSE = new Switch("verbose")
+            .setShortFlag('v')
+            .setHelp("Sets logging to verbose");
+    private static final Parameter P_DEBUG = new Switch("debug")
+            .setShortFlag('d')
+            .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
-        // Nightscout data provider
-        String host = null;
-        String secret = null;
-        Integer batchSize = null;
 
-        // Files data provider
-        String base = null;
-        String entries = null;
-        String treatments = null;
-        String profile = null;
-
-        // General
-        TemporalAccessor lastest = null;
-        TemporalAccessor oldest = null;
-        long absorptionTime = 120;
-        long insulinDuration = 180;
-
-        boolean debug = false;
-
-        // Read startup arguments
+    /**
+     * Registers all arguments to the given JSAP instance
+     *
+     * @param jsap your JSAP instance
+     */
+    private static void registerArguments(JSAP jsap) {
         try {
-            for (int i = 0; i < args.length; i++) {
-                String arg = args[i];
-                if (arg.startsWith("-")) {
-                    arg = arg.substring(1);
-                    switch (arg.toLowerCase()) {
-                        case "config":
-                            config = getPropertiesFileValue(arg, args, i);
-                            i++;
-                            break;
-                        case "data":
-                        case "provider":
-                        case "dataprovider":
-                            dataProviderName = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "algo":
-                        case "algorithm":
-                            algorithmName = getValue(arg, args, i);
-                            i++;
-                            break;
+            jsap.registerParameter(P_HOST);
+            jsap.registerParameter(P_SECRET);
+            jsap.registerParameter(P_ENTRIES_FILE);
+            jsap.registerParameter(P_TREATMENTS_FILE);
+            jsap.registerParameter(P_PROFILE_FILE);
 
-                        // Nightscout data provider
-                        case "host":
-                            host = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "secret":
-                        case "apisecret":
-                            secret = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "batch":
-                        case "batchsize":
-                            batchSize = getIntValue(arg, args, i, 1);
-                            i++;
-                            break;
+            jsap.registerParameter(P_ALGO);
+            jsap.registerParameter(P_ABSORPTION_TIME);
+            jsap.registerParameter(P_INSULIN_DURATION);
 
-                        // Files data provider
-                        case "base":
-                            base = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "entries":
-                            entries = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "treatments":
-                            treatments = getValue(arg, args, i);
-                            i++;
-                            break;
-                        case "profile":
-                            profile = getValue(arg, args, i);
-                            i++;
-                            break;
+            jsap.registerParameter(P_TARGET_HOST);
+            jsap.registerParameter(P_TARGET_SECRET);
+            jsap.registerParameter(P_OUTPUT_FILE);
+            jsap.registerParameter(P_CONSOLE);
+            jsap.registerParameter(P_PLOT);
 
-                        // General
-                        case "latest":
-                            lastest = getDateTimeValue(arg, args, i);
-                            i++;
-                            break;
-                        case "oldest":
-                            oldest = getDateTimeValue(arg, args, i);
-                            i++;
-                            break;
-                        case "absorptiontime":
-                            absorptionTime = getLongValue(arg, args, i);
-                            i++;
-                            break;
-                        case "insduration":
-                        case "insulinduration":
-                            insulinDuration = getLongValue(arg, args, i);
-                            i++;
-                            break;
+            jsap.registerParameter(P_OVERWRITE_OUTPUT);
+            jsap.registerParameter(P_UPLOAD_ALL);
+            jsap.registerParameter(P_LATEST);
+            jsap.registerParameter(P_OLDEST);
+            jsap.registerParameter(P_BATCHSIZE);
 
-                        case "debug":
-                            debug = true;
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unknown argument " + arg);
-                    }
-                } else {
-                    throw new IllegalArgumentException("Unknown argument " + arg);
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            LOGGER.log(Level.SEVERE, e, e::getMessage);
+            jsap.registerParameter(P_VERBOSE);
+            jsap.registerParameter(P_DEBUG);
+
+        } catch (JSAPException e) {
+            NSApi.LOGGER.log(Level.SEVERE, "Exception while registering arguments!", e);
+        }
+    }
+
+    public static void main(String[] args) {
+
+        // setup arguments
+        JSAP jsap = new JSAP();
+        registerArguments(jsap);
+        JSAPResult config = initArguments(jsap, args);
+        if (config == null)
+            return;
+
+        // init
+        initLogger(config);
+
+
+        if (someFilesSet(config) && !allFilesSet(config)) {
+            NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
             return;
         }
 
-        // Set up data provider
-        if (config != null) {
-            if (lastest == null && config.getProperty("latest") != null) {
-                lastest = parseDateTime("latest", config.getProperty("latest"));
-            }
-            if (oldest == null && config.getProperty("oldest") != null) {
-                oldest = parseDateTime("oldest", config.getProperty("oldest"));
-            }
+        if (config.contains("host") && allFilesSet(config)) {
+            NSApi.LOGGER.warning("Cannot get input from files and server at the same time!");
+            return;
+        }
+
+        if (!config.contains("host") && !allFilesSet(config)) {
+            NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile\n" +
+                    "or a Nightscout server URL. Make sure to include the port if needed");
+            return;
+        }
+
+        if (config.contains("target-host") && !config.contains("target-secret")) {
+            NSApi.LOGGER.warning("Please specify the API secret of the target Nightscout server.");
+            return;
+        }
+
+        if (!config.contains("target-host") && !config.getBoolean("console") && !config.getBoolean("plot") && config.contains("output-file")) {
+            NSApi.LOGGER.warning("Please specify at least one output for the results.");
+            return;
         }
 
         AlgorithmDataProvider dataProvider;
         try {
-            switch (dataProviderName.toLowerCase()) {
-                case "demo":
-                    dataProvider = new DemoDataProvider();
-                    break;
-                case "file":
-                case "files":
-                    if (config != null) {
-                        if (base == null && config.getProperty("base") != null) {
-                            base = config.getProperty("base");
-                        }
-                        if (entries == null && config.getProperty("entries") != null) {
-                            entries = config.getProperty("entries");
-                        }
-                        if (treatments == null && config.getProperty("treatments") != null) {
-                            treatments = config.getProperty("treatments");
-                        }
-                        if (profile == null && config.getProperty("profile") != null) {
-                            profile = config.getProperty("profile");
-                        }
-                    }
-                    dataProvider = new FileDataProvider(base, entries, treatments, profile, lastest, oldest);
-                    break;
-                case "ns":
-                case "nightscout":
-                    if (config != null) {
-                        if (host == null && config.getProperty("host") != null) {
-                            host = config.getProperty("host");
-                        }
-                        if (secret == null && config.getProperty("secret") != null) {
-                            secret = config.getProperty("secret");
-                        }
-                        if (batchSize == null && config.getProperty("batchsize") != null) {
-                            batchSize = parseInt("batchsize", config.getProperty("batchsize"), 1);
-                        }
-                    }
-                    dataProvider = new NightscoutDataProvider(host, secret, batchSize, lastest, oldest);
-                    break;
-                default:
-                    LOGGER.log(Level.WARNING, "Unknown dataprovider " + dataProviderName);
-                    return;
-            }
-        } catch (DataProviderException | IllegalArgumentException e) {
-            LOGGER.log(Level.SEVERE, e, e::getMessage);
+            dataProvider = chooseDataProvider(config);
+        } catch (DataProviderException e) {
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
-        // Set up algorithm
-        Algorithm algorithm;
-        switch (algorithmName.toLowerCase()) {
-            case "demo":
-                algorithm = new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
-                break;
-            default:
-                LOGGER.log(Level.WARNING, "Unknown algorithm " + algorithmName);
-                return;
+        Algorithm algorithm = chooseAlgorithm(config, dataProvider);
+
+        if (algorithm == null) {
+            return;
         }
 
-        /*
-        algorithm.setAbsorptionTime(absorptionTime);
-        algorithm.setInsulinDuration(insulinDuration);
-        algorithm.setDataProvider(dataProvider);
-        */
-
-        List<VaultEntry> data = new ArrayList<>();
-        data.addAll(new ArrayList<>(dataProvider.getBolusTreatments()));
-        data.addAll(new ArrayList<>(dataProvider.getGlucoseMeasurements()));
-
-        // Start
         List<VaultEntry> meals = algorithm.calculateMeals();
-        LOGGER.log(Level.INFO, "Calculated %d meals:", meals.size());
 
-        // export as csv
-        // data.addAll(meals);
-        // data.sort(Comparator.comparing(VaultEntry::getTimestamp));
-        // data.forEach(e -> Log.logInfo("%s", e.toString()));
-        // exportCsv(data);
-
-        try {
-            dataProvider.close();
-        } catch (DataProviderException e) {
-            LOGGER.log(Level.SEVERE, e, e::getMessage);
+        //Logging
+        int absorptionTime = config.getInt("absorptionTime");
+        int insulinDuration = config.getInt("insDuration");
+        
+        NSApi.LOGGER.log(Level.FINE, "calculated meals");
+        for (VaultEntry meal: meals){
+            NSApi.LOGGER.log(Level.FINE, meal.toString());
         }
-    }
+        //TODO logging error + max time diff etc.
 
-    private static String getValue(String arg, String[] args, int i) {
-        if (i < args.length - 1) {
-            return args[i + 1];
-        }
-        throw new IllegalArgumentException("Missing value for argument " + arg);
-    }
-
-    private static double getDoubleValue(String arg, String[] args, int i) {
-        return parseDouble(arg, getValue(arg, args, i));
-    }
-
-    private static double parseDouble(String arg, String value) {
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
-        }
-    }
-
-    private static long getLongValue(String arg, String[] args, int i) {
-        return parseLong(arg, getValue(arg, args, i));
-    }
-
-    private static long parseLong(String arg, String value) {
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
-        }
-    }
-
-    private static int getIntValue(String arg, String[] args, int i, int min) {
-        return parseInt(arg, getValue(arg, args, i), min);
-    }
-
-    private static int parseInt(String arg, String value, int min) {
-        try {
-            int integer = Integer.parseInt(value);
-            if (integer < min) {
-                throw new IllegalArgumentException("Invalid value for argument " + arg + ", minimum is " + min);
+        //Output
+        if (config.contains("output-file")) {
+            try {
+                NSApiTools.writeDataToFile(config.getString("output-file"), meals, config.getBoolean("overwrite"), new NightscoutExporter());
+            } catch (NightscoutIOException e) {
+                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             }
-            return integer;
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be a number", e);
         }
-    }
 
-    private static TemporalAccessor getDateTimeValue(String arg, String[] args, int i) {
-        return parseDateTime(arg, getValue(arg, args, i));
-    }
-
-    private static DateTimeFormatter parser = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-
-    private static TemporalAccessor parseDateTime(String arg, String value) {
-        try {
-            return parser.parse(value);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid value for argument " + arg + ", has to be in ISO-8601 representation without timezone data", e);
+        if (config.contains("target-host")) {
+            NSApi nsApi = new NSApi(config.getString("target-host"), config.getString("target-secret"));
+            if (nsApi.checkStatusOk()) {
+                try {
+                    int batchsize = config.getInt("batchsize");
+                    nsApi.postTreatments(meals, batchsize);
+                    if (config.getBoolean("upload-all")) {
+                        nsApi.postTreatments(dataProvider.getBolusTreatments(), batchsize);
+                        nsApi.postTreatments(dataProvider.getRawBasalTreatments(), batchsize);
+                        nsApi.postEntries(dataProvider.getGlucoseMeasurements(), batchsize);
+                    }
+                } catch (NightscoutIOException | NightscoutServerException e) {
+                    NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+                }
+            }
         }
-    }
 
-    private static Properties getPropertiesFileValue(String arg, String[] args, int i) {
-        String value = getValue(arg, args, i);
-        try (InputStream input = new FileInputStream(value)) {
-            Properties properties = new Properties();
-            properties.load(input);
-            return properties;
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("Cannot find config file at " + value, e);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("IOException while reading config file: " + e.getMessage(), e);
+        if (config.getBoolean("console")) {
+            for (VaultEntry meal : meals) {
+                System.out.println(meal.toString());
+            }
         }
+
+        if (config.getBoolean("plot")) {
+            CGMPlotter cgpm = new CGMPlotter(false);
+            cgpm.plot(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
+                    dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            cgpm.showAll();
+        }
+
+
+        dataProvider.close();
     }
 
+    private static AlgorithmDataProvider chooseDataProvider(JSAPResult config) {
+        if (config.contains("host")) {
+            return new NightscoutDataProvider(config.getString("host"), config.getString("secret"),
+                    config.getInt("batchsize"), (ZonedDateTime) config.getObject("latest"),
+                    (ZonedDateTime) config.getObject("oldest"));
+        }
+        if (allFilesSet(config)) {
+            return new FileDataProvider(null, config.getString("entries"), config.getString("treatments"),
+                    config.getString("profile"), (ZonedDateTime) config.getObject("latest"),
+                    (ZonedDateTime) config.getObject("oldest"));
+        }
+        return null;
+    }
+
+    private static Algorithm chooseAlgorithm(JSAPResult config, AlgorithmDataProvider dataProvider) {
+
+        int absorptionTime = config.getInt("absorptionTime");
+        int insulinDuration = config.getInt("insDuration");
+
+        switch (config.getString("algorithm").toLowerCase()) {
+            case "lm":
+                return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "min":
+                return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "filter":
+                return new FilterAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "poly":
+                return new PolyCurveFitterAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "qr":
+                return new QRAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "qrdiff":
+                return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
+            default:
+                NSApi.LOGGER.warning("There is no Algorithm with the name: " + config.getString("algorithm"));
+        }
+        return null;
+    }
+
+    private static boolean allFilesSet(JSAPResult config) {
+        return (config.contains("entries") && config.contains("treatments") && config.contains("profile"));
+    }
+
+    private static boolean someFilesSet(JSAPResult config) {
+        return (config.contains("entries") || config.contains("treatments") || config.contains("profile"));
+    }
     /*
     public static void exportCsv(List<VaultEntry> data) {
         if (data == null || data.isEmpty()) {
