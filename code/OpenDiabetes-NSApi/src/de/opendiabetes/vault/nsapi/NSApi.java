@@ -143,7 +143,7 @@ public class NSApi {
         try {
             response = request.asBinary();
         } catch (UnirestException e) {
-            throw new NightscoutIOException("Exception while sending request to the server", e);
+            throw new NightscoutIOException(e.getMessage());
         }
         if (response.getStatus() != 200)
             throw new NightscoutServerException(response);
