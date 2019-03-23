@@ -119,11 +119,13 @@ public class QRAlgo extends Algorithm {
 //                            && estimatedTime < lastTime) {
 //                    if (estimatedCarbs >= 5 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
 //                            ) {
-                    estimatedTimeAccepted = estimatedTime;
-                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                            estimatedCarbs);
-                    mealTreatments.add(meal);
+                    if (estimatedCarbs > 0) {
+                        estimatedTimeAccepted = estimatedTime;
+                        meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                                TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                                estimatedCarbs);
+                        mealTreatments.add(meal);
+                    }
 
 //                        } else if (currentLimit < absorptionTime / 2) {
 //                            currentLimit += absorptionTime / 6;

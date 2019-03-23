@@ -112,7 +112,7 @@ public class QRDiffAlgo extends Algorithm {
 //                    System.out.println("Date: " + new Date(estimatedTime) + " Carbs: " + estimatedCarbs);
                 if (currentTime - estimatedTime < absorptionTime / 2 * 60000
                         && estimatedTime - currentTime < absorptionTime / 2 * 60000) {
-                    if (estimatedCarbs >= 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
+                    if (estimatedCarbs > 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
                             ) {
                         estimatedTimeAccepted = estimatedTime;
                         meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
