@@ -11,3 +11,5 @@ git add --all
 git commit -m "javadoc"
 git merge --no-edit --allow-unrelated-histories -s ours remotes/javadoc/gh-pages
 git push javadoc master:gh-pages
+
+rm -rf .git

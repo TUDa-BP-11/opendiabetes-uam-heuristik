@@ -33,6 +33,7 @@
         <javadoc destdir="${doc.dir}">
             <fileset dir="${engine.dir}/src"/>
             <fileset dir="${nsapi.dir}/src"/>
+            <fileset dir="${algo.dir}/src"/>
             <fileset dir="${synchronizer.dir}/src"/>
         </javadoc>
     </target>
