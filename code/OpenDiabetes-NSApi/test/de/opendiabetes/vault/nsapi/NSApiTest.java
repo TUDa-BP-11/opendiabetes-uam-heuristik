@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NSApiTest {
+
     private static NSApi api;
     private static Random random;
 
@@ -36,12 +37,15 @@ class NSApiTest {
     static void setUp() {
         String host = System.getenv("NS_HOST");
         String secret = System.getenv("NS_APISECRET");
-        if (host == null)
+        if (host == null) {
             System.err.println("Environment variable NS_HOST not found!");
-        if (secret == null)
+        }
+        if (secret == null) {
             System.err.println("Environment variable NS_APISECRET not found!");
-        if (host == null || secret == null)
+        }
+        if (host == null || secret == null) {
             fail("");
+        }
         api = new NSApi(host, secret);
         random = new Random();
     }
@@ -55,7 +59,7 @@ class NSApiTest {
      * Creates a supplier that produces dates in descending order.
      *
      * @param start time of first date
-     * @param step  time between dates
+     * @param step time between dates
      */
     private Supplier<Date> createDateSupplier(long start, long step) {
         return new Supplier<Date>() {
@@ -104,9 +108,9 @@ class NSApiTest {
         assertTrue(newEntries.size() >= entries.size());
         if (newEntries.size() > entries.size()) {
             // if more entries are found test them individually
-            for (VaultEntry e : entries) {
+            entries.forEach((e) -> {
                 assertTrue(newEntries.contains(e));
-            }
+            });
         } else {
             // else the collections have to be equal
             assertIterableEquals(entries, newEntries);
@@ -137,9 +141,9 @@ class NSApiTest {
         assertTrue(newTreatments.size() >= treatments.size());
         if (newTreatments.size() > treatments.size()) {
             // if more entries are found test them individually
-            for (VaultEntry e : treatments) {
+            treatments.forEach((e) -> {
                 assertTrue(newTreatments.contains(e));
-            }
+            });
         } else {
             // else the collections have to be equal
             assertIterableEquals(treatments, newTreatments);
@@ -161,8 +165,9 @@ class NSApiTest {
             // for each day in the second list, take all entries
             m2.forEach((date, list) -> m1.compute(date, (k, v) -> {
                 // if the first map already has entries at this date, add them
-                if (v != null)
+                if (v != null) {
                     list.addAll(v);
+                }
                 return list;
             }));
         });
@@ -182,8 +187,8 @@ class NSApiTest {
 
     @ParameterizedTest
     @CsvSource({
-            "entries, sgv",
-            "treatments, "
+        "entries, sgv",
+        "treatments, "
     })
     void testEcho(String storage, String spec) throws NightscoutIOException, NightscoutServerException {
         JsonObject echo = api.getEcho(storage, spec).getRaw().getAsJsonObject();
@@ -307,8 +312,9 @@ class NSApiTest {
         if (expected.size() != actual.size()) {
             Set<Date> dates = new HashSet<>();
             for (VaultEntry e : expected) {
-                if (!dates.add(e.getTimestamp()))
+                if (!dates.add(e.getTimestamp())) {
                     System.out.println("Found two entries at the same date: " + e.getTimestamp());
+                }
             }
 
             fail();
