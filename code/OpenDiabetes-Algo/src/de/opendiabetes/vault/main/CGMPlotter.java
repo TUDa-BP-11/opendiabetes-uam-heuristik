@@ -351,12 +351,12 @@ public class CGMPlotter {
                 }
                 skew /= N;
                 double rms = Math.sqrt(MeanSquareError);
-                System.out.printf("Bias: %.3g%%\n", MeanError);
-                System.out.printf("RootMeanSquareError: %.3g%%\n", rms);
-                System.out.printf("Standard Deviation: %.3g\n", std);
-                System.out.printf("Skewness: %.3g\n", skew);
+                System.out.printf("Bias: %.3g%%%n", MeanError);
+                System.out.printf("RootMeanSquareError: %.3g%%%n", rms);
+                System.out.printf("Standard Deviation: %.3g%n", std);
+                System.out.printf("Skewness: %.3g%n", skew);
 
-                System.out.printf("MaxError: %.3g%%\n", Collections.max(allErrorValues, (Double o1, Double o2) -> {
+                System.out.printf("MaxError: %.3g%%%n", Collections.max(allErrorValues, (Double o1, Double o2) -> {
                     Double result = Math.abs(o1) - Math.abs(o2);
                     return result > 0 ? 1 : result < 0 ? -1 : 0;
                 }));

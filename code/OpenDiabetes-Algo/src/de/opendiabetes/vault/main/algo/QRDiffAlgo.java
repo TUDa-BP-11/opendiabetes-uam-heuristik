@@ -32,7 +32,7 @@ public class QRDiffAlgo extends Algorithm {
         ArrayList<Double> alNkbg;
         ArrayList<Double> alPred;
         ArrayList<Double> albg;
-        ArrayList<Long> alTimes;
+//        ArrayList<Long> alTimes;
         List<VaultEntry> mealTreatments = new ArrayList<>();
 
         VaultEntry meal;
@@ -61,7 +61,7 @@ public class QRDiffAlgo extends Algorithm {
             alNkbg = new ArrayList();
             albg = new ArrayList();
             alPred = new ArrayList();
-            alTimes = new ArrayList();
+//            alTimes = new ArrayList();
             double mse = Double.POSITIVE_INFINITY;
             current = glucose.get(i);
 

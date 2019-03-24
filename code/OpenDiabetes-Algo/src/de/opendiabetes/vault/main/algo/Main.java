@@ -77,36 +77,36 @@ public class Main {
         }
         entries.sort(new SortVaultEntryByDate());
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./basal.csv"))) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("t,x\n");
-            for (VaultEntry ve : basals) {
-                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
-            }
-            writer.write(sb.toString());
-        } catch (IOException ex) {
-            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./bolus.csv"))) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("t,x\n");
-            for (VaultEntry ve : bolusTreatment) {
-                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
-            }
-            writer.write(sb.toString());
-        } catch (IOException ex) {
-            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./entries.csv"))) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("t,x\n");
-            for (VaultEntry ve : entries) {
-                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
-            }
-            writer.write(sb.toString());
-        } catch (IOException ex) {
-            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./basal.csv"))) {
+//            StringBuilder sb = new StringBuilder();
+//            sb.append("t,x\n");
+//            for (VaultEntry ve : basals) {
+//                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
+//            }
+//            writer.write(sb.toString());
+//        } catch (IOException ex) {
+//            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./bolus.csv"))) {
+//            StringBuilder sb = new StringBuilder();
+//            sb.append("t,x\n");
+//            for (VaultEntry ve : bolusTreatment) {
+//                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
+//            }
+//            writer.write(sb.toString());
+//        } catch (IOException ex) {
+//            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./entries.csv"))) {
+//            StringBuilder sb = new StringBuilder();
+//            sb.append("t,x\n");
+//            for (VaultEntry ve : entries) {
+//                sb.append(ve.getTimestamp().getTime()).append(',').append(ve.getValue()).append("\n");
+//            }
+//            writer.write(sb.toString());
+//        } catch (IOException ex) {
+//            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
+//        }
 
         List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 6 * 60 * 60000, INSULIN_DURATION * 60000, 10); //Integer.MAX_VALUE
 

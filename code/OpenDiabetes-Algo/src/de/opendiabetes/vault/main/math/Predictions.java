@@ -230,9 +230,9 @@ public class Predictions {
             dt = times.getEntry(i) - t0;
             if (dt < 0 || dt > absorbtionTime) {
                 cob_dt0[i] = 0;
-            } else if (dt < absorbtionTime / 2) {
+            } else if (dt < absorbtionTime / 2.0) {
                 cob_dt0[i] = -c * dt / absorbtionTime;
-            } else if (dt >= absorbtionTime / 2) {
+            } else if (dt >= absorbtionTime / 2.0) {
                 cob_dt0[i] = c * (dt / absorbtionTime - 1);
             }
         }
