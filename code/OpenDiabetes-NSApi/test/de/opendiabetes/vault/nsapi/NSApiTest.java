@@ -247,6 +247,7 @@ class NSApiTest {
         assertNotNull(profile.getTimezone());
     }
 
+    /*
     @Test
     void testEntriesBetween() throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = api.getEntries()
@@ -290,7 +291,7 @@ class NSApiTest {
         List<VaultEntry> between = api.getTreatments(latest, oldest, treatments.size() / 2);
         // test that exactly 2 entries less are returned (first and last from original request should be missing)
         assertEquals(treatments.size() - 2, between.size());
-    }
+    }*/
 
     @Test
     void test404() {
