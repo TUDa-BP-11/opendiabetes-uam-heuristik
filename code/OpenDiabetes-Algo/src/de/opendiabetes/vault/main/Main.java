@@ -259,7 +259,7 @@ public class Main {
         }
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(false);
+            CGMPlotter cgpm = new CGMPlotter();
             cgpm.plot(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
                     dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
             cgpm.showAll();

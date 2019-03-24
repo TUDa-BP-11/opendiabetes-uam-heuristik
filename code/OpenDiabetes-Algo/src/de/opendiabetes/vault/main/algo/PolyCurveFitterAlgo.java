@@ -39,7 +39,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
         ArrayList<WeightedObservedPoint> observations = new ArrayList<>();
 
         // Optional extension: set initial value to medium sized carbs and no offsets
-        double[] initialValues = {0, 0, 2 * 10 * profile.getSensitivity() / (absorptionTime * profile.getCarbratio())};
+        double[] initialValues = {0, 0, 0};
         pcf = pcf.withStartPoint(initialValues);
         pcf = pcf.withMaxIterations(100);
         VaultEntry meal;
