@@ -167,7 +167,7 @@ public class NightscoutDataProvider implements AlgorithmDataProvider {
                     .collect(Collectors.toList());
         }
 
-        return null;
+        return rawBasals;
     }
 
     @Override
