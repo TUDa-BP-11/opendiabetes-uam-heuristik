@@ -87,10 +87,6 @@ public class Main {
             .setShortFlag('o')
             .setLongFlag("output-file")
             .setHelp("File where the meals should saved in");
-    private static final Parameter P_CONSOLE = new Switch("console")
-            .setShortFlag('c')
-            .setLongFlag("console")
-            .setHelp("Prints the result on the console");
     private static final Parameter P_PLOT = new Switch("plot")
             .setLongFlag("plot")
             .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
@@ -124,6 +120,10 @@ public class Main {
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
+    private static final int MEAL_VALUE_LIMIT = 60;
+    private static final int MAX_TIME_GAP = 15;
+
+
     /**
      * Registers all arguments to the given JSAP instance
      *
@@ -144,7 +144,6 @@ public class Main {
             jsap.registerParameter(P_TARGET_HOST);
             jsap.registerParameter(P_TARGET_SECRET);
             jsap.registerParameter(P_OUTPUT_FILE);
-            jsap.registerParameter(P_CONSOLE);
             jsap.registerParameter(P_PLOT);
 
             jsap.registerParameter(P_OVERWRITE_OUTPUT);
@@ -195,7 +194,7 @@ public class Main {
             return;
         }
 
-        if (!config.contains("target-host") && !config.getBoolean("console") && !config.getBoolean("plot") && config.contains("output-file")) {
+        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
             NSApi.LOGGER.warning("Please specify at least one output for the results.");
             return;
         }
@@ -222,9 +221,17 @@ public class Main {
 
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
         for (VaultEntry meal : meals) {
+            if (meal.getValue() > MEAL_VALUE_LIMIT){
+                //TODO warning msg
+                NSApi.LOGGER.log(Level.WARNING, "there is a meal calculated that is bigger than " + MEAL_VALUE_LIMIT +", please check.");
+            }
             NSApi.LOGGER.log(Level.FINE, meal.toString());
         }
-        //TODO logging error + max time diff etc.
+        long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
+        if(maxTimeGap < MAX_TIME_GAP)
+            NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is " + maxTimeGap + ".");
+            //TODO warning msg
+        else NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is " + maxTimeGap + ".");
 
         //Output
         if (config.contains("output-file")) {
@@ -252,11 +259,11 @@ public class Main {
             }
         }
 
-        if (config.getBoolean("console")) {
-            for (VaultEntry meal : meals) {
-                System.out.println(meal.toString());
-            }
+
+        for (VaultEntry meal : meals) {
+            NSApi.LOGGER.log(Level.INFO, meal.toString());
         }
+
 
         if (config.getBoolean("plot")) {
             CGMPlotter cgpm = new CGMPlotter();
@@ -313,6 +320,24 @@ public class Main {
     private static boolean someFilesSet(JSAPResult config) {
         return (config.contains("entries") || config.contains("treatments") || config.contains("profile"));
     }
+
+    private static long getMaxTimeGap(List<VaultEntry> list){
+        long maxTimeGap = 0;
+        if (list.size() < 2){
+            return maxTimeGap;
+        }
+        VaultEntry current = list.get(0);
+        for (int i = 1; i < list.size(); i++) {
+            VaultEntry next = list.get(i);
+            long timeDiff = next.getTimestamp().getTime() - current.getTimestamp().getTime() / 60000;
+            if (timeDiff > maxTimeGap) {
+                maxTimeGap = timeDiff;
+            }
+            current = next;
+        }
+        return maxTimeGap;
+    }
+
     /*
     public static void exportCsv(List<VaultEntry> data) {
         if (data == null || data.isEmpty()) {
