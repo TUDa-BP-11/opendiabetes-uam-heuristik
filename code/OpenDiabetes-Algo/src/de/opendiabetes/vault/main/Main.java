@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import static de.opendiabetes.vault.nsapi.Main.*;
 
 public class Main {
+
     // All parameters
     //Data Source
     private static final Parameter P_HOST = new FlaggedOption("host")
@@ -123,7 +124,6 @@ public class Main {
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
-
     /**
      * Registers all arguments to the given JSAP instance
      *
@@ -167,12 +167,12 @@ public class Main {
         JSAP jsap = new JSAP();
         registerArguments(jsap);
         JSAPResult config = initArguments(jsap, args);
-        if (config == null)
+        if (config == null) {
             return;
+        }
 
         // init
         initLogger(config);
-
 
         if (someFilesSet(config) && !allFilesSet(config)) {
             NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
@@ -185,8 +185,8 @@ public class Main {
         }
 
         if (!config.contains("host") && !allFilesSet(config)) {
-            NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile\n" +
-                    "or a Nightscout server URL. Make sure to include the port if needed");
+            NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile\n"
+                    + "or a Nightscout server URL. Make sure to include the port if needed");
             return;
         }
 
@@ -219,9 +219,9 @@ public class Main {
         //Logging
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
-        
+
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
-        for (VaultEntry meal: meals){
+        for (VaultEntry meal : meals) {
             NSApi.LOGGER.log(Level.FINE, meal.toString());
         }
         //TODO logging error + max time diff etc.
@@ -264,7 +264,6 @@ public class Main {
                     dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
             cgpm.showAll();
         }
-
 
         dataProvider.close();
     }
@@ -349,5 +348,5 @@ public class Main {
             }
         }
     }
-    */
+     */
 }

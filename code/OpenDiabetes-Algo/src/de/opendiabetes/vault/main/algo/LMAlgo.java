@@ -107,12 +107,12 @@ public class LMAlgo extends Algorithm {
                     E.add(abs_e);
                     err = Math.max(Math.abs(e.ebeDivide(ve).getMaxValue()), Math.abs(e.ebeDivide(ve).getMinValue()));
                     if (err <= 0.10) {
-                        Logger.getLogger(LMAlgo.class.getName()).log(Level.INFO, "N: " + N + ", MT: " + mealTimes.getDimension() + ", MV: " + mealValues.getDimension());
+                        Logger.getLogger(LMAlgo.class.getName()).log(Level.INFO, "N: {0}, MT: {1}, MV: {2}", new Object[]{N, mealTimes.getDimension(), mealValues.getDimension()});
                         breakN = true;
                         break;
                     }
                     if (i > 10 && Math.abs(abs_e - E.get(E.size() - 2)) < 1e-7) {
-                        Logger.getLogger(LMAlgo.class.getName()).log(Level.INFO, "Converged N: " + N + ", max err: " + err * 100 + "%, i: " + i);
+                        Logger.getLogger(LMAlgo.class.getName()).log(Level.INFO, "Converged N: {0}, max err: {1}%, i: {2}", new Object[]{N, err * 100, i});
                         break;
                     }
 
