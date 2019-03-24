@@ -29,10 +29,10 @@ public class QRAlgo_TimeOpt extends Algorithm {
         RealMatrix matrix;
         RealVector nkbg;
         RealVector times;
-        ArrayList<Double> alNkbg;
-        ArrayList<Double> alPred;
-        ArrayList<Double> albg;
-        ArrayList<Long> alTimes;
+//        ArrayList<Double> alNkbg;
+//        ArrayList<Double> alPred;
+//        ArrayList<Double> albg;
+//        ArrayList<Long> alTimes;
         List<VaultEntry> mealTreatments = new ArrayList<>();
 
         VaultEntry meal;
@@ -48,19 +48,19 @@ public class QRAlgo_TimeOpt extends Algorithm {
         long nextTime = 0l;
         double currentLimit;
         long estimatedTimeAccepted = 0l;
-        double currentPrediction;
-        double currentValue;
+//        double currentPrediction;
+//        double currentValue;
         double nextPrediction;
-        double deltaBg;
+//        double deltaBg;
 
         for (int i = 0; i < glucose.size(); i++) {
 
             nkbg = new ArrayRealVector();
             times = new ArrayRealVector();
-            alNkbg = new ArrayList();
-            albg = new ArrayList();
-            alPred = new ArrayList();
-            alTimes = new ArrayList();
+//            alNkbg = new ArrayList();
+//            albg = new ArrayList();
+//            alPred = new ArrayList();
+//            alTimes = new ArrayList();
 
             current = glucose.get(i);
             System.out.println(current.getTimestamp());
@@ -72,9 +72,9 @@ public class QRAlgo_TimeOpt extends Algorithm {
 
 //                currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
                 //currentValue = Filter.getAverage(glucose, i, 5, absorptionTime / 3);
-                currentValue = current.getValue();
-                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                        basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+//                currentValue = current.getValue();
+//                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
+//                        basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 for (int j = i; j < glucose.size(); j++) {
 
                     next = glucose.get(j);

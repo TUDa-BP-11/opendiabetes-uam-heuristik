@@ -24,7 +24,7 @@ public interface AlgorithmDataProvider {
     /**
      * Get a list of unmodified basal treatments
      *
-     * @return @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
+     * @return list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
      */
     List<VaultEntry> getRawBasalTreatments();
 
