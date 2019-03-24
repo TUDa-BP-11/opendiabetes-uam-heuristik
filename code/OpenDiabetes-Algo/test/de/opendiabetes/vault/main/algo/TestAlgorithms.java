@@ -7,8 +7,6 @@ import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -39,30 +37,61 @@ public class TestAlgorithms {
 
     @Test
     public void testLine() {
-
         for (int i = 0; i < 50; i++) {
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), 100));
         }
         TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
-        
+
         Algorithm algorithm = new LMAlgo(absTime, insDur, testDataProvider);
         List<VaultEntry> resultMeals = algorithm.calculateMeals();
         //assertEquals(0, resultMeals.size());
         algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
-        assertEquals(0,resultMeals.size());
+        assertEquals(0, resultMeals.size());
         algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
-        assertEquals(0,resultMeals.size());
+        assertEquals(0, resultMeals.size());
         algorithm = new PolyCurveFitterAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
-        //assertEquals(0,resultMeals.size());
+        assertEquals(0,resultMeals.size());
         algorithm = new QRAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         //assertEquals(0,resultMeals.size());
         algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
+    }
+
+    @Test
+    public void testFallingGraph() {
+        for (int i = 0; i < 20; i++) {
+            entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), 200 - ((i * i) / 2)));
+        }
+        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
+
+        Algorithm algorithm = new LMAlgo(absTime, insDur, testDataProvider);
+        List<VaultEntry> resultMeals = algorithm.calculateMeals();
+        //assertEquals(0, resultMeals.size());
+        algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
+        algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        //assertEquals(0,resultMeals.size());
+        algorithm = new QRAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
         assertEquals(0,resultMeals.size());
+        algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
+    }
+
+    @Test
+    public void testMealCalculation(){
+
     }
 
     private static class TestDataProvider implements AlgorithmDataProvider {
