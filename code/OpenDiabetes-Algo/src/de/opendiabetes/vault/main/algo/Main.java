@@ -8,10 +8,8 @@ import de.opendiabetes.vault.parser.ProfileParser;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
-import java.io.BufferedWriter;
 
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,7 +46,7 @@ public class Main {
         treatments.sort(new SortVaultEntryByDate());
         List<VaultEntry> basalTreatments = new ArrayList<>();
         List<VaultEntry> bolusTreatment = new ArrayList<>();
-        List<VaultEntry> mealTreatment = new ArrayList<>();
+//        List<VaultEntry> mealTreatment = new ArrayList<>();
 
         for (VaultEntry treatment : treatments) {
             switch (treatment.getType()) {
@@ -59,10 +57,11 @@ public class Main {
                     bolusTreatment.add(treatment);
                     break;
                 case MEAL_MANUAL:
-                    mealTreatment.add(treatment);
+//                    mealTreatment.add(treatment);
+                    Logger.getLogger(Main.class.getName()).log(Level.INFO, "Ignoring Meals");
                     break;
                 default:
-                    System.out.println("Main.main() " + treatment.getType());
+                    Logger.getLogger(Main.class.getName()).log(Level.INFO, treatment.getType().name());
                     break;
             }
         }
