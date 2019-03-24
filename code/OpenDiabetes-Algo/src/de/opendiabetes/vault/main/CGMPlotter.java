@@ -24,7 +24,7 @@ public class CGMPlotter {
     private boolean plotPlot = false;
     private boolean plotDiff = false;
     private boolean plotHist = false;
-    private boolean bStartValue = false;
+    private boolean bStartValue = true;
 
     private List<List<Double>> errorValues = new ArrayList<>();
     private List<List<Double>> bgTimes = new ArrayList<>();
@@ -90,9 +90,7 @@ public class CGMPlotter {
 
         double first, last;
         first = entries.get(0).getTimestamp().getTime() / 1000.0;
-        first = Math.min(Math.min(mealTimes.get(0), basalTimes.get(0)), first);
         last = entries.get(entries.size() - 1).getTimestamp().getTime() / 1000.0;
-        last = Math.max(Math.max(mealTimes.get(mealTimes.size() - 1), basalTimes.get(basalTimes.size() - 1)), last);
         if (firstToLast.isEmpty()) {
             firstToLast.add(first);
             firstToLast.add(last);
@@ -122,10 +120,9 @@ public class CGMPlotter {
 //                    sensitivity, insDuration,
 //                    carbratio, absorptionTime);
 // Skip predictions until start time
-//            if (ve.getTimestamp().getTime() < startTime) {
-////                offset = -noMealPredict;
-//                continue;
-//            }
+            if (bStartValue && ve.getTimestamp().getTime() < startTime) {
+                continue;
+            }
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
                     meals, bolusTreatments, basalTreatments,
                     sensitivity, insDuration,

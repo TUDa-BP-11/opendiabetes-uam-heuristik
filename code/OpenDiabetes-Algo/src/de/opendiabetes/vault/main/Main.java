@@ -290,7 +290,7 @@ public class Main {
 
         switch (config.getString("algorithm").toLowerCase()) {
             case "lm":
-                return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
+                return new OldLMAlgo(absorptionTime, insulinDuration, dataProvider);
             case "min":
                 return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
             case "filter":

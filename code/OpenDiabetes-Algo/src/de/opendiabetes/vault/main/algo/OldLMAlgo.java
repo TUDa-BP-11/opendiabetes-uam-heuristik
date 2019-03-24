@@ -64,8 +64,7 @@ public class OldLMAlgo extends Algorithm {
 
         mealTimes = new ArrayRealVector();
         mealValues = new ArrayRealVector();
-// uncomment for plot
-//        Plot plt = Plot.create();
+
         for (int N = 3; N < 15 && !breakN; N += 2) {
             E = new ArrayList();
             mealTimes = new ArrayRealVector(N);
@@ -91,7 +90,6 @@ public class OldLMAlgo extends Algorithm {
                 if (Math.max(Math.abs(e.ebeDivide(ve).getMaxValue()),
                         Math.abs(e.ebeDivide(ve).getMinValue()))
                         <= 0.10) {
-                    System.out.println("N: " + N + ", MT: " + mealTimes.getDimension() + ", MV: " + mealValues.getDimension());
                     breakN = true;
                     break;
                 }
@@ -99,13 +97,10 @@ public class OldLMAlgo extends Algorithm {
                     break;
                 }
 
-                // mu_k(ii) = mu*e'*e;
-                mu_k = mu * e.dotProduct(e);//abs_e;
-                // A = (JJ+mu_k(ii)*I);
+                mu_k = mu * e.dotProduct(e);
                 RealMatrix JJ = J.transpose().multiply(J);
                 A = JJ.add(I.scalarMultiply(mu_k));
                 Ainv = new SingularValueDecomposition(A).getSolver().getInverse();
-                // delta = A\J'*e;
                 delta = Ainv.multiply(J.transpose()).operate(e);
                 for (Double d : delta.toArray()) {
                     if (d.isNaN() || d.isInfinite()) {
@@ -115,36 +110,19 @@ public class OldLMAlgo extends Algorithm {
                 }
                 mealTimes = mealTimes.add(delta.getSubVector(0, N));
                 mealValues = mealValues.add(delta.getSubVector(N, N));
-                mealTimes.mapToSelf((x) -> {
-                    return Math.min(lastTime, Math.max(firstTime - absorptionTime, x));
-                });
-                mealValues.mapToSelf((x) -> {
-                    return Math.max(0, x);
-                });
+                mealTimes.mapToSelf((x) -> Math.min(lastTime, Math.max(firstTime - absorptionTime, x)));
+                mealValues.mapToSelf((x) -> Math.max(0, x));
             }
-// uncomment for plot
-//        plt.plot().add(E);
-
         }
-// uncomment for plot
-//        try {
-//            plt.show();
-//        } catch (IOException | PythonExecutionException ex) {
-//            Logger.getLogger(LMAlgo.class.getName()).log(Level.SEVERE, null, ex);
-//        }
 
         ArrayList<Long> uniqueMealTimes = new ArrayList();
-//        ArrayList<Double> a_uniqueMealValues = new ArrayList();
         RealVector uniqueMealValues = new ArrayRealVector();
         for (int i = 0; i < mealTimes.getDimension(); i++) {
 
             long t = Math.round(mealTimes.getEntry(i));
             double x = mealValues.getEntry(i);
             int idx = uniqueMealTimes.indexOf(t);
-//            System.out.println("Times " + uniqueMealTimes.toString());
-//            System.out.println("Values " + uniqueMealValues.toString());
             if (idx != -1) {
-//                System.out.println(idx + " " + uniqueMealValues.getDimension());
                 uniqueMealValues.addToEntry(idx, x);
             } else if (x > 1) {
                 uniqueMealTimes.add(t);
@@ -159,8 +137,18 @@ public class OldLMAlgo extends Algorithm {
             t0 = uniqueMealTimes.get(i);
             meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
                     TimestampUtils.createCleanTimestamp(new Date(t0 * 60000)), x);
-//            System.out.println(meal.toString());
             mealTreatments.add(meal);
+        }
+
+        //Remove Meals before first Bg entry
+        for (int i = 0; i < mealTreatments.size(); i++) {
+            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
+                mealTreatments.remove(i);
+                i--;
+            } else {
+                break;
+            }
+
         }
         return mealTreatments;
 
