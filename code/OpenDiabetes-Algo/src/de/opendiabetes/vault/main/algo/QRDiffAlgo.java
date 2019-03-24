@@ -29,9 +29,9 @@ public class QRDiffAlgo extends Algorithm {
         RealMatrix matrix;
         RealVector nkbg;
         RealVector times;
-        ArrayList<Double> alNkbg;
-        ArrayList<Double> alPred;
-        ArrayList<Double> albg;
+//        ArrayList<Double> alNkbg;
+//        ArrayList<Double> alPred;
+//        ArrayList<Double> albg;
 //        ArrayList<Long> alTimes;
         List<VaultEntry> mealTreatments = new ArrayList<>();
 
@@ -47,7 +47,7 @@ public class QRDiffAlgo extends Algorithm {
         long currentTime;
         long nextTime;
         double currentLimit;
-        long estimatedTimeAccepted = 0l;
+//        long estimatedTimeAccepted = 0l;
         double currentPrediction;
         double currentValue;
         double nextPrediction;
@@ -58,11 +58,11 @@ public class QRDiffAlgo extends Algorithm {
 
             nkbg = new ArrayRealVector();
             times = new ArrayRealVector();
-            alNkbg = new ArrayList();
-            albg = new ArrayList();
-            alPred = new ArrayList();
+//            alNkbg = new ArrayList();
+//            albg = new ArrayList();
+//            alPred = new ArrayList();
 //            alTimes = new ArrayList();
-            double mse = Double.POSITIVE_INFINITY;
+//            double mse = Double.POSITIVE_INFINITY;
             current = glucose.get(i);
 
             currentTime = current.getTimestamp().getTime();
@@ -114,7 +114,7 @@ public class QRDiffAlgo extends Algorithm {
                         && estimatedTime - currentTime < absorptionTime / 2 * 60000) {
                     if (estimatedCarbs > 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
                             ) {
-                        estimatedTimeAccepted = estimatedTime;
+//                        estimatedTimeAccepted = estimatedTime;
                         meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
                                 TimestampUtils.createCleanTimestamp(new Date(estimatedTime)),
                                 estimatedCarbs);

@@ -34,7 +34,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
     public List<VaultEntry> calculateMeals() {
 
         double weight = 1;
-        List<VaultEntry> mealTreatments = new ArrayList<>();
+        mealTreatments.clear();
         PolynomialCurveFitter pcf = PolynomialCurveFitter.create(2);
         ArrayList<WeightedObservedPoint> observations = new ArrayList<>();
 
@@ -49,7 +49,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
         long estimatedTime;
         long currentTime;
         long nextTime;
-        double lastTime = 0;
+        long lastTime = 0l;
         double currentLimit;
         long estimatedTimeAccepted = 0l;
         double currentPrediction;
@@ -57,16 +57,23 @@ public class PolyCurveFitterAlgo extends Algorithm {
         double deltaBg;
 
         double startValue;
+        double nextValue;
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + skipTime;
         for (int i = 0; i < glucose.size(); i++) {
             current = glucose.get(i);
 
             currentTime = current.getTimestamp().getTime() / 60000;
+
+            // skip bg values until start time
+            if (currentTime < firstTime) {
+                continue;
+            }
             currentLimit = currentTime + absorptionTime / 4;
             if (currentTime > estimatedTimeAccepted) {
 
-                startValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
+//                startValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
                 //startValue = Filter.getAverage(glucose, i, 5, absorptionTime / 3);
-                //startValue = current.getValue();
+                startValue = current.getValue();
                 //double deltaBg = Filter.getAverage(glucose, j, 5, 30) - Filter.getAverage(glucose, i, 5, 30);
                 //double deltaBg = next.getValue() - current.getValue();
                 currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
@@ -76,37 +83,33 @@ public class PolyCurveFitterAlgo extends Algorithm {
                     next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
 
-                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
+//                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
                     //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
-                    //double nextValue = next.getValue();
+                    nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                         deltaBg = nextValue - startValue - (nextPrediction - currentPrediction);
-                        //lastTime = nextTime;
-//                        weight = 1 - (nextTime - currentTime) / (absorptionTime / 2);
+                        lastTime = nextTime;
                         observations.add(new WeightedObservedPoint(weight, nextTime, deltaBg));
                     }
                 }
                 // lsq = [c, b, a]
                 double[] lsq = pcf.fit(observations);
-                if (lsq[2] > 0) {
-
-//                double error = lsq[0] - pow(lsq[1], 2) / (4 * lsq[2]);
-                    estimatedTime = (long) (-lsq[1] / (2 * lsq[2]));
+                double alpha, beta;
+                alpha = lsq[2];
+                beta = lsq[1];
+                if (alpha > 0) {
+                    estimatedTime = (long) (-beta / (2 * alpha));
                     double estimatedCarbs = lsq[2] * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
-//                if (currentTime - estimatedTime < absorptionTime / 2
-//                        && estimatedTime < lastTime) {
-//                    if (estimatedCarbs > 0
-//                            && estimatedCarbs < 200 // && error < 10
-//                            ) {
-                    estimatedTimeAccepted = estimatedTime;
-                    meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                            TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
-                            estimatedCarbs);
-                    mealTreatments.add(meal);
-//                    }
-//                }
+                    if (currentTime - estimatedTime < absorptionTime / 2
+                            && estimatedTime < lastTime) {
+
+                        estimatedTimeAccepted = estimatedTime;
+                        meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                                TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
+                                estimatedCarbs);
+                        mealTreatments.add(meal);
+                    }
                 }
             }
             observations.clear();

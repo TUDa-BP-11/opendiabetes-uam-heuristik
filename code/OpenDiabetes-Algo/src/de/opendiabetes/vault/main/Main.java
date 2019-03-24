@@ -221,10 +221,9 @@ public class Main {
         int insulinDuration = config.getInt("insDuration");
 
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
-        for (VaultEntry meal : meals) {
+        meals.forEach((meal) -> {
             NSApi.LOGGER.log(Level.FINE, meal.toString());
-        }
-        //TODO logging error + max time diff etc.
+        }); //TODO logging error + max time diff etc.
 
         //Output
         if (config.contains("output-file")) {
@@ -253,9 +252,9 @@ public class Main {
         }
 
         if (config.getBoolean("console")) {
-            for (VaultEntry meal : meals) {
+            meals.forEach((meal) -> {
                 System.out.println(meal.toString());
-            }
+            });
         }
 
         if (config.getBoolean("plot")) {
@@ -301,7 +300,7 @@ public class Main {
             case "qrdiff":
                 return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
             default:
-                NSApi.LOGGER.warning("There is no Algorithm with the name: " + config.getString("algorithm"));
+                NSApi.LOGGER.log(Level.WARNING, "There is no Algorithm with the name: {0}", config.getString("algorithm"));
         }
         return null;
     }

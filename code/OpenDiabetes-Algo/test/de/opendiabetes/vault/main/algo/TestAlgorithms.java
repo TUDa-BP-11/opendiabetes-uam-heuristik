@@ -3,6 +3,7 @@ package de.opendiabetes.vault.main.algo;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.parser.Profile;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,6 +12,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -43,9 +45,9 @@ public class TestAlgorithms {
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-//        algorithm = new LMAlgo(absTime, insDur, testDataProvider);
-//        resultMeals = algorithm.calculateMeals();
-        //assertEquals(0, resultMeals.size());
+        algorithm = new LMAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
         algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
@@ -55,9 +57,9 @@ public class TestAlgorithms {
         algorithm = new PolyCurveFitterAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0,resultMeals.size());
-//        algorithm = new QRAlgo(absTime, insDur, testDataProvider);
-//        resultMeals = algorithm.calculateMeals();
-        //assertEquals(0,resultMeals.size());
+        algorithm = new QRAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(1,resultMeals.size());
         algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
@@ -72,9 +74,9 @@ public class TestAlgorithms {
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-//        algorithm = new LMAlgo(absTime, insDur, testDataProvider);
-//        resultMeals = algorithm.calculateMeals();
-        //assertEquals(0, resultMeals.size());
+        algorithm = new LMAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
         algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
