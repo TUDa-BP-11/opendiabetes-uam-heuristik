@@ -69,7 +69,7 @@ public class CGMPlotter {
         List<Double> bolusValuesSnippet = new ArrayList<>();
         List<Double> bolusTimesSnippet = new ArrayList<>();
         List<Double> mealValuesSnippet = new ArrayList<>();
-        List<Double> mealTimesSnippet = new ArrayList<>();        
+        List<Double> mealTimesSnippet = new ArrayList<>();
         List<Double> bgTimesSnippet = new ArrayList<>();
         List<Double> algoTimesSnippet = new ArrayList<>();
         List<Double> bgValuesSnippet = new ArrayList<>();
@@ -77,7 +77,7 @@ public class CGMPlotter {
         List<Double> algoValuesSnippet = new ArrayList<>();
         List<Double> errorTimesSnippet = new ArrayList<>();
         List<Double> errorValuesSnippet = new ArrayList<>();
-        
+
         for (VaultEntry a : basalTreatments) {
             basalValuesSnippet.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
             basalTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
@@ -86,8 +86,6 @@ public class CGMPlotter {
         generatePointsToDraw(bolusTreatments, bolusValuesSnippet, bolusTimesSnippet);
 
         generatePointsToDraw(meals, mealValuesSnippet, mealTimesSnippet);
-
-
 
         double first, last;
         first = entries.get(0).getTimestamp().getTime() / 1000.0;
@@ -254,6 +252,7 @@ public class CGMPlotter {
     }
 
     public void showAll() {
+        /*
         try {
             if (plotPlot) {
                 plt.subplot(4, 1, 1);
@@ -373,6 +372,7 @@ public class CGMPlotter {
         } catch (IOException | PythonExecutionException ex) {
             Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
         }
+         */
     }
 
     private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
