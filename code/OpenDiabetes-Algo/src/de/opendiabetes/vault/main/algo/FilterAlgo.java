@@ -81,7 +81,12 @@ public class FilterAlgo extends Algorithm {
         DecompositionSolver solver = new SingularValueDecomposition(matrix).getSolver();
         if (solver.isNonSingular()) {
             mealValues = solver.solve(nkbg);
-            setMeals(mealValues, times);
+            if (mealValues.getDimension() == times.size()) {
+                for (int i = 0; i < mealValues.getDimension(); i++) {
+                    mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(times.get(i) * 60000)), mealValues.getEntry(i)));
+                }
+            }
         }else {
             NSApi.LOGGER.log(Level.WARNING,"Singular");
         }

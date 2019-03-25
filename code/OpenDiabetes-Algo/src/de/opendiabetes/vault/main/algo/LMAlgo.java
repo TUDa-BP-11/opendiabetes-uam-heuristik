@@ -1,13 +1,16 @@
 package de.opendiabetes.vault.main.algo;
 
+import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -200,10 +203,13 @@ public class LMAlgo extends Algorithm {
                     uniqueMealValues.add(x);
                 }
             }
-
-            setMeals(uniqueMealValues, uniqueMealTimes);
+            if (!uniqueMealValues.isEmpty() && uniqueMealValues.size() == uniqueMealTimes.size()) {
+                for (int i = 0; i < uniqueMealValues.size(); i++) {
+                    mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(uniqueMealTimes.get(i) * 60000)), uniqueMealValues.get(i)));
+                }
+            }
         }
         return mealTreatments;
-
     }
 }

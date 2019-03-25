@@ -143,40 +143,6 @@ public abstract class Algorithm {
     }
 
     /**
-     * Set a list of meal treatments as result
-     *
-     * @param mealValues list of meal values
-     * @param mealTimes list of corresponding time values
-     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
-     */
-    public void setMeals(List<Double> mealValues, List<Long> mealTimes) {
-        if (!mealValues.isEmpty() && mealValues.size() == mealTimes.size()) {
-            for (int i = 0; i < mealValues.size(); i++) {
-                mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                        TimestampUtils.createCleanTimestamp(new Date(mealTimes.get(i) * 60000)), mealValues.get(i)));
-            }
-        }
-        NSApi.LOGGER.log(Level.INFO, "Found meals: %d", mealTreatments.size());
-    }
-
-    /**
-     * Set a list of meal treatments as result
-     *
-     * @param mealValues RealVector of meal values
-     * @param mealTimes list of corresponding time values
-     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
-     */
-    public void setMeals(RealVector mealValues, List<Long> mealTimes) {
-        if (mealValues.getDimension() == mealTimes.size()) {
-            for (int i = 0; i < mealValues.getDimension(); i++) {
-                mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                        TimestampUtils.createCleanTimestamp(new Date(mealTimes.get(i) * 60000)), mealValues.getEntry(i)));
-            }
-        }
-        NSApi.LOGGER.log(Level.INFO, "Found meals: %d", mealTreatments.size());
-    }
-
-    /**
      * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
      * {@link #setBasalTreatments(List)} and {@link #setProfile(Profile)}
      *
