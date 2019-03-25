@@ -7,9 +7,9 @@ import java.util.Date;
 import java.util.List;
 
 public class ErrorCalc {
-    private List<Double> errorValues = new ArrayList<>();
-    private List<Double> errorPercent = new ArrayList<>();
-    private List<Date> errorDates = new ArrayList<>();
+    private List<Double> errorValues;
+    private List<Double> errorPercent;
+    private List<Date> errorDates;
     private boolean adjustStartValue;
     private double meanError;
     private double meanSquareError;
@@ -26,12 +26,12 @@ public class ErrorCalc {
     private double skewnessPercent;
     private double rootMeanSquareErrorPercent;
     private double stdDeviationPercent;
-    
-    public ErrorCalc(){
+
+    public ErrorCalc() {
         this(true);
     }
-    
-    public ErrorCalc(boolean adjustStartValue){
+
+    public ErrorCalc(boolean adjustStartValue) {
         this.adjustStartValue = adjustStartValue;
     }
 
@@ -107,7 +107,10 @@ public class ErrorCalc {
 
     public void calculateError(List<VaultEntry> entries, List<VaultEntry> basalDifference,
                                List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-                               double sensitivity, int insDuration, double carbratio, int absorptionTime){
+                               double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+        errorValues = new ArrayList<>();
+        errorPercent = new ArrayList<>();
+        errorDates = new ArrayList<>();
         double startValue = 0;
         if (adjustStartValue) {
             startValue = getStartValue(entries, basalDifference, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
@@ -130,63 +133,68 @@ public class ErrorCalc {
         meanSquareError = 0;
         maxError = 0;
         variance = 0;
+        rootMeanSquareError = 0;
+        stdDeviation = 0;
         skewness = 0;
         int N = errorValues.size();
-        for (double d : errorValues) {
-            meanError += d;
-            meanSquareError += d * d;
-            variance += Math.pow(d - meanError, 2);
-            if(Math.abs(maxError) < Math.abs(d)){
-                maxError = d;
+        if (N > 0) {
+            for (double d : errorValues) {
+                meanError += d;
+                meanSquareError += d * d;
+                variance += Math.pow(d - meanError, 2);
+                if (Math.abs(maxError) < Math.abs(d)) {
+                    maxError = d;
+                }
             }
+            meanError /= N;
+            meanSquareError /= N;
+            variance /= N;
+            rootMeanSquareError = Math.sqrt(meanSquareError);
+            stdDeviation = Math.sqrt(variance);
+            for (double d : errorValues) {
+                if (stdDeviation > 0)
+                    skewness += Math.pow((d - meanError) / stdDeviation, 3);
+            }
+            skewness /= N;
         }
-        meanError /= N;
-        meanSquareError /= N;
-        variance /= N;
-        rootMeanSquareError = Math.sqrt(meanSquareError);
-        stdDeviation = Math.sqrt(variance);
-        for (double d : errorValues) {
-            skewness += Math.pow((d - meanError) / stdDeviation, 3);
-        }
-        skewness /= N;
-
 
         //same for errorPercent
         meanErrorPercent = 0;
         meanSquareErrorPercent = 0;
         maxErrorPercent = 0;
         variancePercent = 0;
+        rootMeanSquareErrorPercent = 0;
+        stdDeviationPercent = 0;
         skewnessPercent = 0;
-        for (double d : errorPercent) {
-            meanErrorPercent += d;
-            meanSquareErrorPercent += d * d;
-            variancePercent += Math.pow(d - meanErrorPercent, 2);
-            if(Math.abs(maxErrorPercent) < Math.abs(d)){
-                maxErrorPercent = d;
+        if (N > 0) {
+            for (double d : errorPercent) {
+                meanErrorPercent += d;
+                meanSquareErrorPercent += d * d;
+                variancePercent += Math.pow(d - meanErrorPercent, 2);
+                if (Math.abs(maxErrorPercent) < Math.abs(d)) {
+                    maxErrorPercent = d;
+                }
             }
+            meanErrorPercent /= N;
+            meanSquareErrorPercent /= N;
+            variancePercent /= N;
+            rootMeanSquareErrorPercent = Math.sqrt(meanSquareErrorPercent);
+            stdDeviationPercent = Math.sqrt(variancePercent);
+            for (double d : errorPercent) {
+                skewnessPercent += Math.pow((d - meanErrorPercent) / stdDeviationPercent, 3);
+            }
+            skewnessPercent /= N;
         }
-        meanErrorPercent /= N;
-        meanSquareErrorPercent /= N;
-        variancePercent /= N;
-        rootMeanSquareErrorPercent = Math.sqrt(meanSquareErrorPercent);
-        stdDeviationPercent = Math.sqrt(variancePercent);
-        for (double d : errorPercent) {
-            skewnessPercent += Math.pow((d - meanErrorPercent) / stdDeviationPercent, 3);
-        }
-        skewnessPercent /= N;
     }
 
 
-
     public static double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-                                 List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-                                 double sensitivity, int insDuration, double carbratio, int absorptionTime) {
-        double startTime = getStartTime(entries, insDuration, absorptionTime);
-
+                                       List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+                                       double sensitivity, int insDuration, double carbratio, int absorptionTime) {
         if (entries.isEmpty()) {
             return 0;
         }
-
+        double startTime = getStartTime(entries, insDuration, absorptionTime);
         double startValue = entries.get(0).getValue();
         for (VaultEntry ve : entries) {
             startValue = ve.getValue() - Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
@@ -199,6 +207,8 @@ public class ErrorCalc {
     }
 
     public static long getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
+        if (entries.isEmpty())
+            return 0;
         long startTime = entries.get(0).getTimestamp().getTime();
         long firstValidTime = startTime + Math.max(insDuration, absorptionTime) * 60000;
         for (int i = 0; i < entries.size() - 1; i++) {
