@@ -329,7 +329,7 @@ public class Main {
         VaultEntry current = list.get(0);
         for (int i = 1; i < list.size(); i++) {
             VaultEntry next = list.get(i);
-            long timeDiff = next.getTimestamp().getTime() - current.getTimestamp().getTime() / 60000;
+            long timeDiff = (next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000;
             if (timeDiff > maxTimeGap) {
                 maxTimeGap = timeDiff;
             }
