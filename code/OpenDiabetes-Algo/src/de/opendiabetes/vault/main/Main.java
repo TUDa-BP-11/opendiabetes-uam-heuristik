@@ -7,6 +7,7 @@ import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;
+import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.nsapi.NSApiTools;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
@@ -235,6 +236,10 @@ public class Main {
             NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d.", maxTimeGap);
         }
 
+        ErrorCalc errorCalc = new ErrorCalc();
+        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals
+                , dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+
         //Output
         if (config.contains("output-file")) {
             try {
@@ -268,6 +273,7 @@ public class Main {
         if (config.getBoolean("plot")) {
             CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
             cgpm.add(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals);
+            cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             cgpm.showAll();
         }
 

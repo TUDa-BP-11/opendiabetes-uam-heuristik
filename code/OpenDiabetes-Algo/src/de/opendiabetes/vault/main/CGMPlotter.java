@@ -10,8 +10,10 @@ import de.opendiabetes.vault.nsapi.NSApi;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * @author anna
@@ -29,6 +31,7 @@ public class CGMPlotter {
     private boolean plotPlot = false;
     private boolean plotDiff = false;
     private boolean plotHist = false;
+    private boolean plotError = false;
     private boolean bStartValue = true;
     private boolean bStartTime = true;
 
@@ -60,10 +63,10 @@ public class CGMPlotter {
     }
 
     /**
-     * @deprecated use CGMPlotter(boolean plotHist, boolean bStartValue, double
-     * sensitivity, int insDuration, double carbratio, int absorptionTime)
      * @param plotHist
      * @param bStartValue
+     * @deprecated use CGMPlotter(boolean plotHist, boolean bStartValue, double
+     * sensitivity, int insDuration, double carbratio, int absorptionTime)
      */
     public CGMPlotter(boolean plotHist, boolean bStartValue) {
         this();
@@ -72,7 +75,6 @@ public class CGMPlotter {
     }
 
     /**
-     *
      * @param plotHist
      * @param bStartValue
      * @param bStartTime
@@ -93,7 +95,6 @@ public class CGMPlotter {
     }
 
     /**
-     *
      * @param title
      */
     public void title(String title) {
@@ -101,14 +102,13 @@ public class CGMPlotter {
     }
 
     /**
-     *
      * @param entries
      * @param basalTreatments
      * @param bolusTreatments
      * @param meals
      */
     public void add(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-            List<VaultEntry> bolusTreatments, List<VaultEntry> meals) {
+                    List<VaultEntry> bolusTreatments, List<VaultEntry> meals) {
 
         plotPlot = true;
         List<Double> basalValuesSnippet = new ArrayList<>();
@@ -131,8 +131,6 @@ public class CGMPlotter {
         List<Double> bgValuesSnippet = new ArrayList<>();
         List<Double> algoValuesSnippet = new ArrayList<>();
 
-        List<Double> errorTimesSnippet = new ArrayList<>();
-        List<Double> errorValuesSnippet = new ArrayList<>();
 
         double first, last;
         first = entries.get(0).getTimestamp().getTime() / 1000.0;
@@ -176,9 +174,6 @@ public class CGMPlotter {
                     carbratio, absorptionTime);
             algoValuesSnippet.add(startValue + algoPredict);
             algoTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
-
-            errorValuesSnippet.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
-            errorTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
         }
 
         this.bgTimes.add(bgTimesSnippet);
@@ -191,143 +186,21 @@ public class CGMPlotter {
         this.bolusValues.add(bolusValuesSnippet);
         this.basalTimes.add(basalTimesSnippet);
         this.basalValues.add(basalValuesSnippet);
-        this.errorTimes.add(errorTimesSnippet);
-        this.errorValues.add(errorValuesSnippet);
-
-        if (plotHist) {
-            allErrorValues.addAll(errorValuesSnippet);
-        }
     }
 
-    /**
-     * @deprecated use add instead
-     * @param entries
-     * @param basalTreatments
-     * @param bolusTreatments
-     * @param meals
-     * @param sensitivity
-     * @param insDuration
-     * @param carbratio
-     * @param absorptionTime
-     */
-    public void plot(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-            List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-            double sensitivity, int insDuration, double carbratio, int absorptionTime) {
-
-        plotPlot = true;
-        List<Double> basalValuesSnippet = new ArrayList<>();
-        List<Double> basalTimesSnippet = new ArrayList<>();
-        for (VaultEntry a : basalTreatments) {
-            basalValuesSnippet.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
-            basalTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
-        }
-
-        List<Double> bolusValuesSnippet = new ArrayList<>();
-        List<Double> bolusTimesSnippet = new ArrayList<>();
-        generatePointsToDraw(bolusTreatments, bolusValuesSnippet, bolusTimesSnippet);
-
-        List<Double> mealValuesSnippet = new ArrayList<>();
-        List<Double> mealTimesSnippet = new ArrayList<>();
-        generatePointsToDraw(meals, mealValuesSnippet, mealTimesSnippet);
-
-        List<Double> bgTimesSnippet = new ArrayList<>();
-        List<Double> algoTimesSnippet = new ArrayList<>();
-        List<Double> bgValuesSnippet = new ArrayList<>();
-//        List<Double> noMealValues = new ArrayList<>();
-        List<Double> algoValuesSnippet = new ArrayList<>();
-
-        List<Double> errorTimesSnippet = new ArrayList<>();
-        List<Double> errorValuesSnippet = new ArrayList<>();
-
-        double first, last;
-        first = entries.get(0).getTimestamp().getTime() / 1000.0;
-        last = entries.get(entries.size() - 1).getTimestamp().getTime() / 1000.0;
-        if (firstToLast.isEmpty()) {
-            firstToLast.add(first);
-            firstToLast.add(last);
-        } else {
-            if (first < firstToLast.get(0)) {
-                firstToLast.set(0, first);
-            }
-            if (last > firstToLast.get(1)) {
-                firstToLast.set(1, last);
-            }
-        }
-
-        double startValue = 0;
-        if (bStartValue) {
-            startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
-        }
-        double startTime = getStartTime(entries, insDuration, absorptionTime);
-//        double offset = 0;
-        for (VaultEntry ve : entries) {
-            bgTimesSnippet.add((ve.getTimestamp().getTime()) / 1000.0);
-            bgValuesSnippet.add(ve.getValue());
-
-//            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
-//                    new ArrayList<>(), bolusTreatments, basalTreatments,
-//                    sensitivity, insDuration,
-//                    carbratio, absorptionTime);
-// Skip predictions until start time
-            if (bStartTime && ve.getTimestamp().getTime() < startTime) {
-                continue;
-            }
-            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    meals, bolusTreatments, basalTreatments,
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
-            algoValuesSnippet.add(startValue + algoPredict);
-            algoTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
-
-            //noMealValues.add(ve.getValue() + noMealPredict + offset);
-            errorValuesSnippet.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
-            errorTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
-        }
-
-        this.bgTimes.add(bgTimesSnippet);
-        this.bgValues.add(bgValuesSnippet);
-        this.algoTimes.add(algoTimesSnippet);
-        this.algoValues.add(algoValuesSnippet);
-        this.mealTimes.add(mealTimesSnippet);
-        this.mealValues.add(mealValuesSnippet);
-        this.bolusTimes.add(bolusTimesSnippet);
-        this.bolusValues.add(bolusValuesSnippet);
-        this.basalTimes.add(basalTimesSnippet);
-        this.basalValues.add(basalValuesSnippet);
-        this.errorTimes.add(errorTimesSnippet);
-        this.errorValues.add(errorValuesSnippet);
-//        plt.subplot(3, 1, 1);
-//        plt.xlabel("time");
-//        plt.ylabel("mg/dl");
-//        plt.plot().addDates(bgTimes).add(bgValues).color("blue").label("cgm"); //.label("Testlabel")
-//        plt.plot().addDates(algoTimes).add(algoValues).linestyle("--").label("predicted values");//.color("cyan").linestyle("--");
-        //plt.plot().addDates(algoTimes).add(noMealValues).color("orange").label("no meal predictions"); //.label("Testlabel")
-//        plt.plot().addDates(firstToLast).add(zeros).linestyle("");
-//        plt.legend().loc(2);
-
-//        plt.subplot(3, 1, 2);
-//        plt.plot().addDates(firstToLast).add(zeros).linestyle("");
-//        plt.plot().addDates(mealTimes).add(mealValues).color("red").label("meals").marker("_").linestyle("").markersize("3");
-//        plt.plot().addDates(bolusTimes).add(bolusValues).color("green").linestyle("").label("bolus").marker("_").markersize("3");
-        //plt.plot().addDates(basalTimes).add(basalValues).color("cyan").linestyle("").label("basal").marker("o");
-//        plt.legend().loc(2);
-        // plot error
-//        plt.subplot(3, 1, 3);
-//        plt.xlabel("time");
-//        plt.ylabel("%");
-//        plt.plot().addDates(firstToLast).add(zeros).linestyle("");
-//        plt.plot().addDates(errorTimes).add(errorValues).label("relative error");//.color("magenta").linestyle("--");
-//        plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), 10)).color("black").label("fault tolerance");
-//        plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), -10)).color("black");
-//        plt.legend().loc(2);
+    public void addError(List<Double> errorValues, List<Date> errorDate) {
+        plotError = true;
+        this.errorValues.add(errorValues);
+        this.errorTimes.add((errorDate.stream().mapToDouble(e -> e.getTime() / 1000.0)).boxed().collect(Collectors.toList()));
         if (plotHist) {
-            allErrorValues.addAll(errorValuesSnippet);
+            allErrorValues.addAll(errorValues);
         }
+
     }
 
     public void plotDiff(Snippet s, List<VaultEntry> meals,
-            double sensitivity, int insDuration,
-            double carbratio, int absorptionTime) {
+                         double sensitivity, int insDuration,
+                         double carbratio, int absorptionTime) {
         plotDiff = true;
         List<Double> basalValuesSnippet = new ArrayList<>();
         List<Double> basalTimesSnippet = new ArrayList<>();
@@ -402,7 +275,8 @@ public class CGMPlotter {
     public void showAll() {
         try {
             if (plotPlot) {
-                plt.subplot(4, 1, 1);
+                int subplots = plotError ? 4 : 3;
+                plt.subplot(subplots, 1, 1);
                 plt.title(title);
                 for (int i = 0; i < bgTimes.size(); i++) {
                     if (i == 0) {
@@ -421,50 +295,52 @@ public class CGMPlotter {
                 plt.ylabel("mg/dl");
                 plt.plot().addDates(firstToLast).add(zeros).linestyle("");
                 plt.legend().loc(2);
-                plt.subplot(4, 1, 2);
+                plt.subplot(subplots, 1, 2);
 
                 for (int i = 0; i < bgTimes.size(); i++) {
                     if (i == 0) {
                         plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("meals").marker("_").linestyle("").markersize("3"); //.color("red")
 //                        plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").linestyle("").label("bolus").marker("_").markersize("3");
-                        //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
+                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
                     } else {
                         plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("_").linestyle("").markersize("3"); //.color("red")
 //                        plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").linestyle("").marker("_").markersize("3");
-                        //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
+                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
                     }
                 }
                 plt.plot().addDates(firstToLast).add(zeros).linestyle("");
                 plt.legend().loc(2);
-                plt.subplot(4, 1, 3);
-                plt.xlabel("time");
-                plt.ylabel("%");
 
-                for (int i = 0; i < errorTimes.size(); i++) {
-                    if (i == 0) {
-                        plt.plot().addDates(errorTimes.get(i)).add(errorValues.get(i)).label("relative error");
-                    } else {
-                        plt.plot().addDates(errorTimes.get(i)).add(errorValues.get(i));
-                    }
-                }
-                plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), 10)).color("black").label("fault tolerance");
-                plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), -10)).color("black");
-                plt.legend().loc(2);
 
-                plt.subplot(4, 1, 4);
+                plt.subplot(subplots, 1, 3);
                 plt.xlabel("time");
                 plt.ylabel("mg/dl");
                 for (int i = 0; i < bgTimes.size(); i++) {
                     if (i == 0) {
                         plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").label("bolus").marker("_").markersize("3").color("C" + i % 10);
-                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).linestyle("").label("basal").marker("o").color("C" + i % 10);
                     } else {
                         plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").marker("_").markersize("3").color("C" + i % 10);
-                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).linestyle("").marker("o").color("C" + i % 10);
                     }
                 }
                 plt.plot().addDates(firstToLast).add(zeros).linestyle("");
                 plt.legend().loc(2);
+
+                if (plotError) {
+                    plt.subplot(subplots, 1, 4);
+                    plt.xlabel("time");
+                    plt.ylabel("%");
+
+                    for (int i = 0; i < errorTimes.size(); i++) {
+                        if (i == 0) {
+                            plt.plot().addDates(errorTimes.get(i)).add(errorValues.get(i)).label("relative error");
+                        } else {
+                            plt.plot().addDates(errorTimes.get(i)).add(errorValues.get(i));
+                        }
+                    }
+                    plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), 10)).color("black").label("fault tolerance");
+                    plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), -10)).color("black");
+                    plt.legend().loc(2);
+                }
 //                String scriptLines = 
                 plt.show();
 
@@ -480,6 +356,7 @@ public class CGMPlotter {
             }
             if (plotHist && !allErrorValues.isEmpty()) {
 
+                /* Error Calculation separated use ErrorCalc
                 double MeanError = 0;
                 double MeanSquareError = 0;
                 int N = allErrorValues.size();
@@ -511,7 +388,7 @@ public class CGMPlotter {
                 NSApi.LOGGER.log(Level.INFO, "MaxError: %.3g%%", Collections.max(allErrorValues, (Double o1, Double o2) -> {
                     Double result = Math.abs(o1) - Math.abs(o2);
                     return result > 0 ? 1 : result < 0 ? -1 : 0;
-                }));
+                }));*/
 
                 histPlt = Plot.create();
                 histPlt.xlabel("error");
@@ -526,8 +403,8 @@ public class CGMPlotter {
     }
 
     private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-            List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-            double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+                                 List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+                                 double sensitivity, int insDuration, double carbratio, int absorptionTime) {
         double startTime = getStartTime(entries, insDuration, absorptionTime);
 
         if (entries.isEmpty()) {
