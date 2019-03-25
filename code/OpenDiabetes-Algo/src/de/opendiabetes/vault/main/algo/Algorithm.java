@@ -4,11 +4,18 @@ import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.util.TimestampUtils;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import org.apache.commons.math3.linear.RealVector;
 
 public abstract class Algorithm {
+
+    protected long skipTime = 0;
 
     protected long absorptionTime;
     protected long insulinDuration;
@@ -16,6 +23,8 @@ public abstract class Algorithm {
     protected List<VaultEntry> glucose;
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
+
+    protected List<VaultEntry> mealTreatments = new ArrayList<>();
 
     public Algorithm(long absorptionTime, long insulinDuration, Profile profile) {
         this.absorptionTime = absorptionTime;
@@ -51,6 +60,16 @@ public abstract class Algorithm {
     }
 
     /**
+     * Set the time from first BG Value skipped to avoid edge effects of unknown
+     * earlier treatments
+     *
+     * @param skipTime skip time in minutes
+     */
+    public void setSkipTime(long skipTime) {
+        this.skipTime = skipTime;
+    }
+
+    /**
      * Set a profile
      *
      * @param profile profile
@@ -68,16 +87,15 @@ public abstract class Algorithm {
     public void setGlucoseMeasurements(List<VaultEntry> entries) {
         if (!entries.isEmpty()) {
             VaultEntry current = entries.get(0);
-            for (VaultEntry entry : entries){
-                if(entry.getTimestamp().getTime() < current.getTimestamp().getTime()){
+            for (VaultEntry entry : entries) {
+                if (entry.getTimestamp().getTime() < current.getTimestamp().getTime()) {
                     throw new IllegalArgumentException("entries have to be sorted by timestamp");
                 }
-                if (!entry.getType().equals(VaultEntryType.GLUCOSE_CGM)){
+                if (!entry.getType().equals(VaultEntryType.GLUCOSE_CGM)) {
                     throw new IllegalArgumentException("VaultEntryType should be GLUCOSE_CGM but was " + entry.getType().toString());
                 }
             }
         }
-
 
         this.glucose = entries;
     }
@@ -91,11 +109,11 @@ public abstract class Algorithm {
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
         if (!bolusTreatments.isEmpty()) {
             VaultEntry current = bolusTreatments.get(0);
-            for (VaultEntry entry : bolusTreatments){
-                if(entry.getTimestamp().getTime() < current.getTimestamp().getTime()){
+            for (VaultEntry entry : bolusTreatments) {
+                if (entry.getTimestamp().getTime() < current.getTimestamp().getTime()) {
                     throw new IllegalArgumentException("bolusTreatments have to be sorted by timestamp");
                 }
-                if (!entry.getType().equals(VaultEntryType.BOLUS_NORMAL)){
+                if (!entry.getType().equals(VaultEntryType.BOLUS_NORMAL)) {
                     throw new IllegalArgumentException("VaultEntryType should be BOLUS_NORMAL but was" + entry.getType().toString());
                 }
             }
@@ -112,16 +130,50 @@ public abstract class Algorithm {
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
         if (!basalTreatments.isEmpty()) {
             VaultEntry current = basalTreatments.get(0);
-            for (VaultEntry entry : basalTreatments){
-                if(entry.getTimestamp().getTime() < current.getTimestamp().getTime()){
+            for (VaultEntry entry : basalTreatments) {
+                if (entry.getTimestamp().getTime() < current.getTimestamp().getTime()) {
                     throw new IllegalArgumentException("basalTreatments have to be sorted by timestamp");
                 }
-                if (!entry.getType().equals(VaultEntryType.BASAL_PROFILE)){
+                if (!entry.getType().equals(VaultEntryType.BASAL_PROFILE)) {
                     throw new IllegalArgumentException("VaultEntryType should be BASAL_PROFILE but was" + entry.getType().toString());
                 }
             }
         }
         this.basalTreatments = basalTreatments;
+    }
+
+    /**
+     * Set a list of meal treatments as result
+     *
+     * @param mealValues list of meal values
+     * @param mealTimes list of corresponding time values
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     */
+    public void setMeals(List<Double> mealValues, List<Long> mealTimes) {
+        if (!mealValues.isEmpty() && mealValues.size() == mealTimes.size()) {
+            for (int i = 0; i < mealValues.size(); i++) {
+                mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                        TimestampUtils.createCleanTimestamp(new Date(mealTimes.get(i) * 60000)), mealValues.get(i)));
+            }
+        }
+        NSApi.LOGGER.log(Level.INFO, "Found meals: %d", mealTreatments.size());
+    }
+
+    /**
+     * Set a list of meal treatments as result
+     *
+     * @param mealValues RealVector of meal values
+     * @param mealTimes list of corresponding time values
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     */
+    public void setMeals(RealVector mealValues, List<Long> mealTimes) {
+        if (mealValues.getDimension() == mealTimes.size()) {
+            for (int i = 0; i < mealValues.getDimension(); i++) {
+                mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                        TimestampUtils.createCleanTimestamp(new Date(mealTimes.get(i) * 60000)), mealValues.getEntry(i)));
+            }
+        }
+        NSApi.LOGGER.log(Level.INFO, "Found meals: %d", mealTreatments.size());
     }
 
     /**

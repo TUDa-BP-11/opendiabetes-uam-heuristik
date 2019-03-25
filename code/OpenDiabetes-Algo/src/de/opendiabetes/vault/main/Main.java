@@ -123,7 +123,6 @@ public class Main {
     private static final int MEAL_VALUE_LIMIT = 60;
     private static final int MAX_TIME_GAP = 15;
 
-
     /**
      * Registers all arguments to the given JSAP instance
      *
@@ -220,18 +219,21 @@ public class Main {
         int insulinDuration = config.getInt("insDuration");
 
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
+
         for (VaultEntry meal : meals) {
-            if (meal.getValue() > MEAL_VALUE_LIMIT){
+            if (meal.getValue() > MEAL_VALUE_LIMIT) {
                 //TODO warning msg
-                NSApi.LOGGER.log(Level.WARNING, "there is a meal calculated that is bigger than " + MEAL_VALUE_LIMIT +", please check.");
+                NSApi.LOGGER.log(Level.WARNING, "there is a meal calculated that is bigger than %d, please check.", MEAL_VALUE_LIMIT);
             }
             NSApi.LOGGER.log(Level.FINE, meal.toString());
         }
         long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
-        if(maxTimeGap < MAX_TIME_GAP)
-            NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is " + maxTimeGap + ".");
-            //TODO warning msg
-        else NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is " + maxTimeGap + ".");
+        if (maxTimeGap < MAX_TIME_GAP) {
+            NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d.", maxTimeGap);
+        } //TODO warning msg
+        else {
+            NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d.", maxTimeGap);
+        }
 
         //Output
         if (config.contains("output-file")) {
@@ -259,16 +261,13 @@ public class Main {
             }
         }
 
-
         for (VaultEntry meal : meals) {
             NSApi.LOGGER.log(Level.INFO, meal.toString());
         }
 
-
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter();
-            cgpm.plot(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
-                    dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            cgpm.add(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals);
             cgpm.showAll();
         }
 
@@ -308,7 +307,7 @@ public class Main {
             case "qrdiff":
                 return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
             default:
-                NSApi.LOGGER.warning("There is no Algorithm with the name: " + config.getString("algorithm"));
+                NSApi.LOGGER.log(Level.WARNING, "There is no Algorithm with the name: {0}", config.getString("algorithm"));
         }
         return null;
     }
@@ -321,9 +320,9 @@ public class Main {
         return (config.contains("entries") || config.contains("treatments") || config.contains("profile"));
     }
 
-    private static long getMaxTimeGap(List<VaultEntry> list){
+    private static long getMaxTimeGap(List<VaultEntry> list) {
         long maxTimeGap = 0;
-        if (list.size() < 2){
+        if (list.size() < 2) {
             return maxTimeGap;
         }
         VaultEntry current = list.get(0);
