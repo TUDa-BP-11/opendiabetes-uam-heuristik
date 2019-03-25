@@ -115,7 +115,6 @@ public class Main {
         CGMPlotter cgpm;
 
         algo = new MinimumAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        algo.setSkipTime(INSULIN_DURATION);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("MinimumAlgo");
@@ -123,7 +122,6 @@ public class Main {
         cgpmList.add(cgpm);
 
         algo = new FilterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        algo.setSkipTime(INSULIN_DURATION);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("FilterAlgo");
@@ -131,7 +129,6 @@ public class Main {
         cgpmList.add(cgpm);
 //        
         algo = new PolyCurveFitterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        algo.setSkipTime(INSULIN_DURATION);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("PolyCurveFitterAlgo");
@@ -139,7 +136,6 @@ public class Main {
         cgpmList.add(cgpm);
         
         algo = new QRAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        algo.setSkipTime(INSULIN_DURATION);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("QRAlgo");
@@ -147,7 +143,6 @@ public class Main {
         cgpmList.add(cgpm);
         
         algo = new QRAlgo_TimeOpt(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        algo.setSkipTime(INSULIN_DURATION);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("QRAlgo_TimeOpt");
@@ -155,7 +150,6 @@ public class Main {
         cgpmList.add(cgpm);
         
         algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        algo.setSkipTime(INSULIN_DURATION);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("LMAlgo");

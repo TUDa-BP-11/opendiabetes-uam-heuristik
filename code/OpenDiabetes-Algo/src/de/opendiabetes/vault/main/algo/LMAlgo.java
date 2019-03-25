@@ -45,7 +45,7 @@ public class LMAlgo extends Algorithm {
         nkbg = new ArrayRealVector();
         times = new ArrayRealVector();
 
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + skipTime;
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
         final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
         final long firstMealTime = firstTime - absorptionTime;
         final long lastMealTime = lastTime; //  - absorptionTime / 4
@@ -209,6 +209,16 @@ public class LMAlgo extends Algorithm {
                             TimestampUtils.createCleanTimestamp(new Date(uniqueMealTimes.get(i) * 60000)), uniqueMealValues.get(i)));
                 }
             }
+        }
+        //Remove Meals before first Bg entry
+        for (int i = 0; i < mealTreatments.size(); i++) {
+            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
+                mealTreatments.remove(i);
+                i--;
+            } else {
+                break;
+            }
+
         }
         return mealTreatments;
     }

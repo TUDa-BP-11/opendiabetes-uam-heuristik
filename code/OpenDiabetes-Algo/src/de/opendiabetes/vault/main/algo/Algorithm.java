@@ -60,16 +60,6 @@ public abstract class Algorithm {
     }
 
     /**
-     * Set the time from first BG Value skipped to avoid edge effects of unknown
-     * earlier treatments
-     *
-     * @param skipTime skip time in minutes
-     */
-    public void setSkipTime(long skipTime) {
-        this.skipTime = skipTime;
-    }
-
-    /**
      * Set a profile
      *
      * @param profile profile
