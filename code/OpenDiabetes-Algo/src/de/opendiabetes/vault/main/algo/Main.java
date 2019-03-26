@@ -2,6 +2,7 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.main.CGMPlotter;
 import de.opendiabetes.vault.main.math.BasalCalculatorTools;
+import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.util.Snippet;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
@@ -156,6 +157,8 @@ public class Main {
         algoList.add(algo);
         cgpmList.add(cgpm);
 
+        ErrorCalc errorCalc = new ErrorCalc(false);
+
         Snippet s;
         for (int i = 0; i < snippets.size(); i++) {
             s = snippets.get(i);
@@ -167,7 +170,9 @@ public class Main {
                 algo.setBolusTreatments(s.getBoli());
                 algo.setBasalTreatments(s.getBasals());
                 List<VaultEntry> meals = algo.calculateMeals();
+                errorCalc.calculateError(s.getEntries(),s.getBasals(),s.getBoli(),meals,profile.getSensitivity(),INSULIN_DURATION,profile.getCarbratio(),ABSORBTION_TIME);
                 cgpmList.get(jj).add(s.getEntries(), s.getBasals(), s.getBoli(), meals);
+                cgpmList.get(jj).addError(errorCalc.getErrorPercent(),errorCalc.getErrorDates());
             }
         }
 
