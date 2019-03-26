@@ -19,6 +19,9 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
+/**
+ * Exports {@link VaultEntry}s as JSON objects that can be uploaded to the uam endpoint of a Nightscout server.
+ */
 public class UnannouncedMealExporter extends Exporter {
     private final Gson gson;
     private final String algorithm;
@@ -29,6 +32,14 @@ public class UnannouncedMealExporter extends Exporter {
         this.algorithm = algorithm;
     }
 
+    /**
+     * Formats the data as nightscout json representation for the uam endpoint. All times are converted to UTC.
+     * Only allowed VaultEntryType is {@link VaultEntryType#MEAL_MANUAL}.
+     *
+     * @param sink target for export (e.g., a file)
+     * @param data data to be exported.
+     * @throws NightscoutDataException if invalid entries are exported
+     */
     @Override
     public void exportData(OutputStream sink, List<VaultEntry> data) {
         JsonArray array = new JsonArray();

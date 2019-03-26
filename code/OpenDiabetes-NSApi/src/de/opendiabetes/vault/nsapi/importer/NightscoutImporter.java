@@ -44,7 +44,7 @@ public class NightscoutImporter extends Importer {
      * Parses the source as a nightscout json representation of vault entries. Expects an array of json objects.
      * If an object in the array contains information for multiple vault entry types, it will be split up into individual entries.
      * Currently supports the following entries: {@link VaultEntryType#GLUCOSE_CGM}, {@link VaultEntryType#BOLUS_NORMAL},
-     * {@link VaultEntryType#MEAL_MANUAL} and {@link VaultEntryType#BASAL_MANUAL}
+     * {@link VaultEntryType#MEAL_MANUAL} and {@link VaultEntryType#BASAL_MANUAL}.
      *
      * @param source Data source.
      * @return list of generated vault entries. May contain more entries than the source did.

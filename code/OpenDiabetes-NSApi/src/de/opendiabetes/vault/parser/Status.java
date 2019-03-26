@@ -38,6 +38,9 @@ public class Status {
         return apiEnabled;
     }
 
+    /**
+     * @return all plugins listed by the server as enabled
+     */
     public String[] getPlugins() {
         return settings.enable;
     }

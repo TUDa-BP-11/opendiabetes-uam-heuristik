@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Imports JSON objects from the uam endpoint of a Nightscout server as {@link VaultEntry}s.
+ */
 public class UnannouncedMealImporter extends Importer {
     private final JsonParser json;
 
@@ -32,6 +35,14 @@ public class UnannouncedMealImporter extends Importer {
         this.json = new JsonParser();
     }
 
+    /**
+     * Parses the source as a nightscout json representation of vault entries. Expects an array of json objects.
+     * Only supports data returned by the uam endpoint of a Nightscout server with the uam plugin enabled.
+     *
+     * @param source Data source.
+     * @return list of generated vault entries.
+     * @throws NightscoutDataException if the given source is not formatted correctly
+     */
     @Override
     public List<VaultEntry> importData(InputStream source) {
         Reader reader = new InputStreamReader(source);
