@@ -2,6 +2,7 @@ package de.opendiabetes.vault.main;
 
 import com.github.sh0nk.matplotlib4j.Plot;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
+import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.main.util.Snippet;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -157,9 +158,9 @@ public class CGMPlotter {
 
         double startValue = 0;
         if (bStartValue) {
-            startValue = getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+            startValue = ErrorCalc.getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
         }
-        double startTime = getStartTime(entries, insDuration, absorptionTime);
+        double startTime = ErrorCalc.getStartTime(entries, insDuration, absorptionTime);
         for (VaultEntry ve : entries) {
             bgTimesSnippet.add((ve.getTimestamp().getTime()) / 1000.0);
             bgValuesSnippet.add(ve.getValue());
@@ -397,39 +398,6 @@ public class CGMPlotter {
                 histPlt.show();
             }
     }
-
-    private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-                                 List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-                                 double sensitivity, int insDuration, double carbratio, int absorptionTime) {
-        double startTime = getStartTime(entries, insDuration, absorptionTime);
-
-        if (entries.isEmpty()) {
-            return 0;
-        }
-
-        double startValue = entries.get(0).getValue();
-        for (VaultEntry ve : entries) {
-            startValue = ve.getValue() - Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
-            if (ve.getTimestamp().getTime() >= startTime) {
-                break;
-            }
-        }
-
-        return startValue;
-    }
-
-    private long getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
-        long startTime = entries.get(0).getTimestamp().getTime();
-        long firstValidTime = startTime + Math.max(insDuration, absorptionTime) * 60000;
-        for (int i = 0; i < entries.size() - 1; i++) {
-            startTime = entries.get(i).getTimestamp().getTime();
-            if (entries.get(i + 1).getTimestamp().getTime() > firstValidTime) {
-                break;
-            }
-        }
-        return startTime;
-    }
-
     private void generatePointsToDraw(List<VaultEntry> vaultEntries, List<Double> values, List<Double> times) {
         vaultEntries.forEach((a) -> {
             if (a.getValue() > 0) {
