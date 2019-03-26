@@ -193,12 +193,16 @@ public class Main {
         // init
         initLogger(config);
 
-
+        //checks
+        if (!algorithms.containsKey(config.getString("algorithm"))) {
+            NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: " + config.getString("algorithm"));
+            NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
+            return;
+        }
         if (someFilesSet(config) && !allFilesSet(config)) {
             NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
             return;
         }
-
         if (config.contains("host") && allFilesSet(config)) {
             NSApi.LOGGER.warning("Cannot get input from files and server at the same time!");
             return;
@@ -220,6 +224,7 @@ public class Main {
             return;
         }
 
+        //init DataProvider
         AlgorithmDataProvider dataProvider;
         try {
             dataProvider = chooseDataProvider(config);
@@ -228,29 +233,20 @@ public class Main {
             return;
         }
 
-        if (!algorithms.containsKey(config.getString("algorithm"))) {
-            NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: " + config.getString("algorithm"));
-            NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
-            return;
-        }
-
+        //init Algorithm
+        int absorptionTime = config.getInt("absorptionTime");
+        int insulinDuration = config.getInt("insDuration");
         Algorithm algorithm = null;
         try {
-            algorithm = chooseAlgorithm(config, dataProvider);
+            algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class)
+                    .newInstance(absorptionTime, insulinDuration, dataProvider);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
-        }
-
-        if (algorithm == null) {
-            return;
         }
 
         List<VaultEntry> meals = algorithm.calculateMeals();
 
         //Logging
-        int absorptionTime = config.getInt("absorptionTime");
-        int insulinDuration = config.getInt("insDuration");
-
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
 
         long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
@@ -268,6 +264,7 @@ public class Main {
         NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.3g%%.", errorCalc.getMaxErrorPercent());
         NSApi.LOGGER.log(Level.INFO, "The mean square error is %.3g.", errorCalc.getMeanSquareError());
         NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.3g.", errorCalc.getStdDeviation());
+
 
         //Output
         if (config.contains("output-file")) {
@@ -329,15 +326,6 @@ public class Main {
                     (ZonedDateTime) config.getObject("oldest"));
         }
         return null;
-    }
-
-    private static Algorithm chooseAlgorithm(JSAPResult config, AlgorithmDataProvider dataProvider) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-
-        int absorptionTime = config.getInt("absorptionTime");
-        int insulinDuration = config.getInt("insDuration");
-        return algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class).newInstance(absorptionTime, insulinDuration, dataProvider);
-
-
     }
 
     private static boolean allFilesSet(JSAPResult config) {
