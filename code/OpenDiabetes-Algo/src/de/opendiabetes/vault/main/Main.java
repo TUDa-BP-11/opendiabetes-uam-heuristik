@@ -238,7 +238,7 @@ public class Main {
         try {
             algorithm = chooseAlgorithm(config, dataProvider);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            e.printStackTrace();
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
 
         if (algorithm == null) {
@@ -262,8 +262,8 @@ public class Main {
         }
 
         ErrorCalc errorCalc = new ErrorCalc();
-        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals
-                , dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
+                dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
         NSApi.LOGGER.log(Level.INFO, "The maximum error between the data and the prediction is %.3g.", errorCalc.getMaxError());
         NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.3g%%.", errorCalc.getMaxErrorPercent());
         NSApi.LOGGER.log(Level.INFO, "The mean square error is %.3g.", errorCalc.getMeanSquareError());
@@ -310,12 +310,10 @@ public class Main {
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {
                 cgpm.showAll();
-
             } catch (IOException | PythonExecutionException ex) {
                 NSApi.LOGGER.log(Level.SEVERE, null, ex);//TODO msg?
             }
         }
-
         dataProvider.close();
     }
 
