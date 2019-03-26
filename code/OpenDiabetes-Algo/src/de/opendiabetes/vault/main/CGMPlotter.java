@@ -301,11 +301,11 @@ public class CGMPlotter {
                     if (i == 0) {
                         plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("meals").marker("_").linestyle("").markersize("3"); //.color("red")
 //                        plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").linestyle("").label("bolus").marker("_").markersize("3");
-                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
+                        //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
                     } else {
                         plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("_").linestyle("").markersize("3"); //.color("red")
 //                        plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").linestyle("").marker("_").markersize("3");
-                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
+                        //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
                     }
                 }
                 plt.plot().addDates(firstToLast).add(zeros).linestyle("");
@@ -318,8 +318,10 @@ public class CGMPlotter {
                 for (int i = 0; i < bgTimes.size(); i++) {
                     if (i == 0) {
                         plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").label("bolus").marker("_").markersize("3").color("C" + i % 10);
+                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
                     } else {
                         plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").marker("_").markersize("3").color("C" + i % 10);
+                        plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
                     }
                 }
                 plt.plot().addDates(firstToLast).add(zeros).linestyle("");
