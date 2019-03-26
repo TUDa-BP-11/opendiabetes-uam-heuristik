@@ -3,17 +3,15 @@ package de.opendiabetes.vault.main.algo;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
-import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.parser.Profile;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestAlgorithms {
@@ -26,7 +24,7 @@ public class TestAlgorithms {
     private final int insDur = 180;
 
 
-    @Before
+    @BeforeEach
     public void init() {
         entries = new ArrayList<>();
         basals = new ArrayList<>();
