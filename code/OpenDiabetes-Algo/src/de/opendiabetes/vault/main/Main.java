@@ -14,10 +14,8 @@ import de.opendiabetes.vault.nsapi.NSApiTools;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
-import de.opendiabetes.vault.parser.Profile;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
