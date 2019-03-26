@@ -130,7 +130,7 @@ public class Main {
 
     private static final int MAX_TIME_GAP = 15;
 
-    private static Map<String,Class<? extends Algorithm>> algorithms = new HashMap<>();
+    private static Map<String, Class<? extends Algorithm>> algorithms = new HashMap<>();
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -168,33 +168,14 @@ public class Main {
         }
     }
 
-    private static void registerAlgorithms(){
-        algorithms.put("Lm" , LMAlgo.class);
+    private static void registerAlgorithms() {
+        algorithms.put("lm", LMAlgo.class);
         algorithms.put("min", MinimumAlgo.class);
         algorithms.put("filter", FilterAlgo.class);
         algorithms.put("poly", PolyCurveFitterAlgo.class);
         algorithms.put("qr", QRAlgo.class);
         algorithms.put("qrdiff", QRDiffAlgo.class);
         algorithms.put("oldlm", OldLMAlgo.class);
-
-                /*
-        switch (config.getString("algorithm").toLowerCase()) {
-            case "lm":
-                return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "min":
-                return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "filter":
-                return new FilterAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "poly":
-                return new PolyCurveFitterAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "qr":
-                return new QRAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "qrdiff":
-                return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
-            default:
-                NSApi.LOGGER.log(Level.WARNING, "There is no Algorithm with the name: {0}", config.getString("algorithm"));
-        }*/
-
     }
 
     public static void main(String[] args) {
@@ -205,7 +186,7 @@ public class Main {
         registerAlgorithms();
         JSAPResult config = initArguments(jsap, args);
         if (config == null) {
-            showAlgorithms();
+            NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
             return;
         }
 
@@ -247,9 +228,9 @@ public class Main {
             return;
         }
 
-        if(!algorithms.containsKey(config.getString("algorithm"))){
+        if (!algorithms.containsKey(config.getString("algorithm"))) {
             NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: " + config.getString("algorithm"));
-            NSApi.LOGGER.log(Level.INFO,"For an argument summary execute without arguments.");
+            NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
             return;
         }
 
@@ -314,7 +295,7 @@ public class Main {
             }
         }
 
-        if (meals.size() > 0){
+        if (meals.size() > 0) {
             NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
         } else {
             NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
@@ -331,16 +312,11 @@ public class Main {
                 cgpm.showAll();
 
             } catch (IOException | PythonExecutionException ex) {
-                NSApi.LOGGER.log(Level.SEVERE,null, ex);//TODO msg?
+                NSApi.LOGGER.log(Level.SEVERE, null, ex);//TODO msg?
             }
         }
 
         dataProvider.close();
-    }
-
-    private static void showAlgorithms() {
-        NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
-
     }
 
     private static AlgorithmDataProvider chooseDataProvider(JSAPResult config) {
@@ -361,7 +337,7 @@ public class Main {
 
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
-        return algorithms.get(config.getString("algorithm")).getConstructor(long.class,long.class,AlgorithmDataProvider.class).newInstance(absorptionTime, insulinDuration, dataProvider);
+        return algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class).newInstance(absorptionTime, insulinDuration, dataProvider);
 
 
     }
