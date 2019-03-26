@@ -2,29 +2,39 @@
 <project name="OpenDiabetes-UAM" default="all" basedir=".">
     <description>Builds and tests all the modules of this project. To build all modules, execute target "all"</description>
 
+    <property name="engine.dir" value="code/OpenDiabetesVault-Engine"/>
+    <property name="nsapi.dir" value="code/OpenDiabetes-NSApi"/>
+    <property name="synchronizer.dir" value="code/OpenDiabetes-Synchronizer"/>
+    <property name="algo.dir" value="code/OpenDiabetes-Algo"/>
+
+    <property name="doc.dir" value="doc"/>
+
     <target name="all" depends="Engine, NSApi, Synchronizer, Algo"/>
 
     <target name="Engine">
-        <ant dir="code/OpenDiabetesVault-Engine" target="jar"/>
+        <ant dir="${engine.dir}" target="jar"/>
     </target>
 
     <target name="NSApi" depends="Engine">
-        <ant dir="code/OpenDiabetes-NSApi" target="full"/>
+        <ant dir="${nsapi.dir}" target="full"/>
     </target>
 
     <target name="Synchronizer" depends="NSApi">
-        <ant dir="code/OpenDiabetes-Synchronizer" target="full"/>
+        <ant dir="${synchronizer.dir}" target="full"/>
     </target>
 
     <target name="Algo" depends="NSApi">
-        <ant dir="code/OpenDiabetes-Algo" target="full"/>
+        <ant dir="${algo.dir}" target="full"/>
     </target>
 
-    <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties"
-             classpath="lib/checkstyle-8.17-all.jar"/>
-    <target name="checkstyle">
-        <checkstyle config="checkstyle.xml">
-            <fileset dir="code" includes="**/*.java"/>
-        </checkstyle>
+    <target name="generate-javadoc">
+        <delete dir="${doc.dir}" failonerror="false"/>
+        <mkdir dir="${doc.dir}"/>
+        <javadoc destdir="${doc.dir}">
+            <fileset dir="${engine.dir}/src"/>
+            <fileset dir="${nsapi.dir}/src"/>
+            <fileset dir="${algo.dir}/src"/>
+            <fileset dir="${synchronizer.dir}/src"/>
+        </javadoc>
     </target>
 </project>
