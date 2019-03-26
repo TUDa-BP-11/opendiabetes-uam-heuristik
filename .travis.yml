@@ -33,6 +33,6 @@ addons:
       name: "TUDa-BP-11/opendiabetes-uam-heuristik"
       description: "Build submitted via Travis CI"
     notification_email: bachelor-praktikum-gruppe-11@googlegroups.com
-    build_command_prepend: "<Your build preprocessing command here>"
-    build_command: ant -buildfile code/OpenDiabetesVault-Engine/build.xml
+    build_command_prepend: ""
+    build_command: ant -lib lib/junit
     branch_pattern: coverity_scan

@@ -1,14 +1,25 @@
 package de.opendiabetes.vault.synchronizer;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonWriter;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.time.temporal.TemporalAccessor;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,6 +89,19 @@ public class Main {
     private static final Parameter P_DEBUG = new Switch("debug")
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
+    private static final Parameter P_DIFF = new Switch("diff")
+            .setLongFlag("diff")
+            .setHelp("Export all missing entries to a file instead of uploading them.");
+    private static final Parameter P_FILE = new FlaggedOption("file")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('f')
+            .setLongFlag("file")
+            .setDefault("missing.json")
+            .setHelp("Path to the file that should be used to export missing entries.");
+    private static final Parameter P_OVERWRITE = new Switch("overwrite")
+            .setShortFlag('o')
+            .setLongFlag("overwrite")
+            .setHelp("Overwrite existing files");
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -96,10 +120,13 @@ public class Main {
             jsap.registerParameter(P_DATA);
             jsap.registerParameter(P_LATEST);
             jsap.registerParameter(P_OLDEST);
+            jsap.registerParameter(P_DIFF);
 
             // Tuning
             jsap.registerParameter(P_BATCHSIZE);
             jsap.registerParameter(P_WITH_IDS);
+            jsap.registerParameter(P_FILE);
+            jsap.registerParameter(P_OVERWRITE);
 
             // Debugging
             jsap.registerParameter(P_VERBOSE);
@@ -138,19 +165,59 @@ public class Main {
                 LOGGER.log(Level.INFO, "Found %d objects in /%s of which %d are missing in the target instance.",
                         new Object[]{sync.getFindCount(), sync.getApiPath(), sync.getMissingCount()});
                 if (sync.getMissingCount() > 0) {
-                    LOGGER.log(Level.INFO, "Uploading %d objects...", sync.getMissingCount());
-                    synchronizer.postMissing(sync, !config.getBoolean("with-ids"));
+                    if (!config.getBoolean("with-ids"))
+                        stripIds(sync.getMissing());
+                    if (config.getBoolean("diff")) {
+                        // use api path as file name (replace all file seperators with dots)
+                        String type = sync.getApiPath().replaceAll("[/\\\\]", ".");
+                        Path path = Paths.get(config.getString("file")).normalize();
+                        // final path is original file with api path as prefix
+                        // get parent (may be null, so current directory in that case) and resolve file name in that directory
+                        // normalize in the end
+                        path = Optional.ofNullable(path.getParent()).orElse(Paths.get("."))
+                                .resolve(type + "." + path.getFileName().toString())
+                                .normalize();
+                        LOGGER.log(Level.INFO, "Writing %d objects to %s...", new Object[]{sync.getMissingCount(), path});
+                        File file = path.toFile();
+                        if (file.isDirectory())
+                            throw new NightscoutIOException("Cannot write to directory: " + path);
+                        if (file.exists() && !config.getBoolean("overwrite"))
+                            throw new NightscoutIOException("File already exists: " + path);
+                        if (file.exists() && !file.canWrite())
+                            throw new NightscoutIOException("File is not writable, are you missing permissions? " + path);
+                        if (file.exists() && !file.delete())
+                            throw new NightscoutIOException("Could not delete old file: " + path);
+
+                        try (JsonWriter writer = new JsonWriter(new FileWriter(file))) {
+                            writer.setIndent("  ");
+                            Gson gson = new Gson();
+                            gson.toJson(sync.getMissing(), writer);
+                        } catch (IOException e) {
+                            LOGGER.log(Level.SEVERE, e, e::getMessage);
+                        }
+                    } else {
+                        LOGGER.log(Level.INFO, "Uploading %d objects...", sync.getMissingCount());
+                        synchronizer.postMissing(sync);
+                    }
                 }
             } catch (NightscoutIOException | NightscoutServerException e) {
                 LOGGER.log(Level.SEVERE, e, e::getMessage);
             }
         }
         try {
-            synchronizer.close();
-        } catch (IOException e) {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
             LOGGER.log(Level.SEVERE, e, e::getMessage);
         }
         LOGGER.log(Level.INFO, "Done!");
+    }
+
+    private static void stripIds(JsonArray array) {
+        for (JsonElement e : array) {
+            JsonObject o = e.getAsJsonObject();
+            if (o.has("_id"))
+                o.remove("_id");
+        }
     }
 
     public static Logger logger() {
