@@ -59,7 +59,7 @@ public class Main {
     private static final Parameter P_ALGO = new FlaggedOption("algorithm")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('a')
-            .setDefault("LM")
+            .setDefault("lm")
             .setRequired(true)
             .setLongFlag("algorithm")
             .setHelp("Algorithm that should be used");
@@ -128,7 +128,7 @@ public class Main {
 
     private static final int MAX_TIME_GAP = 15;
 
-    private static Map<String, Class<? extends Algorithm>> algorithms = new HashMap<>();
+    private static final Map<String, Class<? extends Algorithm>> algorithms = new HashMap<>();
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -193,7 +193,7 @@ public class Main {
 
         //checks
         if (!algorithms.containsKey(config.getString("algorithm"))) {
-            NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: " + config.getString("algorithm"));
+            NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: %s", config.getString("algorithm"));
             NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
             return;
         }
@@ -234,12 +234,13 @@ public class Main {
         //init Algorithm
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
-        Algorithm algorithm = null;
+        Algorithm algorithm;
         try {
             algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class)
                     .newInstance(absorptionTime, insulinDuration, dataProvider);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+            return;
         }
 
         List<VaultEntry> meals = algorithm.calculateMeals();
@@ -249,20 +250,19 @@ public class Main {
 
         long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
         if (maxTimeGap < MAX_TIME_GAP) {
-            NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d.", maxTimeGap);
+            NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         } //TODO warning msg
         else {
-            NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d.", maxTimeGap);
+            NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         }
 
-        ErrorCalc errorCalc = new ErrorCalc();
-        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
-                dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
-        NSApi.LOGGER.log(Level.INFO, "The maximum error between the data and the prediction is %.3g.", errorCalc.getMaxError());
-        NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.3g%%.", errorCalc.getMaxErrorPercent());
-        NSApi.LOGGER.log(Level.INFO, "The mean square error is %.3g.", errorCalc.getMeanSquareError());
-        NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.3g.", errorCalc.getStdDeviation());
-
+        ErrorCalc errorCalc = new ErrorCalc(false);
+        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+        NSApi.LOGGER.log(Level.INFO, "The maximum error between the data and the prediction is %.0f mg/dl.", errorCalc.getMaxError());
+        NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.1f%%.", errorCalc.getMaxErrorPercent());
+        NSApi.LOGGER.log(Level.INFO, "The root mean square error is %.1f mg/dl.", errorCalc.getRootMeanSquareError());
+        NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.1f mg/dl.", errorCalc.getStdDeviation());
+        NSApi.LOGGER.log(Level.INFO, "The bias is %.1f mg/dl.", errorCalc.getMeanError());
 
         //Output
         if (config.contains("output-file")) {
@@ -295,12 +295,12 @@ public class Main {
         } else {
             NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
         }
-        for (VaultEntry meal : meals) {
+        meals.forEach((meal) -> {
             NSApi.LOGGER.log(Level.INFO, meal.toString());
-        }
+        });
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            CGMPlotter cgpm = new CGMPlotter(true, false, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
             cgpm.add(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {

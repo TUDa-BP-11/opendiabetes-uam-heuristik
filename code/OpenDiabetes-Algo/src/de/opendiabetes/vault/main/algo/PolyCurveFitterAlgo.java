@@ -32,7 +32,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
     public List<VaultEntry> calculateMeals() {
 
         double weight = 1;
-        mealTreatments.clear();
+        List<VaultEntry> mealTreatments;
+        mealTreatments = new ArrayList<>();
         PolynomialCurveFitter pcf = PolynomialCurveFitter.create(2);
         ArrayList<WeightedObservedPoint> observations = new ArrayList<>();
 
@@ -56,7 +57,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
 
         double startValue;
         double nextValue;
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + skipTime;
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
         for (int i = 0; i < glucose.size(); i++) {
             current = glucose.get(i);
 

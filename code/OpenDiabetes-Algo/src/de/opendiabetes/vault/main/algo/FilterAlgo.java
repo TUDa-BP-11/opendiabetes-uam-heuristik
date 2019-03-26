@@ -31,9 +31,8 @@ public class FilterAlgo extends Algorithm {
         RealVector mealValues;
 
         ArrayList<Long> times;
-
-        mealTreatments.clear();
-        VaultEntry meal;
+        List<VaultEntry> mealTreatments;
+        mealTreatments = new ArrayList<>();
 
         double currentPrediction;
         double currentValue;
@@ -43,7 +42,7 @@ public class FilterAlgo extends Algorithm {
         times = new ArrayList<>();
 
         // possible discrete meal times within snippet time range each 5 Minutes.
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + skipTime;
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
         long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
         long step = 5; // 5 minutes
         long currentTime = firstTime - absorptionTime;
@@ -86,8 +85,8 @@ public class FilterAlgo extends Algorithm {
                             TimestampUtils.createCleanTimestamp(new Date(times.get(i) * 60000)), mealValues.getEntry(i)));
                 }
             }
-        }else {
-            NSApi.LOGGER.log(Level.WARNING,"Singular");
+        } else {
+            NSApi.LOGGER.log(Level.WARNING, "Singular");
         }
 
         return mealTreatments;
