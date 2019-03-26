@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.main.algo;
 
+import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import de.opendiabetes.vault.main.CGMPlotter;
 import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.main.math.ErrorCalc;
@@ -135,21 +136,21 @@ public class Main {
         cgpm.title("PolyCurveFitterAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
-        
+
         algo = new QRAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("QRAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
-        
+
         algo = new QRAlgo_TimeOpt(ABSORBTION_TIME, INSULIN_DURATION, profile);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
         cgpm.title("QRAlgo_TimeOpt");
         algoList.add(algo);
         cgpmList.add(cgpm);
-        
+
         algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME);
@@ -170,14 +171,19 @@ public class Main {
                 algo.setBolusTreatments(s.getBoli());
                 algo.setBasalTreatments(s.getBasals());
                 List<VaultEntry> meals = algo.calculateMeals();
-                errorCalc.calculateError(s.getEntries(),s.getBasals(),s.getBoli(),meals,profile.getSensitivity(),INSULIN_DURATION,profile.getCarbratio(),ABSORBTION_TIME);
+                errorCalc.calculateError(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), INSULIN_DURATION, profile.getCarbratio(), ABSORBTION_TIME);
                 cgpmList.get(jj).add(s.getEntries(), s.getBasals(), s.getBoli(), meals);
-                cgpmList.get(jj).addError(errorCalc.getErrorPercent(),errorCalc.getErrorDates());
+                cgpmList.get(jj).addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             }
         }
 
         for (int jj = 0; jj < algoList.size(); jj++) {
-            cgpmList.get(jj).showAll();
+            try {
+                cgpmList.get(jj).showAll();
+
+            } catch (IOException | PythonExecutionException ex) {
+                NSApi.LOGGER.log(Level.SEVERE, null, ex);
+            }
         }
 //        //FOR LATER USE
 //        // query data

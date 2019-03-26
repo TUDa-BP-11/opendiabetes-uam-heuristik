@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.main;
 
+import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.*;
@@ -14,6 +15,7 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -274,7 +276,12 @@ public class Main {
             CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
             cgpm.add(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
-            cgpm.showAll();
+            try {
+                cgpm.showAll();
+
+            } catch (IOException | PythonExecutionException ex) {
+                NSApi.LOGGER.log(Level.SEVERE,null, ex);
+            }
         }
 
         dataProvider.close();

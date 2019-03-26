@@ -272,8 +272,7 @@ public class CGMPlotter {
 
     }
 
-    public void showAll() {
-        try {
+    public void showAll() throws IOException, PythonExecutionException {
             if (plotPlot) {
                 int subplots = plotError ? 4 : 3;
                 plt.subplot(subplots, 1, 1);
@@ -397,9 +396,6 @@ public class CGMPlotter {
                 histPlt.title(title);
                 histPlt.show();
             }
-        } catch (IOException | PythonExecutionException ex) {
-            NSApi.LOGGER.log(Level.SEVERE, null, ex);
-        }
     }
 
     private double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
