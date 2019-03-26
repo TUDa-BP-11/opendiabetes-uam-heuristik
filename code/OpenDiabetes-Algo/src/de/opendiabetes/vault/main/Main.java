@@ -14,11 +14,16 @@ import de.opendiabetes.vault.nsapi.NSApiTools;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.vault.parser.Profile;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 import static de.opendiabetes.vault.nsapi.Main.*;
@@ -123,8 +128,9 @@ public class Main {
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
-    private static final int MEAL_VALUE_LIMIT = 60;
     private static final int MAX_TIME_GAP = 15;
+
+    private static Map<String,Class<? extends Algorithm>> algorithms = new HashMap<>();
 
     /**
      * Registers all arguments to the given JSAP instance
@@ -162,18 +168,50 @@ public class Main {
         }
     }
 
+    private static void registerAlgorithms(){
+        algorithms.put("Lm" , LMAlgo.class);
+        algorithms.put("min", MinimumAlgo.class);
+        algorithms.put("filter", FilterAlgo.class);
+        algorithms.put("poly", PolyCurveFitterAlgo.class);
+        algorithms.put("qr", QRAlgo.class);
+        algorithms.put("qrdiff", QRDiffAlgo.class);
+        algorithms.put("oldlm", OldLMAlgo.class);
+
+                /*
+        switch (config.getString("algorithm").toLowerCase()) {
+            case "lm":
+                return new LMAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "min":
+                return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "filter":
+                return new FilterAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "poly":
+                return new PolyCurveFitterAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "qr":
+                return new QRAlgo(absorptionTime, insulinDuration, dataProvider);
+            case "qrdiff":
+                return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
+            default:
+                NSApi.LOGGER.log(Level.WARNING, "There is no Algorithm with the name: {0}", config.getString("algorithm"));
+        }*/
+
+    }
+
     public static void main(String[] args) {
 
         // setup arguments
         JSAP jsap = new JSAP();
         registerArguments(jsap);
+        registerAlgorithms();
         JSAPResult config = initArguments(jsap, args);
         if (config == null) {
+            showAlgorithms();
             return;
         }
 
         // init
         initLogger(config);
+
 
         if (someFilesSet(config) && !allFilesSet(config)) {
             NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
@@ -209,7 +247,18 @@ public class Main {
             return;
         }
 
-        Algorithm algorithm = chooseAlgorithm(config, dataProvider);
+        if(!algorithms.containsKey(config.getString("algorithm"))){
+            NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: " + config.getString("algorithm"));
+            NSApi.LOGGER.log(Level.INFO,"For an argument summary execute without arguments.");
+            return;
+        }
+
+        Algorithm algorithm = null;
+        try {
+            algorithm = chooseAlgorithm(config, dataProvider);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            e.printStackTrace();
+        }
 
         if (algorithm == null) {
             return;
@@ -223,13 +272,6 @@ public class Main {
 
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
 
-        for (VaultEntry meal : meals) {
-            if (meal.getValue() > MEAL_VALUE_LIMIT) {
-                //TODO warning msg
-                NSApi.LOGGER.log(Level.WARNING, "there is a meal calculated that is bigger than %d, please check.", MEAL_VALUE_LIMIT);
-            }
-            NSApi.LOGGER.log(Level.FINE, meal.toString());
-        }
         long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
         if (maxTimeGap < MAX_TIME_GAP) {
             NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d.", maxTimeGap);
@@ -241,6 +283,10 @@ public class Main {
         ErrorCalc errorCalc = new ErrorCalc();
         errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals
                 , dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+        NSApi.LOGGER.log(Level.INFO, "The maximum error between the data and the prediction is %.3g.", errorCalc.getMaxError());
+        NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.3g%%.", errorCalc.getMaxErrorPercent());
+        NSApi.LOGGER.log(Level.INFO, "The mean square error is %.3g.", errorCalc.getMeanSquareError());
+        NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.3g.", errorCalc.getStdDeviation());
 
         //Output
         if (config.contains("output-file")) {
@@ -268,6 +314,11 @@ public class Main {
             }
         }
 
+        if (meals.size() > 0){
+            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
+        } else {
+            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
+        }
         for (VaultEntry meal : meals) {
             NSApi.LOGGER.log(Level.INFO, meal.toString());
         }
@@ -280,11 +331,16 @@ public class Main {
                 cgpm.showAll();
 
             } catch (IOException | PythonExecutionException ex) {
-                NSApi.LOGGER.log(Level.SEVERE,null, ex);
+                NSApi.LOGGER.log(Level.SEVERE,null, ex);//TODO msg?
             }
         }
 
         dataProvider.close();
+    }
+
+    private static void showAlgorithms() {
+        NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
+
     }
 
     private static AlgorithmDataProvider chooseDataProvider(JSAPResult config) {
@@ -301,28 +357,13 @@ public class Main {
         return null;
     }
 
-    private static Algorithm chooseAlgorithm(JSAPResult config, AlgorithmDataProvider dataProvider) {
+    private static Algorithm chooseAlgorithm(JSAPResult config, AlgorithmDataProvider dataProvider) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
+        return algorithms.get(config.getString("algorithm")).getConstructor(long.class,long.class,AlgorithmDataProvider.class).newInstance(absorptionTime, insulinDuration, dataProvider);
 
-        switch (config.getString("algorithm").toLowerCase()) {
-            case "lm":
-                return new OldLMAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "min":
-                return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "filter":
-                return new FilterAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "poly":
-                return new PolyCurveFitterAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "qr":
-                return new QRAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "qrdiff":
-                return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
-            default:
-                NSApi.LOGGER.log(Level.WARNING, "There is no Algorithm with the name: {0}", config.getString("algorithm"));
-        }
-        return null;
+
     }
 
     private static boolean allFilesSet(JSAPResult config) {
