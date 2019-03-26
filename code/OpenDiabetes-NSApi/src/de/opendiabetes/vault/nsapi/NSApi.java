@@ -646,7 +646,7 @@ public class NSApi {
      * @throws NightscoutIOException     if an I/O error occurs during the request
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
-    public boolean hasPluginEnabled(String plugin) throws NightscoutIOException, NightscoutServerException {
+    public boolean isPluginEnabled(String plugin) throws NightscoutIOException, NightscoutServerException {
         Status status = getStatus();
         return Stream.of(status.getPlugins()).anyMatch(plugin::equalsIgnoreCase);
     }

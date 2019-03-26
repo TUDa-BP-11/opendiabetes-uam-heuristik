@@ -198,7 +198,7 @@ class NSApiTest {
     @Test
     void testUnannouncedMeals() throws NightscoutIOException, NightscoutServerException {
         // check that uam plugin is enabled
-        assumeTrue(api.hasPluginEnabled("uam"));
+        assumeTrue(api.isPluginEnabled("uam"));
 
         // start somewhere in the last month
         long start = System.currentTimeMillis() - (1 + (random.nextInt(30 * 24)) * 60 * 60 * 1000);
