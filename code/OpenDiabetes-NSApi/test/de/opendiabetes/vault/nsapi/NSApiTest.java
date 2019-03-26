@@ -167,7 +167,7 @@ class NSApiTest {
         // start somewhere in the last month
         long start = System.currentTimeMillis() - (1 + (random.nextInt(30 * 24)) * 60 * 60 * 1000);
         Supplier<Date> dates = createDateSupplier(start, 5 * 60 * 1000);
-        // generate 10 random CGM measurements
+        // generate 10 random meals
         List<VaultEntry> treatments = random.ints(10, 50, 1000)
                 .mapToObj(i -> new VaultEntry(VaultEntryType.MEAL_MANUAL, dates.get(), i))
                 .collect(Collectors.toList());
@@ -192,6 +192,42 @@ class NSApiTest {
         } else {
             // else the collections have to be equal
             assertIterableEquals(treatments, newTreatments);
+        }
+    }
+
+    @Test
+    void testUnannouncedMeals() throws NightscoutIOException, NightscoutServerException {
+        // check that uam plugin is enabled
+        assumeTrue(api.hasPluginEnabled("uam"));
+
+        // start somewhere in the last month
+        long start = System.currentTimeMillis() - (1 + (random.nextInt(30 * 24)) * 60 * 60 * 1000);
+        Supplier<Date> dates = createDateSupplier(start, 5 * 60 * 1000);
+        // generate 10 random meals
+        List<VaultEntry> uams = random.ints(10, 1, 100)
+                .mapToObj(i -> new VaultEntry(VaultEntryType.MEAL_MANUAL, dates.get(), i))
+                .collect(Collectors.toList());
+
+        // split into three batches
+        api.postUnannouncedMeals(uams, this.getClass().getName(), 4);
+
+        SimpleDateFormat format = NSApi.createSimpleDateFormatTreatment();
+        GetBuilder builder = api.getUnannouncedMeals()
+                .find("created_at").lte(format.format(uams.get(0).getTimestamp()))
+                .find("created_at").gte(format.format(uams.get(uams.size() - 1).getTimestamp()))
+                .count(100);     // in case there are other random uams from previous tests in this time
+        List<VaultEntry> newUams = builder.getUnannouncedMeals();
+
+        // assert all entries are found (or more)
+        assertTrue(newUams.size() >= uams.size());
+        if (newUams.size() > uams.size()) {
+            // if more entries are found test them individually
+            for (VaultEntry e : uams) {
+                assertTrue(newUams.contains(e));
+            }
+        } else {
+            // else the collections have to be equal
+            assertIterableEquals(uams, newUams);
         }
     }
 

@@ -106,12 +106,10 @@ public class NightscoutExporter extends Exporter {
             }
         }
 
-        try {
-            JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
+        try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink))) {
             if (options.isPretty())
                 writer.setIndent("  ");
             gson.toJson(array, writer);
-            writer.close();
         } catch (IOException | JsonIOException e) {
             throw new NightscoutDataException("Exception while flushing stream", e);
         }

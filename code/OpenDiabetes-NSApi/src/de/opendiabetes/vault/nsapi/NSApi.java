@@ -10,10 +10,14 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 import com.mashape.unirest.request.HttpRequestWithBody;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.importer.Importer;
 import de.opendiabetes.vault.nsapi.exception.NightscoutDataException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
+import de.opendiabetes.vault.nsapi.exporter.UnannouncedMealExporter;
+import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
+import de.opendiabetes.vault.nsapi.importer.UnannouncedMealImporter;
 import de.opendiabetes.vault.nsapi.logging.DefaultFormatter;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
@@ -40,6 +44,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * Implementation of the REST API provided by Nightscout
@@ -267,7 +272,7 @@ public class NSApi {
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
     public List<VaultEntry> getEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
-        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString", DATETIME_FORMATTER_ENTRY);
+        return getVaultEntries(latest, oldest, batchSize, "entries", "dateString", DATETIME_FORMATTER_ENTRY, new NightscoutImporter());
     }
 
     /**
@@ -342,17 +347,42 @@ public class NSApi {
      *
      * @param latest    latest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
      * @param oldest    oldest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
-     * @param batchSize amount of entries fetched at once
-     * @return list of fetched entries
+     * @param batchSize amount of treatments fetched at once
+     * @return list of fetched treatments
      * @throws NightscoutIOException       if an I/O error occurs during the request
      * @throws NightscoutServerException   if the Nightscout server returns a bad response status
      * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
      */
     public List<VaultEntry> getTreatments(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
-        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at", DATETIME_FORMATTER_TREATMENT);
+        return getVaultEntries(latest, oldest, batchSize, "treatments", "created_at", DATETIME_FORMATTER_TREATMENT, new NightscoutImporter());
     }
 
-    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField, DateTimeFormatter formatter) throws NightscoutIOException, NightscoutServerException {
+    /**
+     * The uam endpoint returns information about unannounced meals.
+     *
+     * @return a {@link GetBuilder} with uam as its path
+     */
+    public GetBuilder getUnannouncedMeals() {
+        return new GetBuilder(this, get("uam"));
+    }
+
+    /**
+     * Fetches all unannounced meals from Nightscout that are in between the given latest and oldest time (inclusive).
+     * UAMs are fetched in batches with the given batch size until Nightscout returns no more results.
+     *
+     * @param latest    latest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+     * @param oldest    oldest point in time, has to be formatable with {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+     * @param batchSize amount of uams fetched at once
+     * @return list of fetched uams
+     * @throws NightscoutIOException       if an I/O error occurs during the request
+     * @throws NightscoutServerException   if the Nightscout server returns a bad response status
+     * @throws java.time.DateTimeException if an error occurs while formatting latest or oldest
+     */
+    public List<VaultEntry> getUnannouncedMeals(TemporalAccessor latest, TemporalAccessor oldest, int batchSize) throws NightscoutIOException, NightscoutServerException {
+        return getVaultEntries(latest, oldest, batchSize, "uam", "created_at", DATETIME_FORMATTER_TREATMENT, new UnannouncedMealImporter());
+    }
+
+    private List<VaultEntry> getVaultEntries(TemporalAccessor latest, TemporalAccessor oldest, int batchSize, String path, String dateField, DateTimeFormatter formatter, Importer importer) throws NightscoutIOException, NightscoutServerException {
         List<VaultEntry> entries = new ArrayList<>();
         List<VaultEntry> fetched = null;
         GetBuilder getBuilder;
@@ -363,7 +393,7 @@ public class NSApi {
             if (fetched == null)    // first fetch: lte, following fetches: lt
                 getBuilder.find(dateField).lte(latestString);
             else getBuilder.find(dateField).lt(latestString);
-            fetched = getBuilder.getVaultEntries();
+            fetched = getBuilder.getVaultEntries(importer);
             if (!fetched.isEmpty()) {
                 entries.addAll(fetched);
                 Date ld = fetched.get(fetched.size() - 1).getTimestamp();
@@ -456,6 +486,39 @@ public class NSApi {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         exporter.exportData(stream, treatments);
         createPost("treatments").setBody(stream.toByteArray()).send();
+    }
+
+    /**
+     * Sends one or more POST requests with the given unannounced meals as their payloads. Splits the list into smaller batches to upload individually.
+     * Uses {@link UnannouncedMealExporter} to export the data.
+     *
+     * @param uams      data
+     * @param algorithm the algorithm used to calculate the meals
+     * @param batchSize maximum amount of treatments to send in one POST request
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @throws NightscoutDataException   if an exception occurs while exporting the data
+     */
+    public void postUnannouncedMeals(List<VaultEntry> uams, String algorithm, int batchSize) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        for (List<VaultEntry> vaultEntries : NSApiTools.split(uams, batchSize)) {
+            postUnannouncedMeals(vaultEntries, algorithm);
+        }
+    }
+
+    /**
+     * Sends a POST request with the given unannounced meals as its payload.
+     * Uses {@link UnannouncedMealExporter} to export the data.
+     *
+     * @param uams data
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     * @throws NightscoutDataException   if an exception occurs while exporting the data
+     */
+    public void postUnannouncedMeals(List<VaultEntry> uams, String algorithm) throws NightscoutIOException, NightscoutServerException, NightscoutDataException {
+        UnannouncedMealExporter exporter = new UnannouncedMealExporter(algorithm);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        exporter.exportData(stream, uams);
+        createPost("uam").setBody(stream.toByteArray()).send();
     }
 
     // DELETE
@@ -573,6 +636,19 @@ public class NSApi {
                 LOGGER.log(Level.WARNING, "Nightscout server time is %d.%d seconds behind!", new Object[]{timeDistance.getSeconds(), timeDistance.getNano() / 1000000});
         }
         return true;
+    }
+
+    /**
+     * Gets the status from the Nightscout server and checks if the given plugin is enabled.
+     *
+     * @param plugin name of the plugin
+     * @return true if the plugin is enabled
+     * @throws NightscoutIOException     if an I/O error occurs during the request
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
+    public boolean hasPluginEnabled(String plugin) throws NightscoutIOException, NightscoutServerException {
+        Status status = getStatus();
+        return Stream.of(status.getPlugins()).anyMatch(plugin::equalsIgnoreCase);
     }
 
     /**
