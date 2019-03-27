@@ -10,8 +10,6 @@ import java.util.List;
 
 public abstract class Algorithm {
 
-    protected long skipTime = 0;
-
     protected long absorptionTime;
     protected long insulinDuration;
     protected Profile profile;
@@ -19,7 +17,6 @@ public abstract class Algorithm {
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
 
-    protected List<VaultEntry> mealTreatments = new ArrayList<>();
 
     public Algorithm(long absorptionTime, long insulinDuration, Profile profile) {
         this.absorptionTime = absorptionTime;
@@ -131,9 +128,9 @@ public abstract class Algorithm {
      * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
      * {@link #setBasalTreatments(List)} and {@link #setProfile(Profile)}
      *
-     * @param dataProvider the data provider
+     * @param dataProvider the data provider 
      */
-    public void setDataProvider(AlgorithmDataProvider dataProvider) {
+    public final void setDataProvider(AlgorithmDataProvider dataProvider) {
         this.setProfile(dataProvider.getProfile());
         this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
         this.setBolusTreatments(dataProvider.getBolusTreatments());

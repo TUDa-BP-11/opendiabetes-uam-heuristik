@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 import static java.lang.Math.pow;
+import java.util.ArrayList;
 
 public class QRAlgo_TimeOpt extends Algorithm {
 
@@ -31,7 +32,7 @@ public class QRAlgo_TimeOpt extends Algorithm {
         VaultEntry meal;
         VaultEntry next;
         VaultEntry current;
-        long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + skipTime;
+        long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
 
         long estimatedTime;
         long currentTime;
@@ -40,7 +41,8 @@ public class QRAlgo_TimeOpt extends Algorithm {
         long estimatedTimeAccepted = 0l;
         double nextPrediction;
 
-        mealTreatments.clear();
+        List<VaultEntry> mealTreatments;
+        mealTreatments = new ArrayList<>();
         for (int i = 0; i < glucose.size(); i++) {
 
             current = glucose.get(i);

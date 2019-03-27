@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class FileDataProvider implements AlgorithmDataProvider {
+
     private Path entriesPath;
     private Path treatmentsPath;
     private Path profilePath;
@@ -42,60 +43,85 @@ public class FileDataProvider implements AlgorithmDataProvider {
     private NightscoutImporter importer;
 
     /**
-     * Creates a data provider that reads data from disk. All dates are given in ISO-8601 representation.
-     * Default values are assumed if arguments are null.
+     * Creates a data provider that reads data from disk. All dates are given in
+     * ISO-8601 representation. Default values are assumed if arguments are
+     * null.
      *
-     * @param base       path to base directory. If null, the current working directory is used
-     * @param entries    path to entries file relative to base directory. If null, <code>entries.json</code> is used
-     * @param treatments path to treatments file relative to base directory. If null, <code>treatments.json</code> is used
-     * @param profile    path to profile file relative to base directory. If null, <code>profile.json</code> is used
-     * @param latest     latest point in time. If null, the current time is used
-     * @param oldest     oldest point in time. If null, this is set 30 minutes before latest
-     * @throws DataProviderException if any path of the given or assumed paths is invalid or a file cannot be found or if oldest is after latest
+     * @param base path to base directory. If null, the current working
+     * directory is used
+     * @param entries path to entries file relative to base directory. If null,
+     * <code>entries.json</code> is used
+     * @param treatments path to treatments file relative to base directory. If
+     * null, <code>treatments.json</code> is used
+     * @param profile path to profile file relative to base directory. If null,
+     * <code>profile.json</code> is used
+     * @param latest latest point in time. If null, the current time is used
+     * @param oldest oldest point in time. If null, this is set 30 minutes
+     * before latest
+     * @throws DataProviderException if any path of the given or assumed paths
+     * is invalid or a file cannot be found or if oldest is after latest
      */
     public FileDataProvider(String base, String entries, String treatments, String profile, TemporalAccessor latest, TemporalAccessor oldest) {
         Path basePath;
         importer = new NightscoutImporter();
-        if (base == null)
+        if (base == null) {
             basePath = Paths.get("");
-        else basePath = Paths.get(base);
-        if (!Files.isDirectory(basePath))
+        } else {
+            basePath = Paths.get(base);
+        }
+        if (!Files.isDirectory(basePath)) {
             throw new DataProviderException(this, "No directory found at base path " + basePath.toAbsolutePath().toString());
+        }
 
-        if (entries == null)
+        if (entries == null) {
             entriesPath = basePath.resolve("entries.json");
-        else entriesPath = basePath.resolve(entries);
-        if (!Files.isRegularFile(entriesPath))
+        } else {
+            entriesPath = basePath.resolve(entries);
+        }
+        if (!Files.isRegularFile(entriesPath)) {
             throw new DataProviderException(this, "No file found at entries path " + entriesPath.toAbsolutePath().toString());
+        }
 
-        if (treatments == null)
+        if (treatments == null) {
             treatmentsPath = basePath.resolve("treatments.json");
-        else treatmentsPath = basePath.resolve(treatments);
-        if (!Files.isRegularFile(treatmentsPath))
+        } else {
+            treatmentsPath = basePath.resolve(treatments);
+        }
+        if (!Files.isRegularFile(treatmentsPath)) {
             throw new DataProviderException(this, "No file found at treatments path " + treatmentsPath.toAbsolutePath().toString());
+        }
 
-        if (profile == null)
+        if (profile == null) {
             profilePath = basePath.resolve("profile.json");
-        else profilePath = basePath.resolve(profile);
-        if (!Files.isRegularFile(profilePath))
+        } else {
+            profilePath = basePath.resolve(profile);
+        }
+        if (!Files.isRegularFile(profilePath)) {
             throw new DataProviderException(this, "No file found at profile path " + profilePath.toAbsolutePath().toString());
+        }
 
-        if (latest == null)
+        if (latest == null) {
             this.latest = LocalDateTime.now();
-        else this.latest = latest;
+        } else {
+            this.latest = latest;
+        }
 
-        if (oldest == null)
+        if (oldest == null) {
             this.oldest = LocalDateTime.from(this.latest).minus(30, ChronoUnit.MINUTES);
-        else this.oldest = oldest;
+        } else {
+            this.oldest = oldest;
+        }
 
-        if (LocalDateTime.from(this.oldest).isAfter(LocalDateTime.from(this.latest)))
+        if (LocalDateTime.from(this.oldest).isAfter(LocalDateTime.from(this.latest))) {
             throw new DataProviderException(this, "Invalid arguments: oldest cannot be after latest");
+        }
     }
 
     @Override
-    public List<VaultEntry> getRawBasalTreatments(){
-        if (treatments == null)
-        readTreatments();
+    public List<VaultEntry> getRawBasalTreatments() {
+        if (treatments == null) {
+            readTreatments();
+        }
         if (rawBasals == null) {
             rawBasals = treatments.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL))
@@ -137,23 +163,23 @@ public class FileDataProvider implements AlgorithmDataProvider {
 
     @Override
     public List<VaultEntry> getBolusTreatments() {
-        if (treatments == null)
+        if (treatments == null) {
             readTreatments();
-        if(bolusTreatments == null)
-
-
+        }
+        if (bolusTreatments == null) {
             bolusTreatments = treatments.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL))
                     .filter(e -> e.getTimestamp().toInstant().isAfter(Instant.from(oldest)))
                     .filter(e -> e.getTimestamp().toInstant().isBefore(Instant.from(latest)))
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
+        }
         return bolusTreatments;
     }
 
     @Override
     public List<VaultEntry> getBasalDifferences() {
-        if (rawBasals == null || basalDiffs == null){
+        if (rawBasals == null || basalDiffs == null) {
             basalDiffs = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(getRawBasalTreatments()), getProfile());
         }
         return basalDiffs;

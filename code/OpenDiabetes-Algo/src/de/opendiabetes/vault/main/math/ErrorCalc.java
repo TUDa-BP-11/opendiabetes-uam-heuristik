@@ -5,8 +5,17 @@ import de.opendiabetes.vault.container.VaultEntry;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.Skewness;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.descriptive.moment.Variance;
+import org.apache.commons.math3.stat.descriptive.rank.Max;
+import org.apache.commons.math3.stat.descriptive.rank.Min;
+import org.apache.commons.math3.stat.descriptive.summary.SumOfSquares;
 
 public class ErrorCalc {
+
     private List<Double> errorValues;
     private List<Double> errorPercent;
     private List<Date> errorDates;
@@ -75,7 +84,6 @@ public class ErrorCalc {
         return stdDeviation;
     }
 
-
     public double getMeanErrorPercent() {
         return meanErrorPercent;
     }
@@ -104,111 +112,145 @@ public class ErrorCalc {
         return stdDeviationPercent;
     }
 
-
     public void calculateError(List<VaultEntry> entries, List<VaultEntry> basalDifference,
-                               List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-                               double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+            List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+            double sensitivity, int insDuration, double carbratio, int absorptionTime) {
         errorValues = new ArrayList<>();
         errorPercent = new ArrayList<>();
         errorDates = new ArrayList<>();
         double startValue = 0;
+        int startIndex = getStartIndex(entries, insDuration, absorptionTime);
         if (adjustStartValue) {
-            startValue = getStartValue(entries, basalDifference, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime);
+            startValue = getStartValue(entries, basalDifference, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime, startIndex);
         }
-        double startTime = getStartTime(entries, insDuration, absorptionTime);
-        for (VaultEntry ve : entries) {
-            // Skip predictions until start time
-            if (adjustStartValue && ve.getTimestamp().getTime() < startTime) {
-                continue;
-            }
+//        long startTime = getStartTime(entries, insDuration, absorptionTime);
+//        for (VaultEntry ve : entries) {
+//            // Skip predictions until start time
+//            if (ve.getTimestamp().getTime() < startTime) {
+//                continue;
+//            }
+        for (int i = startIndex; i < entries.size(); i++) {
+            VaultEntry ve = entries.get(i);
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments,
                     basalDifference, sensitivity, insDuration, carbratio, absorptionTime);
 
-            errorValues.add(startValue + algoPredict - ve.getValue());
-            errorPercent.add((startValue + algoPredict - ve.getValue()) / ve.getValue() * 100);
+            double error = startValue + algoPredict - ve.getValue();
+            errorValues.add(error);
+            errorPercent.add(error / ve.getValue() * 100);
             errorDates.add(ve.getTimestamp());
         }
+        double[] ev = errorValues.stream().mapToDouble(i -> i).toArray();
+        double[] evp = errorPercent.stream().mapToDouble(i -> i).toArray();
 
-        meanError = 0;
-        meanSquareError = 0;
-        maxError = 0;
-        variance = 0;
-        rootMeanSquareError = 0;
-        stdDeviation = 0;
-        skewness = 0;
-        int N = errorValues.size();
-        if (N > 0) {
-            for (double d : errorValues) {
-                meanError += d;
-                meanSquareError += d * d;
-                variance += Math.pow(d - meanError, 2);
-                if (Math.abs(maxError) < Math.abs(d)) {
-                    maxError = d;
-                }
-            }
-            meanError /= N;
-            meanSquareError /= N;
-            variance /= N;
-            rootMeanSquareError = Math.sqrt(meanSquareError);
-            stdDeviation = Math.sqrt(variance);
-            for (double d : errorValues) {
-                if (stdDeviation > 0)
-                    skewness += Math.pow((d - meanError) / stdDeviation, 3);
-            }
-            skewness /= N;
-        }
+        UnivariateStatistic bias = new Mean();
+        UnivariateStatistic var = new Variance();
+        UnivariateStatistic min = new Min();
+        UnivariateStatistic max = new Max();
+        UnivariateStatistic skew = new Skewness();
+        meanError = bias.evaluate(ev);
+        maxError = Math.max(max.evaluate(ev), Math.abs(min.evaluate(ev)));
+        variance = var.evaluate(ev);
+        meanSquareError = variance + meanError * meanError;
+        rootMeanSquareError = Math.sqrt(meanSquareError);
+        stdDeviation = Math.sqrt(variance);
+        skewness = skew.evaluate(ev);
+//        int N = errorValues.size();
+//        if (N > 0) {
+//            for (double d : errorValues) {
+//                meanError += d;
+//                meanSquareError += d * d;
+//                if (Math.abs(maxError) < Math.abs(d)) {
+//                    maxError = d;
+//                }
+//            }
+//            meanError /= N;
+//            meanSquareError /= N;
+//            // variance needs fully estimated mean error
+//            for (double d : errorValues) {
+//                variance += Math.pow(d - meanError, 2);
+//            }
+//            variance /= N;
+//            rootMeanSquareError = Math.sqrt(meanSquareError);
+//            stdDeviation = Math.sqrt(variance);
+//            for (double d : errorValues) {
+//                if (stdDeviation > 0) {
+//                    skewness += Math.pow((d - meanError) / stdDeviation, 3);
+//                }
+//            }
+//            skewness /= N;
+//        }
 
         //same for errorPercent
-        meanErrorPercent = 0;
-        meanSquareErrorPercent = 0;
-        maxErrorPercent = 0;
-        variancePercent = 0;
-        rootMeanSquareErrorPercent = 0;
-        stdDeviationPercent = 0;
-        skewnessPercent = 0;
-        if (N > 0) {
-            for (double d : errorPercent) {
-                meanErrorPercent += d;
-                meanSquareErrorPercent += d * d;
-                variancePercent += Math.pow(d - meanErrorPercent, 2);
-                if (Math.abs(maxErrorPercent) < Math.abs(d)) {
-                    maxErrorPercent = d;
-                }
-            }
-            meanErrorPercent /= N;
-            meanSquareErrorPercent /= N;
-            variancePercent /= N;
-            rootMeanSquareErrorPercent = Math.sqrt(meanSquareErrorPercent);
-            stdDeviationPercent = Math.sqrt(variancePercent);
-            for (double d : errorPercent) {
-                skewnessPercent += Math.pow((d - meanErrorPercent) / stdDeviationPercent, 3);
-            }
-            skewnessPercent /= N;
-        }
+        meanErrorPercent = bias.evaluate(evp);
+        maxErrorPercent = Math.max(max.evaluate(evp), Math.abs(min.evaluate(evp)));
+        variancePercent = var.evaluate(evp);
+        meanSquareErrorPercent = variancePercent + meanErrorPercent * meanErrorPercent;
+        rootMeanSquareErrorPercent = Math.sqrt(meanSquareErrorPercent);
+        stdDeviationPercent = Math.sqrt(variancePercent);
+        skewnessPercent = skew.evaluate(evp);
+//        meanErrorPercent = 0;
+//        meanSquareErrorPercent = 0;
+//        maxErrorPercent = 0;
+//        variancePercent = 0;
+//        rootMeanSquareErrorPercent = 0;
+//        stdDeviationPercent = 0;
+//        skewnessPercent = 0;
+//        if (N > 0) {
+//            for (double d : errorPercent) {
+//                meanErrorPercent += d;
+//                meanSquareErrorPercent += d * d;
+//                if (Math.abs(maxErrorPercent) < Math.abs(d)) {
+//                    maxErrorPercent = d;
+//                }
+//            }
+//            meanErrorPercent /= N;
+//            meanSquareErrorPercent /= N;
+//
+//            for (double d : errorPercent) {
+//                variancePercent += Math.pow(d - meanErrorPercent, 2);
+//            }
+//            variancePercent /= N;
+//            rootMeanSquareErrorPercent = Math.sqrt(meanSquareErrorPercent);
+//            stdDeviationPercent = Math.sqrt(variancePercent);
+//            for (double d : errorPercent) {
+//                skewnessPercent += Math.pow((d - meanErrorPercent) / stdDeviationPercent, 3);
+//            }
+//            skewnessPercent /= N;
+//        }
     }
 
-
     public static double getStartValue(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-                                       List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
-                                       double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+            List<VaultEntry> bolusTreatments, List<VaultEntry> meals,
+            double sensitivity, int insDuration, double carbratio, int absorptionTime, int startIndex) {
         if (entries.isEmpty()) {
             return 0;
         }
-        double startTime = getStartTime(entries, insDuration, absorptionTime);
-        double startValue = entries.get(0).getValue();
-        for (VaultEntry ve : entries) {
-            startValue = ve.getValue() - Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
-            if (ve.getTimestamp().getTime() >= startTime) {
-                break;
-            }
-        }
+//        int startIndex = getStartIndex(entries, insDuration, absorptionTime);
+        double startValue;
+        startValue = entries.get(startIndex).getValue() - Predictions.predict(entries.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime);
 
         return startValue;
     }
 
-    public static long getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
-        if (entries.isEmpty())
+    public static int getStartIndex(List<VaultEntry> entries, int insDuration, int absorptionTime) {
+        if (entries.isEmpty()) {
             return 0;
+        }
+        long startTime = entries.get(0).getTimestamp().getTime();
+        long firstValidTime = startTime + Math.max(insDuration, absorptionTime) * 60000;
+        int i = 0;
+        for (; i < entries.size() - 1; i++) {
+            if (entries.get(i + 1).getTimestamp().getTime() > firstValidTime) {
+                break;
+            }
+        }
+        return i;
+    }
+
+    public static long getStartTime(List<VaultEntry> entries, int insDuration, int absorptionTime) {
+        if (entries.isEmpty()) {
+            return 0;
+        }
         long startTime = entries.get(0).getTimestamp().getTime();
         long firstValidTime = startTime + Math.max(insDuration, absorptionTime) * 60000;
         for (int i = 0; i < entries.size() - 1; i++) {
