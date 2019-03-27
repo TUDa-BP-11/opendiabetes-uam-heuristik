@@ -42,7 +42,7 @@ public class FilterAlgo extends Algorithm {
         times = new ArrayList<>();
 
         // possible discrete meal times within snippet time range each 5 Minutes.
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
         long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
         long step = 5; // 5 minutes
         long currentTime = firstTime - absorptionTime;
@@ -87,6 +87,17 @@ public class FilterAlgo extends Algorithm {
             }
         } else {
             NSApi.LOGGER.log(Level.WARNING, "Singular");
+        }
+
+        //Remove Meals before first Bg entry
+        for (int i = 0; i < mealTreatments.size(); i++) {
+            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
+                mealTreatments.remove(i);
+                i--;
+            } else {
+                break;
+            }
+
         }
 
         return mealTreatments;
