@@ -1,7 +1,6 @@
 package de.opendiabetes.vault.synchronizer;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.opendiabetes.vault.nsapi.DataCursor;
 import de.opendiabetes.vault.nsapi.NSApi;
@@ -9,7 +8,6 @@ import de.opendiabetes.vault.nsapi.NSApiTools;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
@@ -102,41 +100,16 @@ public class Synchronizer {
     }
 
     /**
-     * Posts all missing objects to the write server. Strips all <code>_id</code> fields of all objects,
-     * to prevent MongoDB errors on the server side.
+     * Posts all missing objects to the write server.
      *
      * @param synchronizable the synchronizeable
      * @throws NightscoutIOException     if an I/O error occurs during the request
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public void postMissing(Synchronizable synchronizable) throws NightscoutIOException, NightscoutServerException {
-        postMissing(synchronizable, true);
-    }
-
-    /**
-     * Posts all missing objects to the write server.
-     *
-     * @param synchronizable the synchronizeable
-     * @param stripIds       set to true to strip all <code>_id</code> fields of objects before uploading them
-     * @throws NightscoutIOException     if an I/O error occurs during the request
-     * @throws NightscoutServerException if the Nightscout server returns a bad response status
-     */
-    public void postMissing(Synchronizable synchronizable, boolean stripIds) throws NightscoutIOException, NightscoutServerException {
-        if (stripIds) {
-            for (JsonElement e : synchronizable.getMissing()) {
-                JsonObject o = e.getAsJsonObject();
-                if (o.has("_id"))
-                    o.remove("_id");
-            }
-        }
         for (JsonArray array : NSApiTools.split(synchronizable.getMissing(), batchSize))
             write.createPost(synchronizable.getApiPath())
                     .setBody(array.toString())
                     .send();
-    }
-
-    public void close() throws IOException {
-        read.close();
-        write.close();
     }
 }
