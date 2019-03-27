@@ -57,7 +57,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
 
         double startValue;
         double nextValue;
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
         for (int i = 0; i < glucose.size(); i++) {
             current = glucose.get(i);
 
@@ -112,6 +112,16 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 }
             }
             observations.clear();
+        }
+        //Remove Meals before first Bg entry
+        for (int i = 0; i < mealTreatments.size(); i++) {
+            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
+                mealTreatments.remove(i);
+                i--;
+            } else {
+                break;
+            }
+
         }
 
         return mealTreatments;
