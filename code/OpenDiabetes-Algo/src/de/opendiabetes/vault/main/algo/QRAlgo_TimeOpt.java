@@ -32,7 +32,7 @@ public class QRAlgo_TimeOpt extends Algorithm {
         VaultEntry meal;
         VaultEntry next;
         VaultEntry current;
-        long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
+        long firstTime = getGlucose().get(0).getTimestamp().getTime() / 60000 + Math.max(getAbsorptionTime(), getInsulinDuration());
 
         long estimatedTime;
         long currentTime;
@@ -43,9 +43,9 @@ public class QRAlgo_TimeOpt extends Algorithm {
 
         List<VaultEntry> mealTreatments;
         mealTreatments = new ArrayList<>();
-        for (int i = 0; i < glucose.size(); i++) {
+        for (int i = 0; i < getGlucose().size(); i++) {
 
-            current = glucose.get(i);
+            current = getGlucose().get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
             // skip bg values until start time
             if (currentTime < firstTime) {
@@ -55,19 +55,18 @@ public class QRAlgo_TimeOpt extends Algorithm {
             nkbg = new ArrayRealVector();
             times = new ArrayRealVector();
 
-            if (currentTime >= firstTime + insulinDuration && currentTime > estimatedTimeAccepted) {
+            if (currentTime >= firstTime + getInsulinDuration() && currentTime > estimatedTimeAccepted) {
 
-                currentLimit = currentTime + absorptionTime / 2;
+                currentLimit = currentTime + getAbsorptionTime() / 2;
 
-                for (int j = i; j < glucose.size(); j++) {
+                for (int j = i; j < getGlucose().size(); j++) {
 
-                    next = glucose.get(j);
+                    next = getGlucose().get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
                     double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
 
                         times = times.append(nextTime - currentTime);
                         nkbg = nkbg.append(nextValue - nextPrediction);
@@ -87,9 +86,9 @@ public class QRAlgo_TimeOpt extends Algorithm {
                     alpha = solution.getEntry(0);
                     beta = solution.getEntry(1);
                     estimatedTime = (long) (currentTime - beta / (2 * alpha));
-                    double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
+                    double estimatedCarbs = alpha * pow(getAbsorptionTime(), 2) * getProfile().getCarbratio() / (2 * getProfile().getSensitivity());
 
-                    if (currentTime - estimatedTime < absorptionTime / 2
+                    if (currentTime - estimatedTime < getAbsorptionTime() / 2
                             && estimatedTime < nextTime) {
                         if (estimatedCarbs >= 0) {
                             if (mealTreatments.isEmpty() || mealTreatments.get(mealTreatments.size() - 1).getTimestamp().getTime() / 60000 < estimatedTime) {

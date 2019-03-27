@@ -42,13 +42,13 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
+        final long firstTime = getGlucose().get(0).getTimestamp().getTime() / 60000 + Math.max(getAbsorptionTime(), getInsulinDuration());
         
         List<VaultEntry> mealTreatments;
         mealTreatments = new ArrayList<>();
 
-        for (int i = 0; i < glucose.size(); i++) {
-            current = glucose.get(i);
+        for (int i = 0; i < getGlucose().size(); i++) {
+            current = getGlucose().get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
             // skip bg values until start time
             if (currentTime < firstTime) {
@@ -59,19 +59,18 @@ public class QRAlgo extends Algorithm {
             times = new ArrayRealVector();
             if (currentTime > estimatedTimeAccepted) {
 
-                currentLimit = currentTime + absorptionTime / 6;
+                currentLimit = currentTime + getAbsorptionTime() / 6;
 
-                for (int j = i; j < glucose.size(); j++) {
+                for (int j = i; j < getGlucose().size(); j++) {
 
-                    next = glucose.get(j);
+                    next = getGlucose().get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
 //                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
                     //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
                     //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
 
                         deltaBg = next.getValue() - nextPrediction;
                         times = times.append(nextTime - currentTime);
@@ -90,7 +89,7 @@ public class QRAlgo extends Algorithm {
                     double alpha;
                     alpha = solution.getEntry(0);
                     estimatedTime = currentTime;
-                    double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (2 * profile.getSensitivity());
+                    double estimatedCarbs = alpha * pow(getAbsorptionTime(), 2) * getProfile().getCarbratio() / (2 * getProfile().getSensitivity());
 
                     if (estimatedCarbs > 0) {
                         estimatedTimeAccepted = estimatedTime;

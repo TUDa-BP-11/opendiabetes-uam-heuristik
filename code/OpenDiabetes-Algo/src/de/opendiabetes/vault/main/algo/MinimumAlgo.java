@@ -27,20 +27,20 @@ public class MinimumAlgo extends Algorithm {
         List<VaultEntry> mealTreatments = new ArrayList<>();
 
 
-        for (int i = 0; i < glucose.size(); i++) {
-            VaultEntry current = glucose.get(i);
+        for (int i = 0; i < getGlucose().size(); i++) {
+            VaultEntry current = getGlucose().get(i);
 
             double mealValue = 0;
 
-            for (int j = i + 1; j < glucose.size(); j++) {
-                VaultEntry next = glucose.get(j);
+            for (int j = i + 1; j < getGlucose().size(); j++) {
+                VaultEntry next = getGlucose().get(j);
                 long dTime = Math.round((next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000.0);
-                if (dTime > absorptionTime / 4) {
+                if (dTime > getAbsorptionTime() / 4) {
                     break;
                 }
-                double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                double deltaBg = Filter.getMedian(glucose, j, 3, absorptionTime / 4) - Filter.getMedian(glucose, i, 3, absorptionTime / 4);
+                double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+                double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+                double deltaBg = Filter.getMedian(getGlucose(), j, 3, getAbsorptionTime() / 4) - Filter.getMedian(getGlucose(), i, 3, getAbsorptionTime() / 4);
                 //double deltaBg = Filter.getAverage(glucose, j, 5, absorptionTime / 3) - Filter.getAverage(glucose, i, 5, absorptionTime / 3);
                 //double deltaBg = next.getValue() - current.getValue();
                 double deltaPrediction = (nextPrediction - currentPrediction);
@@ -60,6 +60,6 @@ public class MinimumAlgo extends Algorithm {
     }
 
     private double calcMealValue(double deltaBg, double deltaTime) {
-        return deltaBg * profile.getCarbratio() / (profile.getSensitivity() * Predictions.carbsOnBoard(deltaTime, absorptionTime));
+        return deltaBg * getProfile().getCarbratio() / (getProfile().getSensitivity() * Predictions.carbsOnBoard(deltaTime, getAbsorptionTime()));
     }
 }

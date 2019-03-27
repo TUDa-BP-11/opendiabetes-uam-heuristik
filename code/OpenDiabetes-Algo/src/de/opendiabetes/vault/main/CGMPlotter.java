@@ -2,18 +2,15 @@ package de.opendiabetes.vault.main;
 
 import com.github.sh0nk.matplotlib4j.Plot;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
-import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.main.util.Snippet;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.main.algo.Algorithm;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -22,10 +19,11 @@ import java.util.stream.Collectors;
 public class CGMPlotter {
 
     private String title = "";
-    private double sensitivity;
-    private double carbratio;
-    private int insDuration;
-    private int absorptionTime;
+//    private double sensitivity;
+//    private double carbratio;
+//    private int insDuration;
+//    private int absorptionTime;
+    private double maxMeal = 0;
     private Plot plt;
     private Plot diffPlt;
     private Plot histPlt;
@@ -60,7 +58,6 @@ public class CGMPlotter {
 
         zeros.add(0.0);
         zeros.add(0.0);
-
     }
 
     /**
@@ -89,10 +86,10 @@ public class CGMPlotter {
         this.plotHist = plotHist;
         this.bStartValue = bStartValue;
         this.bStartTime = bStartTime;
-        this.sensitivity = sensitivity;
-        this.insDuration = insDuration;
-        this.carbratio = carbratio;
-        this.absorptionTime = absorptionTime;
+//        this.sensitivity = sensitivity;
+//        this.insDuration = insDuration;
+//        this.carbratio = carbratio;
+//        this.absorptionTime = absorptionTime;
     }
 
     /**
@@ -103,14 +100,22 @@ public class CGMPlotter {
     }
 
     /**
-     * @param entries
-     * @param basalTreatments
-     * @param bolusTreatments
-     * @param meals
+     * @param algo
      */
-    public void add(List<VaultEntry> entries, List<VaultEntry> basalTreatments,
-            List<VaultEntry> bolusTreatments, List<VaultEntry> meals) {
+    public void add(Algorithm algo) {
+        List<VaultEntry> entries = algo.getGlucose();
+        List<VaultEntry> basalTreatments = algo.getBasalTreatments();
+        List<VaultEntry> bolusTreatments = algo.getBolusTreatments();
+        List<VaultEntry> meals = algo.getMeals();
 
+        double sensitivity;
+        double carbratio;
+        long insDuration;
+        long absorptionTime;
+        sensitivity = algo.getProfile().getSensitivity();
+        insDuration = algo.getInsulinDuration();
+        carbratio = algo.getProfile().getCarbratio();
+        absorptionTime = algo.getAbsorptionTime();
         plotPlot = true;
         List<Double> basalValuesSnippet = new ArrayList<>();
         List<Double> basalTimesSnippet = new ArrayList<>();
@@ -121,13 +126,20 @@ public class CGMPlotter {
 
         List<Double> bolusValuesSnippet = new ArrayList<>();
         List<Double> bolusTimesSnippet = new ArrayList<>();
-        generatePointsToDraw(bolusTreatments, bolusValuesSnippet, bolusTimesSnippet);
+        for (VaultEntry a : bolusTreatments) {
+            bolusValuesSnippet.add(a.getValue());
+            bolusTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
+        }
+//        generatePointsToDraw(bolusTreatments, bolusValuesSnippet, bolusTimesSnippet);
 
         List<Double> mealValuesSnippet = new ArrayList<>();
         List<Double> mealTimesSnippet = new ArrayList<>();
         for (VaultEntry ve : meals) {
             mealTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
-            mealValuesSnippet.add(ve.getValue());
+            mealValuesSnippet.add(ve.getValue() / carbratio);
+        }
+        if (!mealValuesSnippet.isEmpty()) {
+            maxMeal = Math.max(maxMeal, Collections.max(mealValuesSnippet));
         }
 //        generatePointsToDraw(meals, mealValuesSnippet, mealTimesSnippet);
 
@@ -160,9 +172,9 @@ public class CGMPlotter {
         }
 
         double startValue = 0;
-        int startIndex = ErrorCalc.getStartIndex(entries, insDuration, absorptionTime);
+        int startIndex = algo.getStartIndex();
         if (bStartValue) {
-            startValue = ErrorCalc.getStartValue(entries, basalTreatments, bolusTreatments, meals, sensitivity, insDuration, carbratio, absorptionTime, startIndex);
+            startValue = algo.getStartValue();
         }
 //        double startTime = ErrorCalc.getStartTime(entries, insDuration, absorptionTime);
 //        for (VaultEntry ve : entries) {
@@ -205,9 +217,11 @@ public class CGMPlotter {
 
     }
 
-    public void showAll() throws IOException, PythonExecutionException {
+    public String showAll() throws IOException, PythonExecutionException {
+
+        String scriptLines = "";
         if (plotPlot) {
-            int subplots = plotError ? 4 : 3;
+            int subplots = plotError ? 3 : 2;//4 : 3;
             plt.subplot(subplots, 1, 1);
             plt.title(title);
             for (int i = 0; i < bgTimes.size(); i++) {
@@ -218,26 +232,29 @@ public class CGMPlotter {
                     plt.plot().addDates(bgTimes.get(i)).add(bgValues.get(i)).color("C" + i % 10);
                     plt.plot().addDates(algoTimes.get(i)).add(algoValues.get(i)).linestyle("--").color("C" + i % 10);
                 }
-                plt.axvlineDate(bgTimes.get(i).get(0));
-                plt.axvlineDate(bgTimes.get(i).get(bgTimes.get(i).size() - 1));
+//                plt.axvlineDate(bgTimes.get(i).get(0));
+//                plt.axvlineDate(bgTimes.get(i).get(bgTimes.get(i).size() - 1));
 
             }
 
+            plt.title("Blood Glucose");
             plt.xlabel("time");
             plt.ylabel("mg/dl");
             plt.plot().addDates(firstToLast).add(zeros).linestyle("");
             plt.legend().loc(2);
             plt.subplot(subplots, 1, 2);
 
-            for (int i = 0; i < bgTimes.size(); i++) {
+            plt.xlabel("time");
+            plt.ylabel("IE/KE");
+            for (int i = 0; i < mealTimes.size(); i++) {
                 if (i == 0) {
-                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("meals").marker("o").linestyle("").markersize("10"); //.color("red")
-//                    plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").linestyle("").label("bolus").marker("_").markersize("3");
+                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("KE").marker("o").linestyle("").markersize("20").markerfacecolor("none"); //.color("red")
+                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").width(0.0035).label("IE");//.linestyle("").marker("_").markersize("3");
 
                     //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
                 } else {
-                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("_").linestyle("").markersize("3"); //.color("red")
-//                    plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").linestyle("").marker("_").markersize("3");
+                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("o").linestyle("").markersize("20").markerfacecolor("none"); //.color("red")
+                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green");//.linestyle("").marker("_").markersize("3");
                     //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
                 }
 
@@ -246,26 +263,27 @@ public class CGMPlotter {
                 y = mealValues.get(i);
 
                 for (int j = 0; j < t.size(); j++) {
-                    plt.text().addDate(t.get(j), y.get(j), "" + y.get(j).intValue());
+                    plt.text().addDate(t.get(j), y.get(j), String.format("%.1f", y.get(j))).horizontalalignment("center").verticalalignment("center");
                 }
             }
             plt.plot().addDates(firstToLast).add(zeros).linestyle("");
             plt.legend().loc(2);
-
-            plt.subplot(subplots, 1, 3);
-            plt.xlabel("time");
-            plt.ylabel("mg/dl");
-            for (int i = 0; i < bgTimes.size(); i++) {
-                if (i == 0) {
-                    plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").label("bolus").marker("_").markersize("3").color("C" + i % 10);
-                    plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
-                } else {
-                    plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").marker("_").markersize("3").color("C" + i % 10);
-                    plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
-                }
-            }
-            plt.plot().addDates(firstToLast).add(zeros).linestyle("");
-            plt.legend().loc(2);
+            plt.ylim(0, maxMeal + 5);
+            plt.title("Meals and Bolus");
+//            plt.subplot(subplots, 1, 3);
+//            plt.xlabel("time");
+//            plt.ylabel("mg/dl");
+//            for (int i = 0; i < bgTimes.size(); i++) {
+//                if (i == 0) {
+//                    plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").label("bolus").marker("_").markersize("3").color("C" + i % 10);
+//                    plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
+//                } else {
+//                    plt.plot().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).linestyle("").marker("_").markersize("3").color("C" + i % 10);
+//                    plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
+//                }
+//            }
+//            plt.plot().addDates(firstToLast).add(zeros).linestyle("");
+//            plt.legend().loc(2);
             if (plotError) {
                 plt.subplot(subplots, 1, subplots);
                 plt.xlabel("time");
@@ -281,118 +299,114 @@ public class CGMPlotter {
                 plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), 10)).color("black").label("fault tolerance");
                 plt.plot().addDates(firstToLast).add(Collections.nCopies(firstToLast.size(), -10)).color("black");
                 plt.legend().loc(2);
+                plt.title("Relative Error");
             }
-//                String scriptLines = 
-            plt.show();
-
-//                try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
-//                    writer.write(scriptLines);
-//                } catch (IOException ex) {
-//                    Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//        }
+            plt.tight_layout();
+            scriptLines = plt.show();
         }
         if (plotDiff) {
             diffPlt.show();
         }
+
         if (plotHist && !allErrorValues.isEmpty()) {
             histPlt = Plot.create();
             histPlt.xlabel("error");
             histPlt.ylabel("frequency");
-            histPlt.hist().add(allErrorValues).bins(100);
+            histPlt.hist().add(allErrorValues).bins(50);
             histPlt.title(title);
             histPlt.show();
         }
+
+        return scriptLines;
     }
 
-    private void generatePointsToDraw(List<VaultEntry> vaultEntries, List<Double> values, List<Double> times) {
-        vaultEntries.forEach((a) -> {
-            if (a.getValue() > 0) {
-                for (double i = 0; i <= a.getValue(); i += 0.1) {
-                    values.add(i); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
-                    times.add(a.getTimestamp().getTime() / 1000.0);
-                }
-            } else {
-                for (double i = 0; i >= a.getValue(); i -= 0.1) {
-                    values.add(i); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
-                    times.add(a.getTimestamp().getTime() / 1000.0);
-                }
-            }
-        });
-    }
+//    private void generatePointsToDraw(List<VaultEntry> vaultEntries, List<Double> values, List<Double> times) {
+//        vaultEntries.forEach((a) -> {
+//            if (a.getValue() > 0) {
+//                for (double i = 0; i <= a.getValue(); i += 0.1) {
+//                    values.add(i); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
+//                    times.add(a.getTimestamp().getTime() / 1000.0);
+//                }
+//            } else {
+//                for (double i = 0; i >= a.getValue(); i -= 0.1) {
+//                    values.add(i); // a.getValue() * profile.getSensitivity() / profile.getCarbratio()
+//                    times.add(a.getTimestamp().getTime() / 1000.0);
+//                }
+//            }
+//        });
+//    }
 
-    public void plotDiff(Snippet s, List<VaultEntry> meals,
-            double sensitivity, int insDuration,
-            double carbratio, int absorptionTime) {
-        plotDiff = true;
-        List<Double> basalValuesSnippet = new ArrayList<>();
-        List<Double> basalTimesSnippet = new ArrayList<>();
-        List<Double> bolusValuesSnippet = new ArrayList<>();
-        List<Double> bolusTimesSnippet = new ArrayList<>();
-        List<Double> mealValuesSnippet = new ArrayList<>();
-        List<Double> mealTimesSnippet = new ArrayList<>();
-
-        List<Double> bgTimesSnippet = new ArrayList<>();
-        List<Double> bgValuesSnippet = new ArrayList<>();
-        List<Double> algoValuesSnippet = new ArrayList<>();
-        List<Double> noMealValues = new ArrayList<>();
-
-        for (VaultEntry a : s.getBasals()) {
-            basalValuesSnippet.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
-            basalTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
-        }
-
-        for (VaultEntry a : s.getBoli()) {
-            bolusValuesSnippet.add(a.getValue()); // -a.getValue() * profile.getSensitivity()
-            bolusTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
-        }
-
-        for (VaultEntry a : meals) {
-            mealValuesSnippet.add(a.getValue());
-            mealTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
-        }
-        VaultEntry prev = s.getEntries().get(0);
-        double prevValue = prev.getValue();
-        double prevTime = prev.getTimestamp().getTime();
-
-        double algoPredictPrev = Predictions.predict(prev.getTimestamp().getTime(),
-                meals, s.getBoli(), s.getBasals(),
-                sensitivity, insDuration,
-                carbratio, absorptionTime);
-        double noMealPredictPrev = Predictions.predict(prev.getTimestamp().getTime(),
-                new ArrayList<>(), s.getBoli(), s.getBasals(),
-                sensitivity, insDuration,
-                carbratio, absorptionTime);
-        for (int i = 1; i < s.getEntries().size(); i++) {
-            VaultEntry ve = s.getEntries().get(i);
-            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    meals, s.getBoli(), s.getBasals(),
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
-            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    new ArrayList<>(), s.getBoli(), s.getBasals(),
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
-            NSApi.LOGGER.log(Level.INFO, "Date: %s Value: %f Diff: %f", new Object[]{ve.getTimestamp().toString(), ve.getValue(), ve.getValue() - prevValue});
-            bgTimesSnippet.add((ve.getTimestamp().getTime()) / 1000.0);
-            noMealValues.add(noMealPredict - noMealPredictPrev);
-            algoValuesSnippet.add(algoPredict - algoPredictPrev);
-            bgValuesSnippet.add((ve.getValue() - prevValue) / ((ve.getTimestamp().getTime() - prevTime) / 1000));
-            prevValue = ve.getValue();
-            prevTime = ve.getTimestamp().getTime();
-            noMealPredictPrev = noMealPredict;
-            algoPredictPrev = algoPredict;
-        }
-
-        diffPlt.xlabel("time");
-        diffPlt.ylabel("dBG/dt");
-        diffPlt.plot().addDates(bgTimesSnippet).add(bgValuesSnippet).color("blue").marker("x"); //.label("Testlabel")
-        diffPlt.plot().addDates(bgTimesSnippet).add(noMealValues).color("orange").marker("x"); //.label("Testlabel")
-        diffPlt.plot().addDates(mealTimesSnippet).add(mealValuesSnippet).color("red").linestyle("").marker("x");
-        diffPlt.plot().addDates(bolusTimesSnippet).add(bolusValuesSnippet).color("green").linestyle("").marker("o");
-        diffPlt.plot().addDates(basalTimesSnippet).add(basalValuesSnippet).color("cyan").linestyle("").marker("o");
-        diffPlt.plot().addDates(bgTimesSnippet).add(algoValuesSnippet).linestyle("--").marker("x");//.color("cyan").linestyle("--");
-
-    }
-
+//    public void plotDiff(Snippet s, List<VaultEntry> meals,
+//            double sensitivity, int insDuration,
+//            double carbratio, int absorptionTime) {
+//        plotDiff = true;
+//        List<Double> basalValuesSnippet = new ArrayList<>();
+//        List<Double> basalTimesSnippet = new ArrayList<>();
+//        List<Double> bolusValuesSnippet = new ArrayList<>();
+//        List<Double> bolusTimesSnippet = new ArrayList<>();
+//        List<Double> mealValuesSnippet = new ArrayList<>();
+//        List<Double> mealTimesSnippet = new ArrayList<>();
+//
+//        List<Double> bgTimesSnippet = new ArrayList<>();
+//        List<Double> bgValuesSnippet = new ArrayList<>();
+//        List<Double> algoValuesSnippet = new ArrayList<>();
+//        List<Double> noMealValues = new ArrayList<>();
+//
+//        for (VaultEntry a : s.getBasals()) {
+//            basalValuesSnippet.add(a.getValue());// - a.getValue() * profile.getSensitivity() * a.getDuration()
+//            basalTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
+//        }
+//
+//        for (VaultEntry a : s.getBoli()) {
+//            bolusValuesSnippet.add(a.getValue()); // -a.getValue() * profile.getSensitivity()
+//            bolusTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
+//        }
+//
+//        for (VaultEntry a : meals) {
+//            mealValuesSnippet.add(a.getValue());
+//            mealTimesSnippet.add(a.getTimestamp().getTime() / 1000.0);
+//        }
+//        VaultEntry prev = s.getEntries().get(0);
+//        double prevValue = prev.getValue();
+//        double prevTime = prev.getTimestamp().getTime();
+//
+//        double algoPredictPrev = Predictions.predict(prev.getTimestamp().getTime(),
+//                meals, s.getBoli(), s.getBasals(),
+//                sensitivity, insDuration,
+//                carbratio, absorptionTime);
+//        double noMealPredictPrev = Predictions.predict(prev.getTimestamp().getTime(),
+//                new ArrayList<>(), s.getBoli(), s.getBasals(),
+//                sensitivity, insDuration,
+//                carbratio, absorptionTime);
+//        for (int i = 1; i < s.getEntries().size(); i++) {
+//            VaultEntry ve = s.getEntries().get(i);
+//            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
+//                    meals, s.getBoli(), s.getBasals(),
+//                    sensitivity, insDuration,
+//                    carbratio, absorptionTime);
+//            double noMealPredict = Predictions.predict(ve.getTimestamp().getTime(),
+//                    new ArrayList<>(), s.getBoli(), s.getBasals(),
+//                    sensitivity, insDuration,
+//                    carbratio, absorptionTime);
+//            NSApi.LOGGER.log(Level.INFO, "Date: %s Value: %f Diff: %f", new Object[]{ve.getTimestamp().toString(), ve.getValue(), ve.getValue() - prevValue});
+//            bgTimesSnippet.add((ve.getTimestamp().getTime()) / 1000.0);
+//            noMealValues.add(noMealPredict - noMealPredictPrev);
+//            algoValuesSnippet.add(algoPredict - algoPredictPrev);
+//            bgValuesSnippet.add((ve.getValue() - prevValue) / ((ve.getTimestamp().getTime() - prevTime) / 1000));
+//            prevValue = ve.getValue();
+//            prevTime = ve.getTimestamp().getTime();
+//            noMealPredictPrev = noMealPredict;
+//            algoPredictPrev = algoPredict;
+//        }
+//
+//        diffPlt.xlabel("time");
+//        diffPlt.ylabel("dBG/dt");
+//        diffPlt.plot().addDates(bgTimesSnippet).add(bgValuesSnippet).color("blue").marker("x"); //.label("Testlabel")
+//        diffPlt.plot().addDates(bgTimesSnippet).add(noMealValues).color("orange").marker("x"); //.label("Testlabel")
+//        diffPlt.plot().addDates(mealTimesSnippet).add(mealValuesSnippet).color("red").linestyle("").marker("x");
+//        diffPlt.plot().addDates(bolusTimesSnippet).add(bolusValuesSnippet).color("green").linestyle("").marker("o");
+//        diffPlt.plot().addDates(basalTimesSnippet).add(basalValuesSnippet).color("cyan").linestyle("").marker("o");
+//        diffPlt.plot().addDates(bgTimesSnippet).add(algoValuesSnippet).linestyle("--").marker("x");//.color("cyan").linestyle("--");
+//
+//    }
 }

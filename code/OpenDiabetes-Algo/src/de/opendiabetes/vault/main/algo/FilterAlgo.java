@@ -42,36 +42,35 @@ public class FilterAlgo extends Algorithm {
         times = new ArrayList<>();
 
         // possible discrete meal times within snippet time range each 5 Minutes.
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
-        long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
+        final long firstTime = getGlucose().get(0).getTimestamp().getTime() / 60000 + Math.max(getAbsorptionTime(), getInsulinDuration());
+        long lastTime = getGlucose().get(getGlucose().size() - 1).getTimestamp().getTime() / 60000;
         long step = 5; // 5 minutes
-        long currentTime = firstTime - absorptionTime;
+        long currentTime = firstTime - getAbsorptionTime();
 
         while (currentTime <= lastTime) {
             times.add(currentTime);
             currentTime += step;
         }
-        matrix = new Array2DRowRealMatrix(glucose.size(), times.size());
+        matrix = new Array2DRowRealMatrix(getGlucose().size(), times.size());
 
         int row = 0;
 
 //        resample glucose to 5 min grid?
-        for (int i = 0; i < glucose.size(); i++) {
-            VaultEntry current = glucose.get(i);
+        for (int i = 0; i < getGlucose().size(); i++) {
+            VaultEntry current = getGlucose().get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
             // skip bg values until start time
             if (currentTime < firstTime) {
                 continue;
             }
-            currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
 
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
             currentValue = current.getValue();
 
             nkbg = nkbg.append(currentValue - currentPrediction);
             for (int column = 0; column < times.size(); column++) {
-                matrix.setEntry(row, column, Predictions.carbsOnBoard(currentTime - times.get(column), absorptionTime));
+                matrix.setEntry(row, column, Predictions.carbsOnBoard(currentTime - times.get(column), getAbsorptionTime()));
             }
             row++;
         }

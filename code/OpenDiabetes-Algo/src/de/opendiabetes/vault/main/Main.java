@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import static de.opendiabetes.vault.nsapi.Main.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.util.logging.Logger;
 
 public class Main {
 
@@ -256,8 +259,8 @@ public class Main {
             NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         }
 
-        ErrorCalc errorCalc = new ErrorCalc(false);
-        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+        ErrorCalc errorCalc = new ErrorCalc();
+        errorCalc.calculateError(algorithm);
         NSApi.LOGGER.log(Level.INFO, "The maximum error between the data and the prediction is %.0f mg/dl.", errorCalc.getMaxError());
         NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.1f%%.", errorCalc.getMaxErrorPercent());
         NSApi.LOGGER.log(Level.INFO, "The root mean square error is %.1f mg/dl.", errorCalc.getRootMeanSquareError());
@@ -289,22 +292,26 @@ public class Main {
                 }
             }
         }
-
-        if (meals.size() > 0) {
-            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
-        } else {
-            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
-        }
-        meals.forEach((meal) -> {
-            NSApi.LOGGER.log(Level.INFO, meal.toString());
-        });
+//
+//        if (meals.size() > 0) {
+//            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
+//        } else {
+//            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
+//        }
+//        meals.forEach((meal) -> {
+//            NSApi.LOGGER.log(Level.INFO, meal.toString());
+//        });
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(true, false, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
-            cgpm.add(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals);
+            CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            cgpm.add(algorithm);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {
                 cgpm.showAll();
+//                if (pythonDebug) {
+//                    exportPlotScript(cgpm.showAll());
+//                }
+
             } catch (IOException | PythonExecutionException ex) {
                 NSApi.LOGGER.log(Level.SEVERE, null, ex);//TODO msg?
             }
@@ -387,4 +394,11 @@ public class Main {
         }
     }
      */
+    private static void exportPlotScript(String scriptLines) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
+            writer.write(scriptLines);
+        } catch (IOException ex) {
+            NSApi.LOGGER.log(Level.SEVERE, null, ex);
+        }
+    }
 }

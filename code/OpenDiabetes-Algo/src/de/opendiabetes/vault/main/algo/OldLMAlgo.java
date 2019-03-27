@@ -44,18 +44,17 @@ public class OldLMAlgo extends Algorithm {
 
         mealTreatments = new ArrayList<>();
 
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
-        final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
+        final long firstTime = getGlucose().get(0).getTimestamp().getTime() / 60000;
+        final long lastTime = getGlucose().get(getGlucose().size() - 1).getTimestamp().getTime() / 60000;
 
         long currentTime;
 
-        for (int i = 0; i < glucose.size(); i++) {
-            VaultEntry current = glucose.get(i);
+        for (int i = 0; i < getGlucose().size(); i++) {
+            VaultEntry current = getGlucose().get(i);
             currentTime = current.getTimestamp().getTime();
             currentValue = current.getValue();
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, mealTreatments, bolusTreatments,
-                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(currentTime, mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime / 60000);
             ve = ve.append(currentValue);
@@ -82,8 +81,8 @@ public class OldLMAlgo extends Algorithm {
             int N_iter = 1000;
             double abs_e;
             for (int i = 0; i < N_iter; i++) {
-                J = Predictions.Jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
-                e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
+                J = Predictions.Jacobian(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime());
+                e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime()));
                 abs_e = e.getNorm();
                 E.add(abs_e);
 
@@ -110,7 +109,7 @@ public class OldLMAlgo extends Algorithm {
                 }
                 mealTimes = mealTimes.add(delta.getSubVector(0, N));
                 mealValues = mealValues.add(delta.getSubVector(N, N));
-                mealTimes.mapToSelf((x) -> Math.min(lastTime, Math.max(firstTime - absorptionTime, x)));
+                mealTimes.mapToSelf((x) -> Math.min(lastTime, Math.max(firstTime - getAbsorptionTime(), x)));
                 mealValues.mapToSelf((x) -> Math.max(0, x));
             }
         }

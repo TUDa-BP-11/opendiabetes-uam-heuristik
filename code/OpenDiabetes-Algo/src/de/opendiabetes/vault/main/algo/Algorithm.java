@@ -3,6 +3,7 @@ package de.opendiabetes.vault.main.algo;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 
 import java.util.ArrayList;
@@ -10,18 +11,19 @@ import java.util.List;
 
 public abstract class Algorithm {
 
-    protected long absorptionTime;
-    protected long insulinDuration;
+    private long absorptionTime;
+    private long insulinDuration;
     protected Profile profile;
+    protected List<VaultEntry> meals;
     protected List<VaultEntry> glucose;
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
-
 
     public Algorithm(long absorptionTime, long insulinDuration, Profile profile) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
         this.profile = profile;
+        meals = new ArrayList<>();
         glucose = new ArrayList<>();
         bolusTreatments = new ArrayList<>();
         basalTreatments = new ArrayList<>();
@@ -30,6 +32,7 @@ public abstract class Algorithm {
     public Algorithm(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
+        meals = new ArrayList<>();
         setDataProvider(dataProvider);
     }
 
@@ -128,7 +131,7 @@ public abstract class Algorithm {
      * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
      * {@link #setBasalTreatments(List)} and {@link #setProfile(Profile)}
      *
-     * @param dataProvider the data provider 
+     * @param dataProvider the data provider
      */
     public final void setDataProvider(AlgorithmDataProvider dataProvider) {
         this.setProfile(dataProvider.getProfile());
@@ -144,4 +147,94 @@ public abstract class Algorithm {
      * {@link de.opendiabetes.vault.container.VaultEntryType#MEAL_MANUAL}
      */
     public abstract List<VaultEntry> calculateMeals();
+
+    public double getStartValue() {
+        if (glucose.isEmpty()) {
+            return 0;
+        }
+        int startIndex = getStartIndex();
+        double startValue;
+        startValue = glucose.get(startIndex).getValue() - Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+
+        return startValue;
+    }
+
+    public int getStartIndex() {
+        if (glucose.isEmpty()) {
+            return 0;
+        }
+        long startTime = glucose.get(0).getTimestamp().getTime();
+        long firstValidTime = startTime + Math.max(insulinDuration, absorptionTime) * 60000;
+        int i = 0;
+        for (; i < glucose.size() - 1; i++) {
+            if (glucose.get(i + 1).getTimestamp().getTime() > firstValidTime) {
+                break;
+            }
+        }
+        return i;
+    }
+    
+    public long getStartTime() {
+        if (glucose.isEmpty()) {
+            return 0;
+        }
+        long startTime = glucose.get(0).getTimestamp().getTime();
+        long firstValidTime = startTime + Math.max(insulinDuration, absorptionTime) * 60000;
+        for (int i = 0; i < glucose.size() - 1; i++) {
+            startTime = glucose.get(i).getTimestamp().getTime();
+            if (glucose.get(i + 1).getTimestamp().getTime() > firstValidTime) {
+                break;
+            }
+        }
+        return startTime;
+    }
+
+    /**
+     * @return the profile
+     */
+    public Profile getProfile() {
+        return profile;
+    }
+
+    /**
+     * @return the absorptionTime
+     */
+    public long getAbsorptionTime() {
+        return absorptionTime;
+    }
+
+    /**
+     * @return the insulinDuration
+     */
+    public long getInsulinDuration() {
+        return insulinDuration;
+    }
+
+    /**
+     * @return the meals
+     */
+    public List<VaultEntry> getMeals() {
+        return meals;
+    }
+
+    /**
+     * @return the glucose
+     */
+    public List<VaultEntry> getGlucose() {
+        return glucose;
+    }
+
+    /**
+     * @return the bolusTreatments
+     */
+    public List<VaultEntry> getBolusTreatments() {
+        return bolusTreatments;
+    }
+
+    /**
+     * @return the basalTreatments
+     */
+    public List<VaultEntry> getBasalTreatments() {
+        return basalTreatments;
+    }
 }

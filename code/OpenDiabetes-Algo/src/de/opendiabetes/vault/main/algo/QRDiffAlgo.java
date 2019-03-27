@@ -54,7 +54,7 @@ public class QRDiffAlgo extends Algorithm {
         double deltaBg;
 
         double nextValue;
-        for (int i = 0; i < glucose.size(); i++) {
+        for (int i = 0; i < getGlucose().size(); i++) {
 
             nkbg = new ArrayRealVector();
             times = new ArrayRealVector();
@@ -63,26 +63,24 @@ public class QRDiffAlgo extends Algorithm {
 //            alPred = new ArrayList();
 //            alTimes = new ArrayList();
 //            double mse = Double.POSITIVE_INFINITY;
-            current = glucose.get(i);
+            current = getGlucose().get(i);
 
             currentTime = current.getTimestamp().getTime();
 
-            currentLimit = currentTime + absorptionTime / 2 * 60000;
+            currentLimit = currentTime + getAbsorptionTime() / 2 * 60000;
             currentValue = current.getValue();
 
-            currentPrediction = Predictions.predict(currentTime, mealTreatments, bolusTreatments,
-                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            currentPrediction = Predictions.predict(currentTime, mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
 
-            for (int j = i + 1; j < glucose.size(); j++) {
+            for (int j = i + 1; j < getGlucose().size(); j++) {
 
-                next = glucose.get(j);
+                next = getGlucose().get(j);
                 nextTime = next.getTimestamp().getTime();
 
                 if (nextTime <= currentLimit) {
 
                     nextValue = next.getValue();
-                    nextPrediction = Predictions.predict(nextTime, mealTreatments, bolusTreatments,
-                            basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+                    nextPrediction = Predictions.predict(nextTime, mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
 
                     deltaBg = (nextValue - nextPrediction) - (currentValue - currentPrediction);
                     times = times.append(nextTime - currentTime);
@@ -106,12 +104,12 @@ public class QRDiffAlgo extends Algorithm {
 //                    gamma = solution.getEntry(2);
 //                    assert (alpha > 0);
 //                    double error = gamma - pow(beta, 2) / (4 * alpha);
-                double estimatedCarbs = alpha * pow(absorptionTime, 2) * profile.getCarbratio() / (4 * profile.getSensitivity());
+                double estimatedCarbs = alpha * pow(getAbsorptionTime(), 2) * getProfile().getCarbratio() / (4 * getProfile().getSensitivity());
 
                 estimatedTime = (long) (currentTime - beta / alpha);
 //                    System.out.println("Date: " + new Date(estimatedTime) + " Carbs: " + estimatedCarbs);
-                if (currentTime - estimatedTime < absorptionTime / 2 * 60000
-                        && estimatedTime - currentTime < absorptionTime / 2 * 60000) {
+                if (currentTime - estimatedTime < getAbsorptionTime() / 2 * 60000
+                        && estimatedTime - currentTime < getAbsorptionTime() / 2 * 60000) {
                     if (estimatedCarbs > 0 //|| mealTreatments.isEmpty()// && estimatedCarbs < 200 // && error < 10
                             ) {
 //                        estimatedTimeAccepted = estimatedTime;
