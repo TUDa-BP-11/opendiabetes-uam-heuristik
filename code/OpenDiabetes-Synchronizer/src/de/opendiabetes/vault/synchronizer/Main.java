@@ -15,7 +15,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
@@ -23,7 +22,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static de.opendiabetes.vault.nsapi.Main.*;
+import static de.opendiabetes.vault.nsapi.Main.IsoDateTimeParser;
 import static de.opendiabetes.vault.nsapi.NSApi.LOGGER;
 
 public class Main {
@@ -85,12 +84,16 @@ public class Main {
     private static final Parameter P_DIFF = new Switch("diff")
             .setLongFlag("diff")
             .setHelp("Export all missing entries to a file instead of uploading them.");
-    public static final Parameter P_FILE = new FlaggedOption("file")
+    private static final Parameter P_FILE = new FlaggedOption("file")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('f')
             .setLongFlag("file")
             .setDefault("missing.json")
             .setHelp("Path to the file that should be used to export missing entries.");
+    private static final Parameter P_OVERWRITE = new Switch("overwrite")
+            .setShortFlag('o')
+            .setLongFlag("overwrite")
+            .setHelp("Overwrite existing files");
     //Debug
     private static final Parameter P_VERBOSE = new Switch("verbose")
             .setShortFlag('v')
