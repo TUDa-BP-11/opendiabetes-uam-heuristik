@@ -1,11 +1,11 @@
 package de.opendiabetes.vault.main.algo;
 
-
+import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
@@ -13,7 +13,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.stat.descriptive.moment.Variance;
 
 public class LMAlgo extends Algorithm {
 
@@ -27,6 +30,7 @@ public class LMAlgo extends Algorithm {
 
     @Override
     public List<VaultEntry> calculateMeals() {
+        List<VaultEntry> mealTreatments;
         RealMatrix J, I, A, Ainv;
         RealVector nkbg;
         RealVector mealValues;
@@ -37,101 +41,148 @@ public class LMAlgo extends Algorithm {
         RealVector e;
         RealVector ve;
         RealVector times;
-        VaultEntry meal;
         RealVector delta;
-        List<VaultEntry> mealTreatments;
-        ArrayList<Double> E;
-
+        Double e_old;
         double deltaBg, currentValue;
 
+        UnivariateStatistic bias = new Mean();
+        UnivariateStatistic std = new StandardDeviation();
+        mealTreatments = new ArrayList<>();
         ve = new ArrayRealVector();
         nkbg = new ArrayRealVector();
         times = new ArrayRealVector();
 
-        mealTreatments = new ArrayList<>();
-
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;// + Math.max(absorptionTime, insulinDuration);
+        final long startTime = firstTime + Math.max(absorptionTime, insulinDuration);
         final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
         final long firstMealTime = firstTime - absorptionTime;
         final long lastMealTime = lastTime; //  - absorptionTime / 4
         long currentTime;
+        int i_startTime = 0;
+        // keep track of best result
         errOpt = Double.POSITIVE_INFINITY;
-        err = Double.POSITIVE_INFINITY;
+
+        //
         for (int i = 0; i < glucose.size(); i++) {
             VaultEntry current = glucose.get(i);
-            currentTime = current.getTimestamp().getTime();
+            currentTime = current.getTimestamp().getTime() / 60000;
 
             // skip bg values until start time
-//            if (currentTime / 60000 < firstTime + insulinDuration) {
-//                continue;
-//            }
+            if (currentTime < firstTime) {
+                continue;
+            }
+
             currentValue = current.getValue();
-//            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, mealTreatments, bolusTreatments,
+
+            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
                     basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
             nkbg = nkbg.append(deltaBg);
-            times = times.append(currentTime / 60000);
-            ve = ve.append(currentValue);
+            if (currentTime >= startTime) {
+                if (i_startTime == 0) {
+                    i_startTime = times.getDimension();
+                }
+                ve = ve.append(currentValue);
+            }
+            times = times.append(currentTime);
         }
 
+        // initial carbs to be distributed on N start values
         double totalCarbs = 200;
-//        insSensitivityFactor / carbRatio * carbsAmount
+
+        double mu_k, mu, abs_e;
 
         if (times.getDimension() >= 3) {
-            boolean breakN = false;
 
-            mealTimes = new ArrayRealVector();
-            mealValues = new ArrayRealVector();
-// uncomment for plot
-//        Plot plt = Plot.create();
-            for (int N = 1; N < 10 && !breakN; N += 1) {
-                E = new ArrayList();
+            mealTimes = new ArrayRealVector(0);
+            mealValues = new ArrayRealVector(0);
+            // estimate error vector with current mealValues and mealTimes
+            e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
+
+            RealVector e_use = e.getSubVector(i_startTime, times.getDimension() - i_startTime);
+            // calculate norm.
+            abs_e = e_use.getNorm();
+            // calculate max relative error
+            err = Math.max(Math.abs(e_use.ebeDivide(ve).getMaxValue()), Math.abs(e_use.ebeDivide(ve).getMinValue()));
+            // stop iterations and search if convergence criterion is met (max error <= 10%)
+            if (err <= 0.10) {
+                NSApi.LOGGER.log(Level.INFO, "N: %d, MT: %d, MV: %d", new Object[]{0, mealTimes.getDimension(), mealValues.getDimension()});
+            }
+
+            // store current error
+            e_old = abs_e;
+
+            // keep track of best result
+            if (mealTimesOpt.getDimension() == 0 || errOpt > abs_e) {
+                errOpt = err;
+                mealTimesOpt = mealTimes;
+                mealValuesOpt = mealValues;
+            }
+
+            boolean breakN = false;
+            for (int N = 1; N < 15 && !breakN; N += 1) {
+
                 mealTimes = new ArrayRealVector(N);
                 mealValues = new ArrayRealVector(N);
-                // possible discrete meal times within snippet time range each dT/N Minutes.
+
                 long step = (lastTime - firstMealTime) / N;
                 I = MatrixUtils.createRealIdentityMatrix(2 * N);
-                //beta_t0 = linspace(t(1), t(end)-T,N)';
+
                 for (int i = 0; i < N; i++) {
                     mealTimes.setEntry(i, firstMealTime + i * step);
                     mealValues.setEntry(i, totalCarbs / N);
                 }
-                double mu_k, mu;
+
+                // basic constant for LM multiplier
                 mu = 1e-5;
+                // max number of iterations per N
                 int N_iter = 10000;
-                double abs_e;
                 for (int i = 0; i < N_iter; i++) {
+                    // estimate Jacobian with current mealValues and mealTimes
                     J = Predictions.Jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
+
+                    // estimate error vector with current mealValues and mealTimes
                     e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
-                    abs_e = e.getNorm();
-                    E.add(abs_e);
-                    err = Math.max(Math.abs(e.ebeDivide(ve).getMaxValue()), Math.abs(e.ebeDivide(ve).getMinValue()));
+
+                    e_use = e.getSubVector(i_startTime, times.getDimension() - i_startTime);
+                    // calculate norm.
+                    abs_e = e_use.getNorm();
+                    // calculate max relative error
+                    err = Math.max(Math.abs(e_use.ebeDivide(ve).getMaxValue()), Math.abs(e_use.ebeDivide(ve).getMinValue()));
+                    // stop iterations and search if convergence criterion is met (max error <= 10%)
                     if (err <= 0.10) {
-                        Logger.getLogger(LMAlgo.class.getName()).log(Level.INFO, "N: {0}, MT: {1}, MV: {2}", new Object[]{N, mealTimes.getDimension(), mealValues.getDimension()});
+                        NSApi.LOGGER.log(Level.INFO, "N: %d, MT: %d, MV: %d", new Object[]{N, mealTimes.getDimension(), mealValues.getDimension()});
                         breakN = true;
                         break;
                     }
-                    if (i > 10 && Math.abs(abs_e - E.get(E.size() - 2)) < 1e-7) {
-                        Logger.getLogger(LMAlgo.class.getName()).log(Level.INFO, "Converged N: {0}, max err: {1}%, i: {2}", new Object[]{N, err * 100, i});
+                    // stop iterations if error vector magnitude changes less than 1e-7
+                    if (i > 10 && Math.abs(abs_e - e_old) < 1e-7) {
+                        NSApi.LOGGER.log(Level.INFO, "Converged N: %d, max err: %.2f%%, bias: %.2f, std: %.2f, i: %d", new Object[]{N, err * 100, bias.evaluate(e_use.toArray()), std.evaluate(e_use.toArray()), i});
                         break;
                     }
+                    // store current error
+                    e_old = abs_e;
 
-                    // mu_k(ii) = mu*e'*e;
-                    mu_k = mu * e.dotProduct(e);//abs_e;
+                    // calculate LM normalization from error vector magnitude squared
+                    mu_k = mu * e.dotProduct(e);
                     // A = (JJ+mu_k(ii)*I);
                     RealMatrix JJ = J.transpose().multiply(J);
                     A = JJ.add(I.scalarMultiply(mu_k));
                     Ainv = new SingularValueDecomposition(A).getSolver().getInverse();
-                    // delta = A\J'*e;
+
+                    // calculate least squares solution of gradient step
                     delta = Ainv.multiply(J.transpose()).operate(e);
-                    for (Double d : delta.toArray()) {
-                        if (d.isNaN() || d.isInfinite()) {
-                            Logger.getLogger(LMAlgo.class.getName()).log(Level.WARNING, "NaN in increment");
-                        }
+
+                    // dismiss trial of gradient step becomes unstable
+                    if (delta.isNaN() || delta.isInfinite()) {
+                        NSApi.LOGGER.log(Level.WARNING, "NaN in increment");
                         break;
                     }
+
+                    // apply gradient step
                     mealTimes = mealTimes.add(delta.getSubVector(0, N));
                     mealValues = mealValues.add(delta.getSubVector(N, N));
+
+                    // restrict solutions to boundary conditions
                     mealTimes.mapToSelf((x) -> {
                         return Math.min(lastMealTime, Math.max(firstMealTime, x));
                     });
@@ -139,53 +190,41 @@ public class LMAlgo extends Algorithm {
                         return Math.max(0, x);
                     });
                 }
-// uncomment for plot
-//        plt.plot().add(E);
-                if (mealTimesOpt.getDimension() == 0 || errOpt > err) {
-                    errOpt = err;
+
+                // keep track of best result
+                if (mealTimesOpt.getDimension() == 0 || errOpt > abs_e) {
+                    errOpt = abs_e;
                     mealTimesOpt = mealTimes;
                     mealValuesOpt = mealValues;
-                    
                 }
             }
-// uncomment for plot
-//        try {
-//            plt.show();
-//        } catch (IOException | PythonExecutionException ex) {
-//            Logger.getLogger(LMAlgo.class.getName()).log(Level.SEVERE, null, ex);
-//        }
 
+            // normalize mealTimes and sum up meals at the same time. Throw everything with < 1g of Carbs away.
             ArrayList<Long> uniqueMealTimes = new ArrayList();
-//        ArrayList<Double> a_uniqueMealValues = new ArrayList();
-            RealVector uniqueMealValues = new ArrayRealVector();
+            ArrayList<Double> uniqueMealValues = new ArrayList();
             for (int i = 0; i < mealTimesOpt.getDimension(); i++) {
-
                 long t = Math.round(mealTimesOpt.getEntry(i));
+//                if (t < firstTime) {
+//                    continue;
+//                }
+                t = Math.max(t,firstTime);
                 double x = mealValuesOpt.getEntry(i);
                 int idx = uniqueMealTimes.indexOf(t);
-//            System.out.println("Times " + uniqueMealTimes.toString());
-//            System.out.println("Values " + uniqueMealValues.toString());
                 if (idx != -1) {
-//                System.out.println(idx + " " + uniqueMealValues.getDimension());
-                    uniqueMealValues.addToEntry(idx, x);
+                    uniqueMealValues.set(idx, uniqueMealValues.get(idx) + x);
                 } else if (x > 1) {
                     uniqueMealTimes.add(t);
-                    uniqueMealValues = uniqueMealValues.append(x);
+                    uniqueMealValues.add(x);
                 }
             }
-
-            double x;
-            long t0;
-            for (int i = 0; i < uniqueMealValues.getDimension(); i++) {
-                x = uniqueMealValues.getEntry(i);
-                t0 = uniqueMealTimes.get(i);
-                meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                        TimestampUtils.createCleanTimestamp(new Date(t0 * 60000)), x);
-//            System.out.println(meal.toString());
-                mealTreatments.add(meal);
+            if (!uniqueMealValues.isEmpty() && uniqueMealValues.size() == uniqueMealTimes.size()) {
+                for (int i = 0; i < uniqueMealValues.size(); i++) {
+                    mealTreatments.add(new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                            TimestampUtils.createCleanTimestamp(new Date(uniqueMealTimes.get(i) * 60000)), uniqueMealValues.get(i)));
+                }
             }
         }
-        return mealTreatments;
 
+        return mealTreatments;
     }
 }

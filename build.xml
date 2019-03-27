@@ -4,27 +4,45 @@
 
     <property name="engine.dir" value="code/OpenDiabetesVault-Engine"/>
     <property name="nsapi.dir" value="code/OpenDiabetes-NSApi"/>
-    <property name="synchronizer.dir" value="code/OpenDiabetes-Synchronizer"/>
     <property name="algo.dir" value="code/OpenDiabetes-Algo"/>
+    <property name="synchronizer.dir" value="code/OpenDiabetes-Synchronizer"/>
 
     <property name="doc.dir" value="doc"/>
 
-    <target name="all" depends="Engine, NSApi, Synchronizer, Algo"/>
+    <target name="all-compile">
+        <!-- clean -->
+        <ant dir="${engine.dir}" target="clean" inheritall="false"/>
+        <ant dir="${nsapi.dir}" target="clean" inheritall="false"/>
+        <ant dir="${algo.dir}" target="clean" inheritall="false"/>
+        <ant dir="${synchronizer.dir}" target="clean" inheritall="false"/>
+        <!-- compile -->
+        <ant dir="${engine.dir}" target="jar" inheritall="false"/>
+        <ant dir="${nsapi.dir}" target="jar" inheritall="false"/>
+        <ant dir="${algo.dir}" target="jar" inheritall="false"/>
+        <ant dir="${synchronizer.dir}" target="jar" inheritall="false"/>
+    </target>
+
+    <target name="all" depends="all-compile">
+        <!-- test -->
+        <ant dir="${nsapi.dir}" target="junit5-test" inheritall="false"/>
+        <ant dir="${algo.dir}" target="junit5-test" inheritall="false"/>
+        <ant dir="${synchronizer.dir}" target="junit5-test" inheritall="false"/>
+    </target>
 
     <target name="Engine">
-        <ant dir="${engine.dir}" target="jar"/>
+        <ant dir="${engine.dir}" target="jar" inheritall="false"/>
     </target>
 
     <target name="NSApi" depends="Engine">
-        <ant dir="${nsapi.dir}" target="full"/>
-    </target>
-
-    <target name="Synchronizer" depends="NSApi">
-        <ant dir="${synchronizer.dir}" target="full"/>
+        <ant dir="${nsapi.dir}" target="full" inheritall="false"/>
     </target>
 
     <target name="Algo" depends="NSApi">
-        <ant dir="${algo.dir}" target="full"/>
+        <ant dir="${algo.dir}" target="full" inheritall="false"/>
+    </target>
+
+    <target name="Synchronizer" depends="NSApi">
+        <ant dir="${synchronizer.dir}" target="full" inheritall="false"/>
     </target>
 
     <target name="generate-javadoc">

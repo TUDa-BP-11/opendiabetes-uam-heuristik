@@ -1,5 +1,6 @@
 package de.opendiabetes.vault.main;
 
+import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.*;
@@ -7,15 +8,20 @@ import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;
+import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.nsapi.NSApiTools;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 import static de.opendiabetes.vault.nsapi.Main.*;
@@ -53,7 +59,7 @@ public class Main {
     private static final Parameter P_ALGO = new FlaggedOption("algorithm")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('a')
-            .setDefault("LM")
+            .setDefault("lm")
             .setRequired(true)
             .setLongFlag("algorithm")
             .setHelp("Algorithm that should be used");
@@ -87,10 +93,6 @@ public class Main {
             .setShortFlag('o')
             .setLongFlag("output-file")
             .setHelp("File where the meals should saved in");
-    private static final Parameter P_CONSOLE = new Switch("console")
-            .setShortFlag('c')
-            .setLongFlag("console")
-            .setHelp("Prints the result on the console");
     private static final Parameter P_PLOT = new Switch("plot")
             .setLongFlag("plot")
             .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
@@ -124,6 +126,10 @@ public class Main {
             .setShortFlag('d')
             .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
 
+    private static final int MAX_TIME_GAP = 15;
+
+    private static final Map<String, Class<? extends Algorithm>> algorithms = new HashMap<>();
+
     /**
      * Registers all arguments to the given JSAP instance
      *
@@ -144,7 +150,6 @@ public class Main {
             jsap.registerParameter(P_TARGET_HOST);
             jsap.registerParameter(P_TARGET_SECRET);
             jsap.registerParameter(P_OUTPUT_FILE);
-            jsap.registerParameter(P_CONSOLE);
             jsap.registerParameter(P_PLOT);
 
             jsap.registerParameter(P_OVERWRITE_OUTPUT);
@@ -161,24 +166,41 @@ public class Main {
         }
     }
 
+    private static void registerAlgorithms() {
+        algorithms.put("lm", LMAlgo.class);
+        algorithms.put("min", MinimumAlgo.class);
+        algorithms.put("filter", FilterAlgo.class);
+        algorithms.put("poly", PolyCurveFitterAlgo.class);
+        algorithms.put("qr", QRAlgo.class);
+        algorithms.put("qrdiff", QRDiffAlgo.class);
+        algorithms.put("oldlm", OldLMAlgo.class);
+    }
+
     public static void main(String[] args) {
 
         // setup arguments
         JSAP jsap = new JSAP();
         registerArguments(jsap);
+        registerAlgorithms();
         JSAPResult config = initArguments(jsap, args);
         if (config == null) {
+            NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
             return;
         }
 
         // init
         initLogger(config);
 
+        //checks
+        if (!algorithms.containsKey(config.getString("algorithm"))) {
+            NSApi.LOGGER.log(Level.INFO, "There is no Algorithm with the name: %s", config.getString("algorithm"));
+            NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
+            return;
+        }
         if (someFilesSet(config) && !allFilesSet(config)) {
             NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
             return;
         }
-
         if (config.contains("host") && allFilesSet(config)) {
             NSApi.LOGGER.warning("Cannot get input from files and server at the same time!");
             return;
@@ -195,11 +217,12 @@ public class Main {
             return;
         }
 
-        if (!config.contains("target-host") && !config.getBoolean("console") && !config.getBoolean("plot") && config.contains("output-file")) {
+        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
             NSApi.LOGGER.warning("Please specify at least one output for the results.");
             return;
         }
 
+        //init DataProvider
         AlgorithmDataProvider dataProvider;
         try {
             dataProvider = chooseDataProvider(config);
@@ -208,23 +231,38 @@ public class Main {
             return;
         }
 
-        Algorithm algorithm = chooseAlgorithm(config, dataProvider);
-
-        if (algorithm == null) {
+        //init Algorithm
+        int absorptionTime = config.getInt("absorptionTime");
+        int insulinDuration = config.getInt("insDuration");
+        Algorithm algorithm;
+        try {
+            algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class)
+                    .newInstance(absorptionTime, insulinDuration, dataProvider);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
         List<VaultEntry> meals = algorithm.calculateMeals();
 
         //Logging
-        int absorptionTime = config.getInt("absorptionTime");
-        int insulinDuration = config.getInt("insDuration");
-
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
-        for (VaultEntry meal : meals) {
-            NSApi.LOGGER.log(Level.FINE, meal.toString());
+
+        long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
+        if (maxTimeGap < MAX_TIME_GAP) {
+            NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
+        } //TODO warning msg
+        else {
+            NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         }
-        //TODO logging error + max time diff etc.
+
+        ErrorCalc errorCalc = new ErrorCalc(false);
+        errorCalc.calculateError(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+        NSApi.LOGGER.log(Level.INFO, "The maximum error between the data and the prediction is %.0f mg/dl.", errorCalc.getMaxError());
+        NSApi.LOGGER.log(Level.INFO, "The maximum error in percent is %.1f%%.", errorCalc.getMaxErrorPercent());
+        NSApi.LOGGER.log(Level.INFO, "The root mean square error is %.1f mg/dl.", errorCalc.getRootMeanSquareError());
+        NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.1f mg/dl.", errorCalc.getStdDeviation());
+        NSApi.LOGGER.log(Level.INFO, "The bias is %.1f mg/dl.", errorCalc.getMeanError());
 
         //Output
         if (config.contains("output-file")) {
@@ -252,19 +290,25 @@ public class Main {
             }
         }
 
-        if (config.getBoolean("console")) {
-            for (VaultEntry meal : meals) {
-                System.out.println(meal.toString());
-            }
+        if (meals.size() > 0) {
+            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
+        } else {
+            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
         }
+        meals.forEach((meal) -> {
+            NSApi.LOGGER.log(Level.INFO, meal.toString());
+        });
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter();
-            cgpm.plot(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals,
-                    dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
-            cgpm.showAll();
+            CGMPlotter cgpm = new CGMPlotter(true, false, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            cgpm.add(dataProvider.getGlucoseMeasurements(), dataProvider.getBasalDifferences(), dataProvider.getBolusTreatments(), meals);
+            cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
+            try {
+                cgpm.showAll();
+            } catch (IOException | PythonExecutionException ex) {
+                NSApi.LOGGER.log(Level.SEVERE, null, ex);//TODO msg?
+            }
         }
-
         dataProvider.close();
     }
 
@@ -282,30 +326,6 @@ public class Main {
         return null;
     }
 
-    private static Algorithm chooseAlgorithm(JSAPResult config, AlgorithmDataProvider dataProvider) {
-
-        int absorptionTime = config.getInt("absorptionTime");
-        int insulinDuration = config.getInt("insDuration");
-
-        switch (config.getString("algorithm").toLowerCase()) {
-            case "lm":
-                return new OldLMAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "min":
-                return new MinimumAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "filter":
-                return new FilterAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "poly":
-                return new PolyCurveFitterAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "qr":
-                return new QRAlgo(absorptionTime, insulinDuration, dataProvider);
-            case "qrdiff":
-                return new QRDiffAlgo(absorptionTime, insulinDuration, dataProvider);
-            default:
-                NSApi.LOGGER.warning("There is no Algorithm with the name: " + config.getString("algorithm"));
-        }
-        return null;
-    }
-
     private static boolean allFilesSet(JSAPResult config) {
         return (config.contains("entries") && config.contains("treatments") && config.contains("profile"));
     }
@@ -313,6 +333,24 @@ public class Main {
     private static boolean someFilesSet(JSAPResult config) {
         return (config.contains("entries") || config.contains("treatments") || config.contains("profile"));
     }
+
+    private static long getMaxTimeGap(List<VaultEntry> list) {
+        long maxTimeGap = 0;
+        if (list.size() < 2) {
+            return maxTimeGap;
+        }
+        VaultEntry current = list.get(0);
+        for (int i = 1; i < list.size(); i++) {
+            VaultEntry next = list.get(i);
+            long timeDiff = (next.getTimestamp().getTime() - current.getTimestamp().getTime()) / 60000;
+            if (timeDiff > maxTimeGap) {
+                maxTimeGap = timeDiff;
+            }
+            current = next;
+        }
+        return maxTimeGap;
+    }
+
     /*
     public static void exportCsv(List<VaultEntry> data) {
         if (data == null || data.isEmpty()) {

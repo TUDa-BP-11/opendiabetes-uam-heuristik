@@ -1,12 +1,12 @@
 package de.opendiabetes.vault.main.util;
 
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.nsapi.NSApi;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Snippet {
 
@@ -20,7 +20,7 @@ public class Snippet {
     private final List<VaultEntry> boli = new ArrayList<>();
     private final List<VaultEntry> basals = new ArrayList<>();
 
-    private int iExceededGap = 0;
+//    private int iExceededGap = 0;
     private long lMaxGap = 0;
 
     public static List<Snippet> getSnippets(List<VaultEntry> entries,
@@ -55,7 +55,7 @@ public class Snippet {
                 }
             } else {
                 if (current.isFull()) {
-                    Logger.getLogger(Snippet.class.getName()).log(Level.WARNING, "Snippet length only {0} min.", TIME_MIN / 60000);
+                    NSApi.LOGGER.log(Level.WARNING, "Snippet length only %d min.", TIME_MIN / 60000);
                     snippets.add(current);
                 }
                 if (snippets.size() == n_snippets) {
@@ -86,8 +86,8 @@ public class Snippet {
             }
         }
 
-        System.out.println("Created " + snippets.size() + " snippets");
-        System.out.println("Current " + current.getEntries().size() + " entries");
+        NSApi.LOGGER.log(Level.INFO, "Created %d snippets", snippets.size());
+        NSApi.LOGGER.log(Level.INFO, "Current %d entries", current.getEntries().size());
         return snippets;
     }
 
@@ -134,8 +134,8 @@ public class Snippet {
         }
         if (entry.getTimestamp().getTime() - first <= snippetLength) {
             if (lGap > TIME_MAX_GAP) {
-                iExceededGap++;
-                Logger.getLogger(Snippet.class.getName()).log(Level.WARNING, "Time Gap of {0} min.", lGap / 60000);
+//                iExceededGap++;
+//                NSApi.LOGGER.log(Level.WARNING, "Time Gap of {0} min.", lGap / 60000);
                 return false;
             }
             if (lGap > lMaxGap) {
@@ -225,9 +225,9 @@ public class Snippet {
     /**
      * @return the iExceededGap
      */
-    public int getiExceededGap() {
-        return iExceededGap;
-    }
+//    public int getiExceededGap() {
+//        return iExceededGap;
+//    }
 
     /**
      * @return the lMaxGap

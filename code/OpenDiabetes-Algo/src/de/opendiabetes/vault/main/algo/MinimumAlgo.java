@@ -40,11 +40,9 @@ public class MinimumAlgo extends Algorithm {
                 }
                 double currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
                 double nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
-                double deltaBg = Filter.getMedian(glucose, j, 3, absorptionTime / 4) - Filter.getMedian(glucose, i, 3, absorptionTime / 4);
-                //double deltaBg = Filter.getAverage(glucose, j, 5, absorptionTime / 3) - Filter.getAverage(glucose, i, 5, absorptionTime / 3);
-                //double deltaBg = next.getValue() - current.getValue();
+                double deltaBg = next.getValue() - current.getValue();
                 double deltaPrediction = (nextPrediction - currentPrediction);
-                double value = calcMealValue(deltaBg - deltaPrediction, dTime);
+                double value = Math.round(calcMealValue(deltaBg - deltaPrediction, dTime) * 1000) / 1000.0;
                 if (j == i + 1 || value < mealValue) {
                     mealValue = value;
                 }

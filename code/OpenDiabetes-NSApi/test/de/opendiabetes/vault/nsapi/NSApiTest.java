@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NSApiTest {
-
     private static NSApi api;
     private static Random random;
 
@@ -38,15 +37,13 @@ class NSApiTest {
     static void setUp() throws NightscoutIOException, NightscoutServerException {
         String host = System.getenv("NS_HOST");
         String secret = System.getenv("NS_APISECRET");
-        if (host == null) {
+        if (host == null)
             System.err.println("Environment variable NS_HOST not found!");
-        }
-        if (secret == null) {
+        if (secret == null)
             System.err.println("Environment variable NS_APISECRET not found!");
-        }
-        if (host == null || secret == null) {
+        if (host == null || secret == null)
             fail("");
-        }
+
         api = new NSApi(host, secret);
         random = new Random();
 
@@ -107,7 +104,7 @@ class NSApiTest {
      * Creates a supplier that produces dates in descending order.
      *
      * @param start time of first date
-     * @param step time between dates
+     * @param step  time between dates
      */
     private Supplier<Date> createDateSupplier(long start, long step) {
         return new Supplier<Date>() {
@@ -156,9 +153,9 @@ class NSApiTest {
         assertTrue(newEntries.size() >= entries.size());
         if (newEntries.size() > entries.size()) {
             // if more entries are found test them individually
-            entries.forEach((e) -> {
+            for (VaultEntry e : entries) {
                 assertTrue(newEntries.contains(e));
-            });
+            }
         } else {
             // else the collections have to be equal
             assertIterableEquals(entries, newEntries);
@@ -189,9 +186,9 @@ class NSApiTest {
         assertTrue(newTreatments.size() >= treatments.size());
         if (newTreatments.size() > treatments.size()) {
             // if more entries are found test them individually
-            treatments.forEach((e) -> {
+            for (VaultEntry e : treatments) {
                 assertTrue(newTreatments.contains(e));
-            });
+            }
         } else {
             // else the collections have to be equal
             assertIterableEquals(treatments, newTreatments);
@@ -249,9 +246,8 @@ class NSApiTest {
             // for each day in the second list, take all entries
             m2.forEach((date, list) -> m1.compute(date, (k, v) -> {
                 // if the first map already has entries at this date, add them
-                if (v != null) {
+                if (v != null)
                     list.addAll(v);
-                }
                 return list;
             }));
         });
@@ -280,8 +276,8 @@ class NSApiTest {
 
     @ParameterizedTest
     @CsvSource({
-        "entries, sgv",
-        "treatments, "
+            "entries, sgv",
+            "treatments, "
     })
     void testEcho(String storage, String spec) throws NightscoutIOException, NightscoutServerException {
         JsonObject echo = api.getEcho(storage, spec).getRaw().getAsJsonObject();
@@ -350,17 +346,10 @@ class NSApiTest {
         // assume that there are at least 3 entries
         assumeTrue(entries.size() > 3);
 
-        // get profile for timezone
-        Profile profile = api.getProfile();
-
         // set latest to second entry
-        ZonedDateTime latest = ZonedDateTime
-                .ofInstant(entries.get(1).getTimestamp().toInstant(), profile.getTimezone())
-                .withZoneSameInstant(ZoneId.of("UTC"));
+        ZonedDateTime latest = ZonedDateTime.ofInstant(entries.get(1).getTimestamp().toInstant(), ZoneId.of("UTC"));
         // set oldest to second to last entry
-        ZonedDateTime oldest = ZonedDateTime
-                .ofInstant(entries.get(entries.size() - 2).getTimestamp().toInstant(), profile.getTimezone())
-                .withZoneSameInstant(ZoneId.of("UTC"));
+        ZonedDateTime oldest = ZonedDateTime.ofInstant(entries.get(entries.size() - 2).getTimestamp().toInstant(), ZoneId.of("UTC"));
 
         List<VaultEntry> between = api.getEntries(latest, oldest, entries.size() / 2);
         // test that exactly 2 entries less are returned (first and last from original request should be missing)

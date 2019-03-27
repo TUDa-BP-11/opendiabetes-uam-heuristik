@@ -1,12 +1,15 @@
 package de.opendiabetes.vault.main.algo;
 
+import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import de.opendiabetes.vault.main.CGMPlotter;
 import de.opendiabetes.vault.main.math.BasalCalculatorTools;
+import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.util.Snippet;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.FileInputStream;
@@ -15,7 +18,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Main {
 
@@ -40,7 +42,7 @@ public class Main {
         try (InputStream stream = new FileInputStream(treatmentPath)) {
             treatments = importer.importData(stream);
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.WARNING, null, ex);
+            NSApi.LOGGER.log(Level.WARNING, null, ex);
         }
 
         treatments.sort(new SortVaultEntryByDate());
@@ -57,11 +59,11 @@ public class Main {
                     bolusTreatment.add(treatment);
                     break;
                 case MEAL_MANUAL:
-                    Logger.getLogger(Main.class.getName()).log(Level.INFO, "Ignoring Meals in Dataset");
 //                    mealTreatment.add(treatment);
+                    NSApi.LOGGER.log(Level.INFO, "Ignoring Meals");
                     break;
                 default:
-                    Logger.getLogger(Main.class.getName()).log(Level.INFO, treatment.getType().name());
+                    NSApi.LOGGER.log(Level.INFO, treatment.getType().name());
                     break;
             }
         }
@@ -72,7 +74,7 @@ public class Main {
         try (InputStream stream = new FileInputStream(entriesPath)) {
             entries = importer.importData(stream);
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            NSApi.LOGGER.log(Level.SEVERE, null, ex);
         }
         entries.sort(new SortVaultEntryByDate());
 
@@ -106,43 +108,83 @@ public class Main {
 //        } catch (IOException ex) {
 //            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
 //        }
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 24 * 60 * 60000, INSULIN_DURATION * 60000, Integer.MAX_VALUE); //
 
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 6 * 60 * 60000, INSULIN_DURATION * 60000, 10); //Integer.MAX_VALUE
+//        snippets = snippets.subList(snippets.size()-1, snippets.size());
+        List<Algorithm> algoList = new ArrayList();
+        List<CGMPlotter> cgpmList = new ArrayList();
+        Algorithm algo;
+        CGMPlotter cgpm;
 
-//        Algorithm algo = new FilterAlgo(absorptionTime, insDuration, profile);
-//        Algorithm algo = new MinimumAlgo(absorptionTime, insDuration, profile);
-//        Algorithm algo = new PolyCurveFitterAlgo(absorptionTime, insDuration, profile);
-        Algorithm algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        algo = new MinimumAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+                profile.getCarbratio(), ABSORBTION_TIME);
+        cgpm.title("MinimumAlgo");
+        algoList.add(algo);
+        cgpmList.add(cgpm);
 
-        int i = 0;
+        algo = new FilterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+                profile.getCarbratio(), ABSORBTION_TIME);
+        cgpm.title("FilterAlgo");
+        algoList.add(algo);
+        cgpmList.add(cgpm);
+//        
+        algo = new PolyCurveFitterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+                profile.getCarbratio(), ABSORBTION_TIME);
+        cgpm.title("PolyCurveFitterAlgo");
+        algoList.add(algo);
+        cgpmList.add(cgpm);
 
-        CGMPlotter cgpm = new CGMPlotter(true, true);
+        algo = new QRAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+                profile.getCarbratio(), ABSORBTION_TIME);
+        cgpm.title("QRAlgo");
+        algoList.add(algo);
+        cgpmList.add(cgpm);
 
-        long TIME_MAX_GAP = 15 * 60000;   // 15 minutes
-        for (Snippet s : snippets) {
-            if (s.getiExceededGap() > s.getEntries().size() / 10) {
-                Logger.getLogger(Main.class.getName()).log(Level.WARNING, "Skipped Snippet with {0} gaps.", s.getiExceededGap());
-                continue;
+        algo = new QRAlgo_TimeOpt(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+                profile.getCarbratio(), ABSORBTION_TIME);
+        cgpm.title("QRAlgo_TimeOpt");
+        algoList.add(algo);
+        cgpmList.add(cgpm);
+
+        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+                profile.getCarbratio(), ABSORBTION_TIME);
+        cgpm.title("LMAlgo");
+        algoList.add(algo);
+        cgpmList.add(cgpm);
+
+        ErrorCalc errorCalc = new ErrorCalc(false);
+
+        Snippet s;
+        for (int i = 0; i < snippets.size(); i++) {
+            s = snippets.get(i);
+
+            NSApi.LOGGER.log(Level.INFO, "calc :%d with %d entries, %d basals, %d bolus", new Object[]{++i, s.getEntries().size(), s.getBasals().size(), s.getBoli().size()});
+            for (int jj = 0; jj < algoList.size() && jj < cgpmList.size(); jj++) {
+                algo = algoList.get(jj);
+                algo.setGlucoseMeasurements(s.getEntries());
+                algo.setBolusTreatments(s.getBoli());
+                algo.setBasalTreatments(s.getBasals());
+                List<VaultEntry> meals = algo.calculateMeals();
+                errorCalc.calculateError(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), INSULIN_DURATION, profile.getCarbratio(), ABSORBTION_TIME);
+                cgpmList.get(jj).add(s.getEntries(), s.getBasals(), s.getBoli(), meals);
+                cgpmList.get(jj).addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             }
-            if (s.getlMaxGap() > TIME_MAX_GAP) {
-                Logger.getLogger(Main.class.getName()).log(Level.WARNING, "Skipped Snippet with gap of {0} min.", s.getlMaxGap() / 60000);
-                continue;
-            }
-            algo.setGlucoseMeasurements(s.getEntries());
-            algo.setBolusTreatments(s.getBoli());
-            algo.setBasalTreatments(s.getBasals());
-
-            System.out.println("calc :" + ++i + " with " + s.getEntries().size() + " entries, " + s.getBasals().size() + " basals, " + s.getBoli().size() + " bolus");
-            List<VaultEntry> meals = algo.calculateMeals();
-
-            System.out.println("Found meals:" + meals.size());
-
-            cgpm.plot(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), INSULIN_DURATION,
-                    profile.getCarbratio(), ABSORBTION_TIME);
         }
 
-        cgpm.showAll();
+        for (int jj = 0; jj < algoList.size(); jj++) {
+            try {
+                cgpmList.get(jj).showAll();
 
+            } catch (IOException | PythonExecutionException ex) {
+                NSApi.LOGGER.log(Level.SEVERE, null, ex);
+            }
+        }
 //        //FOR LATER USE
 //        // query data
 //        List<VaultEntry> data = VaultDao.getInstance().queryAllVaultEntries();
