@@ -11,8 +11,8 @@ import java.util.List;
 
 public abstract class Algorithm {
 
-    private long absorptionTime;
-    private long insulinDuration;
+    protected long absorptionTime;
+    protected long insulinDuration;
     protected Profile profile;
     protected List<VaultEntry> meals;
     protected List<VaultEntry> glucose;

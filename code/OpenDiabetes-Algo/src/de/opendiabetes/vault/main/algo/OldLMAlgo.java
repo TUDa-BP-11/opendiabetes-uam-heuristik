@@ -133,10 +133,12 @@ public class OldLMAlgo extends Algorithm {
         long t0;
         for (int i = 0; i < uniqueMealValues.getDimension(); i++) {
             x = uniqueMealValues.getEntry(i);
-            t0 = uniqueMealTimes.get(i);
-            meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
-                    TimestampUtils.createCleanTimestamp(new Date(t0 * 60000)), x);
-            mealTreatments.add(meal);
+            if(x > 5) {
+                t0 = uniqueMealTimes.get(i);
+                meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
+                        TimestampUtils.createCleanTimestamp(new Date(t0 * 60000)), x);
+                mealTreatments.add(meal);
+            }
         }
 
         //Remove Meals before first Bg entry

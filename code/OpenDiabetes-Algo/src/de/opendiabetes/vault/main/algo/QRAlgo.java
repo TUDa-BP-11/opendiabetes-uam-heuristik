@@ -42,7 +42,7 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
-        final long firstTime = getGlucose().get(0).getTimestamp().getTime() / 60000 + Math.max(getAbsorptionTime(), getInsulinDuration());
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
         
         List<VaultEntry> mealTreatments;
         mealTreatments = new ArrayList<>();
@@ -100,6 +100,16 @@ public class QRAlgo extends Algorithm {
                     }
                 }
             }
+        }
+        //Remove Meals before first Bg entry
+        for (int i = 0; i < mealTreatments.size(); i++) {
+            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
+                mealTreatments.remove(i);
+                i--;
+            } else {
+                break;
+            }
+
         }
         return mealTreatments;
     }

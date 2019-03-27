@@ -55,17 +55,17 @@ public class LMAlgo extends Algorithm {
         times = new ArrayRealVector();
 
         final long startTime = getStartTime() / 60000;
-        final long lastTime = getGlucose().get(getGlucose().size() - 1).getTimestamp().getTime() / 60000;
-        final long firstMealTime = startTime - getAbsorptionTime();
+        final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
+        final long firstMealTime = startTime - absorptionTime;
         final long lastMealTime = lastTime; 
         long currentTime;
-        
+
         // keep track of best result
         errOpt = Double.POSITIVE_INFINITY;
 
         //
-        for (int i = 0; i < getGlucose().size(); i++) {
-            VaultEntry current = getGlucose().get(i);
+        for (int i = 0; i < glucose.size(); i++) {
+            VaultEntry current = glucose.get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
 
             // skip bg values until start time
@@ -75,10 +75,11 @@ public class LMAlgo extends Algorithm {
 
             currentValue = current.getValue();
 
-            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments,
+                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
             nkbg = nkbg.append(deltaBg);
-            ve = ve.append(currentValue);
             times = times.append(currentTime);
+            ve = ve.append(currentValue);
         }
 
         // initial carbs to be distributed on N start values
@@ -91,10 +92,11 @@ public class LMAlgo extends Algorithm {
             mealTimes = new ArrayRealVector(0);
             mealValues = new ArrayRealVector(0);
             // estimate error vector with current mealValues and mealTimes
-            e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime()));
+            e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
 
             // calculate norm.
             abs_e = e.getNorm();
+
             // calculate max relative error
             err = Math.max(Math.abs(e.ebeDivide(ve).getMaxValue()), Math.abs(e.ebeDivide(ve).getMinValue()));
             // stop iterations and search if convergence criterion is met (max error <= 10%)
@@ -132,13 +134,14 @@ public class LMAlgo extends Algorithm {
                 int N_iter = 10000;
                 for (int i = 0; i < N_iter; i++) {
                     // estimate Jacobian with current mealValues and mealTimes
-                    J = Predictions.Jacobian(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime());
+                    J = Predictions.Jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
 
                     // estimate error vector with current mealValues and mealTimes
-                    e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime()));
+                    e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
 
                     // calculate norm.
                     abs_e = e.getNorm();
+
                     // calculate max relative error
                     err = Math.max(Math.abs(e.ebeDivide(ve).getMaxValue()), Math.abs(e.ebeDivide(ve).getMinValue()));
                     // stop iterations and search if convergence criterion is met (max error <= 10%)
@@ -147,6 +150,7 @@ public class LMAlgo extends Algorithm {
                         breakN = true;
                         break;
                     }
+
                     // stop iterations if error vector magnitude changes less than 1e-7
                     if (i > 10 && Math.abs(abs_e - e_old) < 1e-7) {
 //                        NSApi.LOGGER.log(Level.INFO, "Converged N: %d, max err: %.2f%%, bias: %.2f, std: %.2f, i: %d", new Object[]{N, err * 100, bias.evaluate(e.toArray()), std.evaluate(e.toArray()), i});
