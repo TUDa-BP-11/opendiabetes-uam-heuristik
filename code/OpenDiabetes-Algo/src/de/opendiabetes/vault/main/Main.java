@@ -115,7 +115,6 @@ public class Main {
             .setLongFlag("output-file")
             .setHelp("File where the meals should saved in");
     private static final Parameter P_PLOT = new Switch("plot")
-            .setShortFlag('p')
             .setLongFlag("plot")
             .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
 
@@ -153,7 +152,6 @@ public class Main {
     private static final int MAX_TIME_GAP = 15;
 
     private static final Map<String, Class<? extends Algorithm>> algorithms = new HashMap<>();
-
     private static final Map<String, Class<? extends DataProvider>> dataproviders = new HashMap<>();
 
     /**
@@ -162,7 +160,6 @@ public class Main {
      * @param jsap your JSAP instance
      */
     private static void registerArguments(JSAP jsap) {
-
         try {
             jsap.registerParameter(P_DATAPROVIDER);
             jsap.registerParameter(P_HOST);
@@ -184,7 +181,6 @@ public class Main {
 
             jsap.registerParameter(P_OVERWRITE_OUTPUT);
             jsap.registerParameter(P_UPLOAD_ALL);
-
             jsap.registerParameter(P_BATCHSIZE);
             jsap.registerParameter(P_LATEST);
             jsap.registerParameter(P_OLDEST);
@@ -207,7 +203,6 @@ public class Main {
         algorithms.put("oldlm", OldLMAlgo.class);
     }
 
-
     /**
      * Use this method to register more data providers
      */
@@ -229,7 +224,7 @@ public class Main {
             NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
             return;
         }
-
+        
         // init
         initLogger(config);
 
@@ -296,7 +291,7 @@ public class Main {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
-        
+
         //init Algorithm
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
@@ -438,7 +433,6 @@ public class Main {
         }
     }
      */
-
     private static void exportPlotScript(String scriptLines) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
             writer.write(scriptLines);
