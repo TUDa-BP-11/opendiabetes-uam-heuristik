@@ -109,17 +109,6 @@ public class PolyCurveFitterAlgo extends Algorithm {
             }
             observations.clear();
         }
-        //Remove Meals before first Bg entry
-        for (int i = 0; i < meals.size(); i++) {
-            if (meals.get(i).getTimestamp().getTime() / 60000  < firstTime){
-                meals.remove(i);
-                i--;
-            } else {
-                break;
-            }
-
-        }
-
         return meals;
     }
 }
