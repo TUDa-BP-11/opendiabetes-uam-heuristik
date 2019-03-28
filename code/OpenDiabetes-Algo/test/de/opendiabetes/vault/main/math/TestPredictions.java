@@ -46,9 +46,10 @@ public class TestPredictions {
         double sens = 35;
         double carb = 10;
         double insDuration = 180;
+        double peak = 55;
 
         double y = 3;
-        double expected = -1 * y * sens * (1 - Predictions.fastActingIob(t, insDuration));     //TODO fastActingIOB vs getIOBWeight / 100D ?
-        assertEquals(expected, Predictions.deltaBGI(t, y, sens, insDuration));
+        double expected = -1 * y * sens * (1 - Predictions.fastActingIob(t, insDuration, peak));     //TODO fastActingIOB vs getIOBWeight / 100D ?
+        assertEquals(expected, Predictions.deltaBGI(t, y, sens, insDuration, peak));
     }
 }

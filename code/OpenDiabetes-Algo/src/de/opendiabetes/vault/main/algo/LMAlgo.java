@@ -1,7 +1,6 @@
 package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -13,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
+
 import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
@@ -21,12 +21,8 @@ public class LMAlgo extends Algorithm {
 
     private double offset;
 
-    public LMAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
-    }
-
-    public LMAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public LMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
@@ -70,7 +66,7 @@ public class LMAlgo extends Algorithm {
             current = glucose.get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
             currentValue = current.getValue();
-            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime);
             ve = ve.append(currentValue);
@@ -114,11 +110,11 @@ public class LMAlgo extends Algorithm {
                 mealTimes = new ArrayRealVector(N);
                 mealValues = new ArrayRealVector(N);
 
-                long step = (lastTime - startTime) / N;
+                long step = (lastMealTime - firstMealTime) / N;
                 I = MatrixUtils.createRealIdentityMatrix(2 * N);
 
                 for (int i = 0; i < N; i++) {
-                    mealTimes.setEntry(i, startTime + i * step);
+                    mealTimes.setEntry(i, firstMealTime + i * step);
                     mealValues.setEntry(i, totalCarbs / N);
                 }
 
@@ -191,15 +187,15 @@ public class LMAlgo extends Algorithm {
             }
 
             // normalize mealTimes and sum up meals at the same time. Throw everything with < 1g of Carbs away.
-            ArrayList<Long> uniqueMealTimes = new ArrayList();
-            ArrayList<Double> uniqueMealValues = new ArrayList();
+            ArrayList<Long> uniqueMealTimes = new ArrayList<>();
+            ArrayList<Double> uniqueMealValues = new ArrayList<>();
             for (int i = 0; i < mealTimesOpt.getDimension(); i++) {
                 long t = Math.round(mealTimesOpt.getEntry(i));
                 double x = mealValuesOpt.getEntry(i);
-//                if (t <= startTime) {
-//                    offset += x * profile.getSensitivity() / profile.getCarbratio();
-//                    continue;
-//                }
+                if (t <= firstMealTime) {
+                    offset += x * profile.getSensitivity() / profile.getCarbratio();
+                    continue;
+                }
 //                t = Math.max(t, firstTime);
                 int idx = uniqueMealTimes.indexOf(t);
                 if (idx != -1) {

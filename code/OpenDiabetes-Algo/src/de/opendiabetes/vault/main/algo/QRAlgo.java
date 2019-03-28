@@ -1,6 +1,5 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -12,16 +11,11 @@ import java.util.Date;
 import java.util.List;
 
 import static java.lang.Math.pow;
-import java.util.ArrayList;
 
 public class QRAlgo extends Algorithm {
 
-    public QRAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
-    }
-
-    public QRAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public QRAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
@@ -66,7 +60,7 @@ public class QRAlgo extends Algorithm {
                     //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
                         deltaBg = next.getValue() - nextPrediction;
                         times = times.append(nextTime - currentTime);
@@ -97,15 +91,7 @@ public class QRAlgo extends Algorithm {
                 }
             }
         }
-        //Remove Meals before first Bg entry
-        for (int i = 0; i < meals.size(); i++) {
-            if (meals.get(i).getTimestamp().getTime() / 60000 <= firstTime) {
-                meals.remove(i);
-                i--;
-            } else {
-                break;
-            }
-        }
+
         return meals;
     }
 }

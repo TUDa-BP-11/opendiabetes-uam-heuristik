@@ -11,7 +11,7 @@ import org.apache.commons.math3.linear.RealVector;
 public class Predictions {
 
     public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments,
-            double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime) {
+            double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime, double peak) {
         double result = 0;
         for (VaultEntry meal : mealTreatments) {
             long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);  //Time in minutes
@@ -25,14 +25,14 @@ public class Predictions {
             if (deltaTime <= 0) {
                 break;
             }
-            result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration);
+            result += deltaBGI(deltaTime, bolus.getValue(), insSensitivityFactor, insDuration, peak);
         }
         for (VaultEntry basal : basalTreatments) {
             long deltaTime = Math.round((time - basal.getTimestamp().getTime()) / 60000.0);      //Time in minutes
             if (deltaTime <= 0) {
                 break;
             }
-            result += deltatempBGI(deltaTime, basal.getValue(), insSensitivityFactor, insDuration, 0, basal.getValue2());
+            result += deltatempBGI(deltaTime, basal.getValue(), insSensitivityFactor, insDuration, peak, 0, basal.getValue2());
         }
 
         return result;
@@ -67,17 +67,14 @@ public class Predictions {
      * @param insDuration effective time of insulin in minutes
      * @return percentage of insulin still on board
      */
-    public static double fastActingIob(double timeFromEvent, double insDuration) {
+    public static double fastActingIob(double timeFromEvent, double insDuration, double peak) {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
         } else if (timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
             IOBWeight = 0;
         } else {
-
-            double peak = 55;
-            //double peak = insDuration * 75 / 180.0;
-
+            
             //Time constant of exp decay
             double decay = peak * (1 - peak / insDuration)
                     / (1 - 2 * peak / insDuration);
@@ -109,7 +106,7 @@ public class Predictions {
      * @param timeFromEvent time in minutes since insulin event
      * @return
      */
-    public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent) {
+    public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent, double peak) {
         // timeFromEvent - scale*(1-growth) *(Math.exp(-timeFromEvent/decay) * (2*decay+timeFromEvent-(2*decay^2+2*decay*timeFromEvent+timeFromEvent^2)/((1-growth) * insDuration))+timeFromEvent)
 
         double integral;
@@ -123,16 +120,16 @@ public class Predictions {
         //integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
 
         // Orig:
-        integral = fastActingIob((timeFromEvent - t1), insDuration)
-                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
+        integral = fastActingIob((timeFromEvent - t1), insDuration, peak)
+                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration, peak);
         int ii = 1;
         while (ii < nn - 2) {
             //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
             integral = integral
                     + 4 * fastActingIob(timeFromEvent
-                            - (t1 + ii * dx), insDuration)
+                            - (t1 + ii * dx), insDuration, peak)
                     + 2 * fastActingIob(timeFromEvent
-                            - (t1 + (ii + 1) * dx), insDuration);
+                            - (t1 + (ii + 1) * dx), insDuration, peak);
             ii = ii + 2;
         }
 
@@ -157,8 +154,8 @@ public class Predictions {
 
     //tempInsAmount in U/min
     //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
-    public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double t1, double t2) {
-        return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIob(t1, t2, insDuration, timeFromEvent));
+    public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double peak, double t1, double t2) {
+        return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIob(t1, t2, insDuration, timeFromEvent, peak));
         //return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIob(t1, t2, insDuration, timeFromEvent));
     }
 
@@ -168,8 +165,8 @@ public class Predictions {
     }
 
     //function deltaBGI(g,bolus,sensf,idur)
-    public static double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration) {
-        return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration));
+    public static double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration, double peak) {
+        return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration, peak));
         //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
 

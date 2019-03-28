@@ -1,6 +1,5 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -14,12 +13,8 @@ import java.util.List;
 
 public class OldLMAlgo extends Algorithm {
 
-    public OldLMAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
-    }
-
-    public OldLMAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public OldLMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
@@ -52,7 +47,7 @@ public class OldLMAlgo extends Algorithm {
             currentTime = current.getTimestamp().getTime();
             currentValue = current.getValue();
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime, peak);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime / 60000);
             ve = ve.append(currentValue);

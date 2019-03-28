@@ -2,7 +2,6 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
@@ -20,13 +19,10 @@ import static java.lang.Math.pow;
  */
 public class PolyCurveFitterAlgo extends Algorithm {
 
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
-    }
 
     @Override
     public List<VaultEntry> calculateMeals() {
@@ -75,17 +71,17 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 startValue = current.getValue();
                 //double deltaBg = Filter.getAverage(glucose, j, 5, 30) - Filter.getAverage(glucose, i, 5, 30);
                 //double deltaBg = next.getValue() - current.getValue();
-                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
-                for (int j = i; j < getGlucose().size(); j++) {
-                    next = getGlucose().get(j);
+                for (int j = i; j < glucose.size(); j++) {
+                    next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
 
 //                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
                     //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
                     nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
                         deltaBg = nextValue - startValue - (nextPrediction - currentPrediction);
                         lastTime = nextTime;
                         observations.add(new WeightedObservedPoint(weight, nextTime, deltaBg));
@@ -111,16 +107,6 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 }
             }
             observations.clear();
-        }
-        //Remove Meals before first Bg entry
-        for (int i = 0; i < meals.size(); i++) {
-            if (meals.get(i).getTimestamp().getTime() / 60000  < firstTime){
-                meals.remove(i);
-                i--;
-            } else {
-                break;
-            }
-
         }
 
         return meals;

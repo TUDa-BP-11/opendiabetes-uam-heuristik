@@ -4,7 +4,7 @@ import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.*;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.vault.main.dataprovider.DataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
 import de.opendiabetes.vault.main.exception.DataProviderException;
@@ -25,14 +25,23 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import static de.opendiabetes.vault.nsapi.Main.*;
+import de.opendiabetes.vault.parser.Profile;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.logging.Logger;
+import java.time.LocalDateTime;
 
 public class Main {
 
     // All parameters
     //Data Source
+        private static final Parameter P_DATAPROVIDER = new FlaggedOption("dataprovider")
+            .setStringParser(JSAP.STRING_PARSER)
+            .setShortFlag('p')
+            .setRequired(true)
+            .setLongFlag("dataprovider")
+            .setHelp("Data provider that should be used");
+
+    // NightscoutDataProvider
     private static final Parameter P_HOST = new FlaggedOption("host")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('h')
@@ -45,17 +54,17 @@ public class Main {
             .setHelp("Your Nightscout API secret.");
     private static final Parameter P_ENTRIES_FILE = new FlaggedOption("entries")
             .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('e')
+            .setShortFlag('E')
             .setLongFlag("entries")
             .setHelp("Path to file with the blood glucose values");
     private static final Parameter P_TREATMENTS_FILE = new FlaggedOption("treatments")
             .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('f')
+            .setShortFlag('T')
             .setLongFlag("treatments")
             .setHelp("File with the basal and bolus insulin treatments");
     private static final Parameter P_PROFILE_FILE = new FlaggedOption("profile")
             .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('p')
+            .setShortFlag('P')
             .setLongFlag("profile")
             .setHelp("Path to a nightscout profile");
     //Algoorithm Parameters
@@ -80,6 +89,12 @@ public class Main {
             .setRequired(true)
             .setDefault("180")
             .setHelp("Duration of used Insulin");
+    private static final Parameter P_INSULIN_PEAK = new FlaggedOption("peak")
+            .setStringParser(JSAP.DOUBLE_PARSER)
+            .setLongFlag("peak")
+            .setRequired(true)
+            .setDefault("55.0")
+            .setHelp("Duration in minutes until insulin action reaches it’s peak activity level");
     //Output
     private static final Parameter P_TARGET_HOST = new FlaggedOption("target-host")
             .setStringParser(JSAP.STRING_PARSER)
@@ -97,6 +112,7 @@ public class Main {
             .setLongFlag("output-file")
             .setHelp("File where the meals should saved in");
     private static final Parameter P_PLOT = new Switch("plot")
+            .setShortFlag('p')
             .setLongFlag("plot")
             .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
     //Options and tuning
@@ -132,14 +148,15 @@ public class Main {
     private static final int MAX_TIME_GAP = 15;
 
     private static final Map<String, Class<? extends Algorithm>> algorithms = new HashMap<>();
-
+private static final Map<String, Class<? extends DataProvider>> dataproviders = new HashMap<>();
     /**
      * Registers all arguments to the given JSAP instance
      *
      * @param jsap your JSAP instance
      */
     private static void registerArguments(JSAP jsap) {
-        try {
+        try {            
+            jsap.registerParameter(P_DATAPROVIDER); 
             jsap.registerParameter(P_HOST);
             jsap.registerParameter(P_SECRET);
             jsap.registerParameter(P_ENTRIES_FILE);
@@ -149,6 +166,7 @@ public class Main {
             jsap.registerParameter(P_ALGO);
             jsap.registerParameter(P_ABSORPTION_TIME);
             jsap.registerParameter(P_INSULIN_DURATION);
+            jsap.registerParameter(P_INSULIN_PEAK);
 
             jsap.registerParameter(P_TARGET_HOST);
             jsap.registerParameter(P_TARGET_SECRET);
@@ -157,9 +175,9 @@ public class Main {
 
             jsap.registerParameter(P_OVERWRITE_OUTPUT);
             jsap.registerParameter(P_UPLOAD_ALL);
+            jsap.registerParameter(P_BATCHSIZE); 
             jsap.registerParameter(P_LATEST);
             jsap.registerParameter(P_OLDEST);
-            jsap.registerParameter(P_BATCHSIZE);
 
             jsap.registerParameter(P_VERBOSE);
             jsap.registerParameter(P_DEBUG);
@@ -177,14 +195,24 @@ public class Main {
         algorithms.put("oldlm", OldLMAlgo.class);
     }
 
+        /**
+     * Use this method to register more data providers
+     */
+    private static void registerDataproviders() {
+        dataproviders.put("nightscout", NightscoutDataProvider.class);
+        dataproviders.put("file", FileDataProvider.class);
+    }
+    
     public static void main(String[] args) {
 
         // setup arguments
         JSAP jsap = new JSAP();
         registerArguments(jsap);
         registerAlgorithms();
+        registerDataproviders();
         JSAPResult config = initArguments(jsap, args);
         if (config == null) {
+            NSApi.LOGGER.log(Level.INFO, "DataProvider summary:\n%s", dataproviders.keySet());
             NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
             return;
         }
@@ -198,21 +226,12 @@ public class Main {
             NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
             return;
         }
-        if (someFilesSet(config) && !allFilesSet(config)) {
-            NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile");
+        if (!dataproviders.containsKey(config.getString("dataprovider"))) {
+            NSApi.LOGGER.log(Level.INFO, "There is no DataProvider with the name: %s", config.getString("dataprovider"));
+            NSApi.LOGGER.log(Level.INFO, "For an argument summary execute without arguments.");
             return;
         }
-        if (config.contains("host") && allFilesSet(config)) {
-            NSApi.LOGGER.warning("Cannot get input from files and server at the same time!");
-            return;
-        }
-
-        if (!config.contains("host") && !allFilesSet(config)) {
-            NSApi.LOGGER.warning("Please specify paths to your files of blood glucose values treatments and your profile\n"
-                    + "or a Nightscout server URL. Make sure to include the port if needed");
-            return;
-        }
-
+        
         if (config.contains("target-host") && !config.contains("target-secret")) {
             NSApi.LOGGER.warning("Please specify the API secret of the target Nightscout server.");
             return;
@@ -223,23 +242,56 @@ public class Main {
             return;
         }
 
+        if(config.getDouble("peak") <= 0 || config.getDouble("peak") >= config.getInt("insDuration")){
+            NSApi.LOGGER.warning("Peak can not be less than or greater than the duration of the insulin used");
+            return;
+        }
+
+        if(config.getDouble("peak") ==  config.getInt("insDuration")/2){
+            NSApi.LOGGER.warning("Peak can not be exactly half the duration of the insulin used");
+            return;
+        }
+        
+        if (LocalDateTime.from((ZonedDateTime) config.getObject("latest")).isBefore(LocalDateTime.from((ZonedDateTime) config.getObject("oldest")))) {
+            NSApi.LOGGER.warning("Oldest cannot be after latest");
+            return;
+        }
         //init DataProvider
-        AlgorithmDataProvider dataProvider;
+                DataProvider dataProvider;
         try {
-            dataProvider = chooseDataProvider(config);
+            dataProvider = dataproviders.get(config.getString("dataprovider")).getConstructor().newInstance();
+        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+            return;
+        }
+        try {
+            dataProvider.setConfig(config);
         } catch (DataProviderException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
 
+        Profile profile;
+        List<VaultEntry> glucoseMeasurements, bolusTreatments, basalTreatments;
+        try {
+profile = dataProvider.getProfile();
+            glucoseMeasurements = dataProvider.getGlucoseMeasurements();
+            bolusTreatments = dataProvider.getBolusTreatments();
+            basalTreatments = dataProvider.getBasalTreatments();
+             } catch (DataProviderException e) {
+             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+             return;
+             }
+        
         //init Algorithm
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
+        double peak = config.getDouble("peak");
         Algorithm algorithm;
         try {
-            algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class)
-                    .newInstance(absorptionTime, insulinDuration, dataProvider);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, double.class, Profile.class, List.class, List.class, List.class)
+                    .newInstance(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException | IllegalArgumentException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
         }
@@ -249,7 +301,7 @@ public class Main {
         //Logging
         NSApi.LOGGER.log(Level.FINE, "calculated meals");
 
-        long maxTimeGap = getMaxTimeGap(dataProvider.getGlucoseMeasurements());
+        long maxTimeGap = getMaxTimeGap(glucoseMeasurements);
         if (maxTimeGap < MAX_TIME_GAP) {
             NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         } //TODO warning msg
@@ -281,27 +333,27 @@ public class Main {
                     int batchsize = config.getInt("batchsize");
                     nsApi.postTreatments(meals, batchsize);
                     if (config.getBoolean("upload-all")) {
-                        nsApi.postTreatments(dataProvider.getBolusTreatments(), batchsize);
-                        nsApi.postTreatments(dataProvider.getRawBasalTreatments(), batchsize);
-                        nsApi.postEntries(dataProvider.getGlucoseMeasurements(), batchsize);
+                        nsApi.postTreatments(bolusTreatments, batchsize);
+                        nsApi.postTreatments(basalTreatments, batchsize);
+                        nsApi.postEntries(glucoseMeasurements, batchsize);
                     }
                 } catch (NightscoutIOException | NightscoutServerException e) {
                     NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
                 }
             }
         }
-//
-//        if (meals.size() > 0) {
-//            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
-//        } else {
-//            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
-//        }
-//        meals.forEach((meal) -> {
-//            NSApi.LOGGER.log(Level.INFO, meal.toString());
-//        });
+
+        if (meals.size() > 0) {
+            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
+        } else {
+            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
+        }
+        meals.forEach((meal) -> {
+            NSApi.LOGGER.log(Level.INFO, meal.toString());
+        });
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            CGMPlotter cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
             cgpm.add(algorithm);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {
@@ -315,28 +367,6 @@ public class Main {
             }
         }
         dataProvider.close();
-    }
-
-    private static AlgorithmDataProvider chooseDataProvider(JSAPResult config) {
-        if (config.contains("host")) {
-            return new NightscoutDataProvider(config.getString("host"), config.getString("secret"),
-                    config.getInt("batchsize"), (ZonedDateTime) config.getObject("latest"),
-                    (ZonedDateTime) config.getObject("oldest"));
-        }
-        if (allFilesSet(config)) {
-            return new FileDataProvider(null, config.getString("entries"), config.getString("treatments"),
-                    config.getString("profile"), (ZonedDateTime) config.getObject("latest"),
-                    (ZonedDateTime) config.getObject("oldest"));
-        }
-        return null;
-    }
-
-    private static boolean allFilesSet(JSAPResult config) {
-        return (config.contains("entries") && config.contains("treatments") && config.contains("profile"));
-    }
-
-    private static boolean someFilesSet(JSAPResult config) {
-        return (config.contains("entries") || config.contains("treatments") || config.contains("profile"));
     }
 
     private static long getMaxTimeGap(List<VaultEntry> list) {
@@ -392,6 +422,7 @@ public class Main {
         }
     }
      */
+    
     private static void exportPlotScript(String scriptLines) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
             writer.write(scriptLines);

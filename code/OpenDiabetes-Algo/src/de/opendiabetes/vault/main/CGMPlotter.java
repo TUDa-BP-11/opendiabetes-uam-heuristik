@@ -20,6 +20,7 @@ public class CGMPlotter {
     private double carbratio;
     private int insDuration;
     private int absorptionTime;
+    private double peak;
     private double maxMeal = 0;
     private Plot plt;
     private Plot diffPlt;
@@ -78,7 +79,7 @@ public class CGMPlotter {
      * @param carbratio
      * @param absorptionTime
      */
-    public CGMPlotter(boolean plotHist, boolean bStartValue, boolean bStartTime, double sensitivity, int insDuration, double carbratio, int absorptionTime) {
+    public CGMPlotter(boolean plotHist, boolean bStartValue, boolean bStartTime, double sensitivity, int insDuration, double carbratio, int absorptionTime, double peak) {
         this();
         this.plotHist = plotHist;
         this.bStartValue = bStartValue;
@@ -87,6 +88,7 @@ public class CGMPlotter {
         this.insDuration = insDuration;
         this.carbratio = carbratio;
         this.absorptionTime = absorptionTime;
+        this.peak = peak;
     }
 
     /**
@@ -180,10 +182,8 @@ public class CGMPlotter {
             if (bStartTime && i < startIndex) {
                 continue;
             }
-            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(),
-                    meals, bolusTreatments, basalTreatments,
-                    sensitivity, insDuration,
-                    carbratio, absorptionTime);
+            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, 
+                    sensitivity, insDuration, carbratio, absorptionTime, peak);
             algoValuesSnippet.add(startValue + algoPredict);
             algoTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
         }

@@ -2,7 +2,7 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 
@@ -13,54 +13,22 @@ public abstract class Algorithm {
 
     protected long absorptionTime;
     protected long insulinDuration;
+    protected double peak;
     protected Profile profile;
-    protected List<VaultEntry> meals;
     protected List<VaultEntry> glucose;
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
+    protected List<VaultEntry> meals;
 
-    public Algorithm(long absorptionTime, long insulinDuration, Profile profile) {
+    public Algorithm(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
+        this.peak = peak;
         this.profile = profile;
-        meals = new ArrayList<>();
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        basalTreatments = new ArrayList<>();
-    }
-
-    public Algorithm(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        this.absorptionTime = absorptionTime;
-        this.insulinDuration = insulinDuration;
-        meals = new ArrayList<>();
-        setDataProvider(dataProvider);
-    }
-
-    /**
-     * Set the time needed to absorb a meal completely
-     *
-     * @param absorptionTime absoption time in minutes
-     */
-    public void setAbsorptionTime(long absorptionTime) {
-        this.absorptionTime = absorptionTime;
-    }
-
-    /**
-     * Set the effective time of an insulin treatment
-     *
-     * @param insulinDuration insulin duration in minutes
-     */
-    public void setInsulinDuration(long insulinDuration) {
-        this.insulinDuration = insulinDuration;
-    }
-
-    /**
-     * Set a profile
-     *
-     * @param profile profile
-     */
-    public void setProfile(Profile profile) {
-        this.profile = profile;
+        setGlucoseMeasurements(glucoseMeasurements);
+        setBolusTreatments(bolusTreatments);
+        setBasalTreatments(basalTreatments);
+        this.meals = new ArrayList<>();
     }
 
     /**
@@ -113,31 +81,12 @@ public abstract class Algorithm {
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
-        if (!basalTreatments.isEmpty()) {
-            VaultEntry current = basalTreatments.get(0);
-            for (VaultEntry entry : basalTreatments) {
-                if (entry.getTimestamp().getTime() < current.getTimestamp().getTime()) {
-                    throw new IllegalArgumentException("basalTreatments have to be sorted by timestamp");
-                }
-                if (!entry.getType().equals(VaultEntryType.BASAL_PROFILE)) {
-                    throw new IllegalArgumentException("VaultEntryType should be BASAL_PROFILE but was" + entry.getType().toString());
-                }
-            }
-        }
+        basalTreatments = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
         this.basalTreatments = basalTreatments;
     }
 
-    /**
-     * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
-     * {@link #setBasalTreatments(List)} and {@link #setProfile(Profile)}
-     *
-     * @param dataProvider the data provider
-     */
-    public final void setDataProvider(AlgorithmDataProvider dataProvider) {
-        this.setProfile(dataProvider.getProfile());
-        this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
-        this.setBolusTreatments(dataProvider.getBolusTreatments());
-        this.setBasalTreatments(dataProvider.getBasalDifferences());
+    public void setProfile(Profile profile) {
+        this.profile = profile;
     }
 
     /**
@@ -154,7 +103,7 @@ public abstract class Algorithm {
         }
         int startIndex = getStartIndex();
         double startValue;
-        startValue = glucose.get(startIndex).getValue() - Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+        startValue = glucose.get(startIndex).getValue() - Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
         return startValue;
     }
@@ -173,7 +122,7 @@ public abstract class Algorithm {
         }
         return i;
     }
-    
+
     public long getStartTime() {
         if (glucose.isEmpty()) {
             return 0;
@@ -236,5 +185,9 @@ public abstract class Algorithm {
      */
     public List<VaultEntry> getBasalTreatments() {
         return basalTreatments;
+    }
+
+    public double getPeak() {
+        return peak;
     }
 }
