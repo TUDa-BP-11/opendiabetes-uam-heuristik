@@ -49,6 +49,7 @@ public class LMAlgo extends Algorithm {
         UnivariateStatistic bias = new Mean();
         UnivariateStatistic std = new StandardDeviation();
         meals.clear();
+        offset = 0;
 //        mealTreatments = new ArrayList<>();
         ve = new ArrayRealVector();
         nkbg = new ArrayRealVector();
@@ -57,26 +58,19 @@ public class LMAlgo extends Algorithm {
         final long startTime = getStartTime() / 60000;
         final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
         final long firstMealTime = startTime - absorptionTime;
-        final long lastMealTime = lastTime; 
+        final long lastMealTime = lastTime;
         long currentTime;
 
+        VaultEntry current;
         // keep track of best result
         errOpt = Double.POSITIVE_INFINITY;
 
         //
-        for (int i = 0; i < glucose.size(); i++) {
-            VaultEntry current = glucose.get(i);
+        for (int i = getStartIndex(); i < glucose.size(); i++) {
+            current = glucose.get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
-
-            // skip bg values until start time
-            if (currentTime < startTime) {
-                continue;
-            }
-
             currentValue = current.getValue();
-
-            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments,
-                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime);
             ve = ve.append(currentValue);
@@ -202,10 +196,10 @@ public class LMAlgo extends Algorithm {
             for (int i = 0; i < mealTimesOpt.getDimension(); i++) {
                 long t = Math.round(mealTimesOpt.getEntry(i));
                 double x = mealValuesOpt.getEntry(i);
-                if (t <= startTime) {
-                    offset += x*profile.getSensitivity()/profile.getCarbratio();
-                    continue;
-                }
+//                if (t <= startTime) {
+//                    offset += x * profile.getSensitivity() / profile.getCarbratio();
+//                    continue;
+//                }
 //                t = Math.max(t, firstTime);
                 int idx = uniqueMealTimes.indexOf(t);
                 if (idx != -1) {

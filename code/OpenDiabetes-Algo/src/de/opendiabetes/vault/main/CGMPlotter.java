@@ -13,16 +13,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * @author anna
- */
 public class CGMPlotter {
 
     private String title = "";
-//    private double sensitivity;
-//    private double carbratio;
-//    private int insDuration;
-//    private int absorptionTime;
+    private double sensitivity;
+    private double carbratio;
+    private int insDuration;
+    private int absorptionTime;
     private double maxMeal = 0;
     private Plot plt;
     private Plot diffPlt;
@@ -86,10 +83,10 @@ public class CGMPlotter {
         this.plotHist = plotHist;
         this.bStartValue = bStartValue;
         this.bStartTime = bStartTime;
-//        this.sensitivity = sensitivity;
-//        this.insDuration = insDuration;
-//        this.carbratio = carbratio;
-//        this.absorptionTime = absorptionTime;
+        this.sensitivity = sensitivity;
+        this.insDuration = insDuration;
+        this.carbratio = carbratio;
+        this.absorptionTime = absorptionTime;
     }
 
     /**
@@ -107,15 +104,16 @@ public class CGMPlotter {
         List<VaultEntry> basalTreatments = algo.getBasalTreatments();
         List<VaultEntry> bolusTreatments = algo.getBolusTreatments();
         List<VaultEntry> meals = algo.getMeals();
+        double startValue = 0;
+        int startIndex = algo.getStartIndex();
+        if (bStartValue) {
+            startValue = algo.getStartValue();
+        }
+        this.add(entries, basalTreatments, bolusTreatments, meals, startIndex, startValue);
+    }
 
-        double sensitivity;
-        double carbratio;
-        long insDuration;
-        long absorptionTime;
-        sensitivity = algo.getProfile().getSensitivity();
-        insDuration = algo.getInsulinDuration();
-        carbratio = algo.getProfile().getCarbratio();
-        absorptionTime = algo.getAbsorptionTime();
+    public void add(List<VaultEntry> entries, List<VaultEntry> basalTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> meals, int startIndex, double startValue) {
+
         plotPlot = true;
         List<Double> basalValuesSnippet = new ArrayList<>();
         List<Double> basalTimesSnippet = new ArrayList<>();
@@ -171,11 +169,6 @@ public class CGMPlotter {
             }
         }
 
-        double startValue = 0;
-        int startIndex = algo.getStartIndex();
-        if (bStartValue) {
-            startValue = algo.getStartValue();
-        }
 //        double startTime = ErrorCalc.getStartTime(entries, insDuration, absorptionTime);
 //        for (VaultEntry ve : entries) {
         for (int i = 0; i < entries.size(); i++) {
@@ -335,7 +328,6 @@ public class CGMPlotter {
 //            }
 //        });
 //    }
-
 //    public void plotDiff(Snippet s, List<VaultEntry> meals,
 //            double sensitivity, int insDuration,
 //            double carbratio, int absorptionTime) {

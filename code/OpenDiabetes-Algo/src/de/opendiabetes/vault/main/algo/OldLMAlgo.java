@@ -33,7 +33,6 @@ public class OldLMAlgo extends Algorithm {
         RealVector times;
         VaultEntry meal;
         RealVector delta;
-        List<VaultEntry> mealTreatments;
         ArrayList<Double> E;
 
         double deltaBg, currentValue;
@@ -41,20 +40,19 @@ public class OldLMAlgo extends Algorithm {
         ve = new ArrayRealVector();
         nkbg = new ArrayRealVector();
         times = new ArrayRealVector();
+        meals.clear();
 
-        mealTreatments = new ArrayList<>();
-
-        final long firstTime = getGlucose().get(0).getTimestamp().getTime() / 60000;
-        final long lastTime = getGlucose().get(getGlucose().size() - 1).getTimestamp().getTime() / 60000;
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
+        final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
 
         long currentTime;
 
-        for (int i = 0; i < getGlucose().size(); i++) {
-            VaultEntry current = getGlucose().get(i);
+        for (int i = 0; i < glucose.size(); i++) {
+            VaultEntry current = glucose.get(i);
             currentTime = current.getTimestamp().getTime();
             currentValue = current.getValue();
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, mealTreatments, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime / 60000);
             ve = ve.append(currentValue);
@@ -81,8 +79,8 @@ public class OldLMAlgo extends Algorithm {
             int N_iter = 1000;
             double abs_e;
             for (int i = 0; i < N_iter; i++) {
-                J = Predictions.Jacobian(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime());
-                e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, getProfile().getSensitivity(), getProfile().getCarbratio(), getAbsorptionTime()));
+                J = Predictions.Jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
+                e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
                 abs_e = e.getNorm();
                 E.add(abs_e);
 
@@ -109,7 +107,7 @@ public class OldLMAlgo extends Algorithm {
                 }
                 mealTimes = mealTimes.add(delta.getSubVector(0, N));
                 mealValues = mealValues.add(delta.getSubVector(N, N));
-                mealTimes.mapToSelf((x) -> Math.min(lastTime, Math.max(firstTime - getAbsorptionTime(), x)));
+                mealTimes.mapToSelf((x) -> Math.min(lastTime, Math.max(firstTime - absorptionTime, x)));
                 mealValues.mapToSelf((x) -> Math.max(0, x));
             }
         }
@@ -133,25 +131,25 @@ public class OldLMAlgo extends Algorithm {
         long t0;
         for (int i = 0; i < uniqueMealValues.getDimension(); i++) {
             x = uniqueMealValues.getEntry(i);
-            if(x > 5) {
+            if (x > 5) {
                 t0 = uniqueMealTimes.get(i);
                 meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
                         TimestampUtils.createCleanTimestamp(new Date(t0 * 60000)), x);
-                mealTreatments.add(meal);
+                meals.add(meal);
             }
         }
 
         //Remove Meals before first Bg entry
-        for (int i = 0; i < mealTreatments.size(); i++) {
-            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
-                mealTreatments.remove(i);
+        for (int i = 0; i < meals.size(); i++) {
+            if (meals.get(i).getTimestamp().getTime() / 60000 < firstTime) {
+                meals.remove(i);
                 i--;
             } else {
                 break;
             }
 
         }
-        return mealTreatments;
+        return meals;
 
     }
 }

@@ -54,10 +54,6 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
         algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
@@ -67,14 +63,6 @@ public class TestAlgorithms {
         assertEquals(0, resultMeals.size());
 
         algorithm = new QRAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        //assertEquals(0, resultMeals.size());
-
-        algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new QRAlgo_TimeOpt(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         //assertEquals(0, resultMeals.size());
     }
@@ -96,10 +84,6 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         //assertEquals(0, resultMeals.size());
 
-        algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
         algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
@@ -109,14 +93,6 @@ public class TestAlgorithms {
         assertEquals(0, resultMeals.size());
 
         algorithm = new QRAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new QRAlgo_TimeOpt(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
     }
@@ -164,18 +140,6 @@ public class TestAlgorithms {
         assertEquals(timestamp, resTime, timeDelta);
         assertEquals(value, result, valueDelta);
 
-        algorithm = new FilterAlgo(absTime, insDur, testDataProvider); //remove FilterAlgo ?
-        resultMeals = algorithm.calculateMeals();
-        /*result = 0;
-        resTime = 0;
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }
-        resTime /= resultMeals.size();
-        assertEquals(timestamp, resTime, timeDelta);
-        assertEquals(value, result, valueDelta);*/
-
         algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         result = 0;
@@ -211,30 +175,6 @@ public class TestAlgorithms {
         resTime /= resultMeals.size();
         //assertEquals(timestamp, resTime, timeDelta);
         //assertEquals(value, result, valueDelta);
-
-        algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);//remove?
-        resultMeals = algorithm.calculateMeals();
-        result = 0;
-        resTime = 0;
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }
-        resTime /= resultMeals.size();
-        //assertEquals(timestamp, resTime, timeDelta);
-        //assertEquals(value, result, valueDelta);
-
-        algorithm = new QRAlgo_TimeOpt(absTime, insDur, testDataProvider);//remove?
-        resultMeals = algorithm.calculateMeals();
-        result = 0;
-        resTime = 0;
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }/*
-        resTime /= resultMeals.size();
-        assertEquals(timestamp, resTime, timeDelta);
-        assertEquals(value, result, valueDelta);*/
     }
 
     @Test
@@ -276,11 +216,6 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
 
-        algorithm = new FilterAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        for (VaultEntry meal: testMeals){
-            //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
-        }
         algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
@@ -292,18 +227,6 @@ public class TestAlgorithms {
         }
 
         algorithm = new QRAlgo(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        for (VaultEntry meal: testMeals){
-            //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
-        }
-
-        algorithm = new QRAlgo_TimeOpt(absTime, insDur, testDataProvider);
-        resultMeals = algorithm.calculateMeals();
-        for (VaultEntry meal: testMeals){
-            //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
-        }
-
-        algorithm = new QRDiffAlgo(absTime, insDur, testDataProvider);
         resultMeals = algorithm.calculateMeals();
         for (VaultEntry meal: testMeals){
             //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
