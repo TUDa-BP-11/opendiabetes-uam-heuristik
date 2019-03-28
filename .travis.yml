@@ -9,9 +9,13 @@ before_install:
 
 install:
   - chmod -R 755 lib/junit/
+  - ant -lib lib/junit all-compile
+  - bash install-nightscout.sh
 
 script:
-  - ant -lib lib/junit
+  - ant -lib lib/junit all-test
+
+after_script:
   - cat code/*/dist/TEST-*.txt
 
 env:
@@ -19,14 +23,22 @@ env:
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     #   via the "travis encrypt" command using the project repo's public key
     - secure: "D+Shdubv0/f++hp5BTjjx++kq3k0zqvWB0kISmZM8SiVseV6KLgw8lCaW9IDixguIqAKlMsgaeEPDI9HXcFwI+D/Cl40pMeR56svn8mWr0vNJFSQO07RIDeaMOnQ5C05bngbjKDd/4GOHbOqAUz3bLscQIc3HAnL/InrR0YPeM2mSz3ZyfwIyXX14WhgXH2bwLVzOBdGBB7qbJ8qRKVsrr1t+5Gj34BfUuLwvN8Nl6Ym0jlgKg0jzyy8/FblXdDbEW0cwhhFK0rgRUHdhq/1AKo0r+LkF5pi8zHbBcMm1YFG1g7SA/tQ1vqtUH8QAOR4XNd8yPbiOeCAC3TGgO2nsChYIgGqyt7ScOogJ9z5KLuujjhDaZ2qfEZaClGogYudBIVtnFNtgSxT7uPbiGcUM6AbjVmc+KCI7rMtPnxGYNdr4iwiO11so3EWVuWOaX/jKdfahoWcPq8X9+miidHR1UUieL4TeXtO26/Ck9orcZZtDczh2EnHDcLcJvESrKel1bb40SqnGZyDsUQruQ8UVXMbFMj+LHwHm6ugpZfo6PXYYo6QH4N/erU5DX4wgmW4f3Di9oGdWtEkoMeQPdxEMh0uHQh+0Er0SXsT3ZTbCSV/2jlgkygOtwnKbHBIu4W79XcjypWDzWa4/bFShuMB+dCN+mJxmfl8dAwKW7umq54="
-    # Nightscout host for testing: $NS_HOST
-    - secure: "l93OuioBgsGKWQ4bAEqkxb0W6CvKW2N9c8stDNaxGQc8VRJOW7W+nQ2aB2/jS73cr/tmooWhIF3Z/HOr601g1JtF56IzDGEYokazMB+WKxAX2wK/cIsWIcBZBfWenaP5GmhKJuk7mpSvsrXaHAkUVPZSwQ69lN/3UbN37uM0H5dgsF0LP/gn70mPvlUwbkxxxWTIlD5Y82RLcBrzyIwldLVzuK8G3db0O8fafIcVZ6C+6Da8ELNugbnBjjSXlhp7p/rv2IWiyBXu4ws77kHi+bII1KO9ab6t7POtvR79L1KPcSbmwlS1QX3caxsMhNf2WUP19H20nq4i6hoSStXLseyOEkNmwF3j2QeP20z5SdTtzAeyrSUPGdGGzNxUrijB3lrG2O4XLjISge0jvK2B0LpMhXNa1W304TsCp4o42OP2Qa6nKUrOs+NYjDMjg1rfAkHTDyrvRSc8Ric72jyxSm2fjGKOf9GxIUaG/Bd9Lwiq6xGq5hO7/y7kQFxVudqHipUyiTv8JtPNrs9q/SQWlAW+L/MV/bZoXKrfvFgH71CScKOxzCUWodaBVDgrrFgBtsPmAZVg4gZIN2Cn/mcViCd7exMpWCmgqweN6X/2C/MBC/FXMhGcS5CyE5UYXy+FpZ9KKhifXYD/hQoUfsDPdHb4SCgL+352PSrB1zPKYZ8="
-    # Nightscout api secret for testing: $NS_APISECRET
-    - secure: "nMMIIULYrWAERKdHZv5GnmN5Zxm3iODJfKavUZ9mCUVVRdijilFyNXcI7cAefieBDkd3TVG6Kk8vx3SO0VspySMp32LH05+g8UeOGsXlg+DSuAdDg62ee7CxK9kjY9Zw7KFyeo6LeCXQDm2eJQja2y5c2jIiRU/3W2QatjMFoAlAIRhhKQXgjOE1ga6CgKh9LXCYDnFNXlK4hy6+Bv+X6QmYcP7aUUpEXsQtXLDOJUq0AKKMBQ9zvuRTKUuEiUZFvUzPc7asVX5al3dRkcYobN/AvnOMYqG8w19QkGFSZbq37ugaJ9GtzKHT8xSNm+l6xaf9PExrI+MS+mOjsJEhQPyzJhTpv4HSiPor1tb7VxYFUB05NArrOEwdpCu52z0/n7EDpgi4P6UEdEcanGoWqLGsvlCQy8cCVGgcDGO0oPV+i4Z9LiR3n8QtRDgBQqSwH+wjAuYUJ9fPdVGwFW5eMmmlzZeJDFLyZkDAT1FV3soDuyelbekz9TYhSpu87jewK8Q2DGo6aydjHdJpqcqlc70cZAvMbBpaREuzMSPueRfHZf06wV9u2G26sSqJ44qMyoto2nF74pyRhCOku4ssbx9kD3PLWY2cp9WUNU6B8cAQvjyAGDjRN3iElhr3TZtpzO1cp/0r9mvmhstPCvfre6n62Br/hoUSXO+7VgC4Gtw="
+    # variables for cgm-remote-monitor server
+    - MONGO=mongodb://127.0.0.1:27017/nightscout
+    - HOSTNAME=localhost
+    - PORT=8000
+    - API_SECRET=mysecret
+    - ENABLE=careportal iob cob openaps pump bwg rawbg basal uam
+    - INSECURE_USE_HTTP=true
+    # Nightscout host for testing
+    - NS_HOST=http://$HOSTNAME:$PORT
+    # Nightscout api secret for testing
+    - NS_APISECRET=$API_SECRET
     # Nightscout host for synchronizer testing: $NS_HOST_2
     - secure: "QCUg8hjmnMvo22ywJcnGKCv/xyqZtbEFjRTGYGEvL39pduSNjeksu1Un0hkH0qjxHzbwK9cdwa/gsGAIW8udm5NLeXO8NCOGQSZrVF0MTROGv+RO5/cJmbhgEa4J8yVx0uEl6qMcoP/FbVVffCCIh+8HC86gOTIqCHI8wVFVZXBmp6jBczrPYx9FsYbfkUpKeFXFzcKyUWV9MdNcFfIKmXAJgO2w62ekRVAo0ztliYT5o6U4sjYt2kvW28RqtTFCwGPsmk3dmPdjkXgETD1iAA5Z+fjfIyb4YIbsdDVemT6M9Au3MKV4m8JND983R54HsMaeYWwGBBfna9aojzHLhoj1HpVWDWysowSTBlhyMrDXTKfTZCNKo/YU6/NhryDti8I4kw9XocXDQirRA3jWmBgcRDDpA0l0wTYk9OeZyoZDT5llN41pMxQIOdWfQqk6PBsRCI4lVJrHDNQ/5PANKGFROKCDh2yQlQxNR/dgxsdbnF90X1tZCwGXA2zW3JzkrBDslpI2NxECQ/PQ9a6cJVF3+u3yCCoDj6RE/puGwE+f/1UAFII1RXth3tDUla+nQriV29jYVOxoxgdLTU+VYgfACSlUEhFBV8VUXF37jvFxUHbz6FKPl9P/J+MBZIvb9vSpjnwWVdQGME6nmQKs5A/9Z1lG36jV+25p6uMORIw="
     # Nightscout api secret for synchronizer testing: $NS_APISECRET_2
     - secure: "LLago1PUve8wvJbprUj+nGieejGZ5TBJqD3owl4VK8GMvvlYFxbrTiuo9/pcVKxtMgtTVfz9TFbtzZuKQajfQDwhpSNlgYCfcsf4PijvpiflkDW7eAfd5AvqViYBrDGO93x/U8clyy7AmXWOuYT55ktKDVHHnPi4JCGlj/7tnB5KKkmva3ySwKfrIvnYF9XfUQkJKIRnWqcr8hv1dLxtfYpKSIUVyMa/x1XdTDoR1OFHqfVxKQHp8xr908ak5U3LHbwvoDzYwyxJ1z0WVzZ+OyfIedeYXH20XVN5j+3pCkT+7ZUCZDzua6bj7cy9jkrliXbqb1nZRdrslTiRo9LqP6RKTBK1C+jGzwrPVnR7txTU+fkanCXALIWmrvONPA2ViZPUkv6zugX/AbqGjr7NSsLUvwBxrW9P04HHmisPJLtY/Az9P7nCMMe4v3kaEjQjilDG+jLDzmU0fsdScG3/++hrVB/Wj49VPqMLAx+q+167v7jBd4AfnIpN8wQiPpDaUpQksFTzxSpD4VvcLlpbBBZ+I9IfOlr/fCivvr20ioR6cSd/qX7IVoCxrGOB5xgeQz+xIyITTT6mJely9jt93f3d0EC+aR/vQO5waiL/ff2sCObslpndI4yox8XBdWmFy0x+60fiUvmX3IMnq4Y6X3CgHG2pw/kaVmuKZkwdj2o="
+
 addons:
   coverity_scan:
     project:
@@ -36,3 +48,5 @@ addons:
     build_command_prepend: ""
     build_command: ant -lib lib/junit
     branch_pattern: coverity_scan
+
+services: mongodb
