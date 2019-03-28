@@ -1,15 +1,15 @@
 package de.opendiabetes.vault.main.algo;
 
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
+import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.CGMPlotter;
 import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.util.Snippet;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
-import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
-import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.FileInputStream;
@@ -112,8 +112,8 @@ public class Main {
         List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 24 * 60 * 60000, INSULIN_DURATION * 60000, 1); //
 
 //        snippets = snippets.subList(snippets.size()-1, snippets.size());
-        List<Algorithm> algoList = new ArrayList();
-        List<CGMPlotter> cgpmList = new ArrayList();
+        List<Algorithm> algoList = new ArrayList<>();
+        List<CGMPlotter> cgpmList = new ArrayList<>();
         Algorithm algo;
         CGMPlotter cgpm;
 
@@ -138,14 +138,14 @@ public class Main {
 //        algoList.add(algo);
 //        cgpmList.add(cgpm);
 
-        algo = new OldLMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile);
+        algo = new OldLMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
         cgpm.title("OldLMAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
-        
-        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile);
+
+        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
         cgpm.title("LMAlgo");

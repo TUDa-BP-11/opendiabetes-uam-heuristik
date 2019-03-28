@@ -1,33 +1,27 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
-import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
-import org.apache.commons.math3.stat.descriptive.moment.Mean;
-import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
-
 public class LMAlgo extends Algorithm {
 
     private double offset;
 
-    public LMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile) {
-        super(absorptionTime, insulinDuration, peak, profile);
-    }
-
-    public LMAlgo(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, peak, dataProvider);
+    public LMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
@@ -195,8 +189,8 @@ public class LMAlgo extends Algorithm {
             }
 
             // normalize mealTimes and sum up meals at the same time. Throw everything with < 1g of Carbs away.
-            ArrayList<Long> uniqueMealTimes = new ArrayList();
-            ArrayList<Double> uniqueMealValues = new ArrayList();
+            ArrayList<Long> uniqueMealTimes = new ArrayList<>();
+            ArrayList<Double> uniqueMealValues = new ArrayList<>();
             for (int i = 0; i < mealTimesOpt.getDimension(); i++) {
                 long t = Math.round(mealTimesOpt.getEntry(i));
                 double x = mealValuesOpt.getEntry(i);

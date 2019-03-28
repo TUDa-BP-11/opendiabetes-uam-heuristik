@@ -2,7 +2,7 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
+import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 
@@ -15,45 +15,38 @@ public abstract class Algorithm {
     protected long insulinDuration;
     protected double peak;
     protected Profile profile;
-    protected List<VaultEntry> meals;
     protected List<VaultEntry> glucose;
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
-
-    public Algorithm(long absorptionTime, long insulinDuration, double peak, Profile profile) {
-        this.absorptionTime = absorptionTime;
-        this.insulinDuration = insulinDuration;
-        this.peak = peak;
-        this.profile = profile;
-        meals = new ArrayList<>();
-        glucose = new ArrayList<>();
-        bolusTreatments = new ArrayList<>();
-        basalTreatments = new ArrayList<>();
-    }
-
-    public Algorithm(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
-        this.absorptionTime = absorptionTime;
-        this.insulinDuration = insulinDuration;
-        this.peak = peak;
-        meals = new ArrayList<>();
-        setDataProvider(dataProvider);
-    }
-
+    protected List<VaultEntry> meals;
 
     /**
-     * Set a profile
+     * Creates a new Algorithm instance. The given data is checked for validity.
      *
-     * @param profile profile
+     * @param absorptionTime      carbohydrate absorption time
+     * @param insulinDuration     insulin duration
+     * @param peak                duration in minutes until insulin action reaches it’s peak activity level
+     * @param profile             user profile
+     * @param glucoseMeasurements glucose measurements
+     * @param bolusTreatments     bolus treatments
+     * @param basalTreatments     raw basal treatments
      */
-    public void setProfile(Profile profile) {
+    public Algorithm(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        this.absorptionTime = absorptionTime;
+        this.insulinDuration = insulinDuration;
+        this.peak = peak;
         this.profile = profile;
+        setGlucoseMeasurements(glucoseMeasurements);
+        setBolusTreatments(bolusTreatments);
+        setBasalTreatments(basalTreatments);
+        this.meals = new ArrayList<>();
     }
 
     /**
      * Set a list of glucose measurements for calculation
      *
-     * @param entries list of VaultEntries with type
-     * {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
+     * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
+     * @throws IllegalArgumentException if the entries are not sorted
      */
     public void setGlucoseMeasurements(List<VaultEntry> entries) {
         if (!entries.isEmpty()) {
@@ -74,8 +67,7 @@ public abstract class Algorithm {
     /**
      * Set a list of insulin bolus treatments for calculation
      *
-     * @param bolusTreatments list of VaultEntries with type
-     * {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
+     * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
         if (!bolusTreatments.isEmpty()) {
@@ -93,12 +85,12 @@ public abstract class Algorithm {
     }
 
     /**
-     * Set a list of insulin bolus treatments for calculation
+     * Set a list of insulin bolus treatments for calculation. Adjusts all treatments using {@link BasalCalculatorTools#calcBasalDifference(List, Profile)}.
      *
-     * @param basalTreatments list of VaultEntries with type
-     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
+        basalTreatments = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
         if (!basalTreatments.isEmpty()) {
             VaultEntry current = basalTreatments.get(0);
             for (VaultEntry entry : basalTreatments) {
@@ -114,16 +106,12 @@ public abstract class Algorithm {
     }
 
     /**
-     * Uses a data provider to invoke {@link #setGlucoseMeasurements(List)}, {@link #setBolusTreatments(List)},
-     * {@link #setBasalTreatments(List)} and {@link #setProfile(Profile)}
+     * Sets the Profile for this calculation.
      *
-     * @param dataProvider the data provider
+     * @param profile Profile
      */
-    public final void setDataProvider(AlgorithmDataProvider dataProvider) {
-        this.setProfile(dataProvider.getProfile());
-        this.setGlucoseMeasurements(dataProvider.getGlucoseMeasurements());
-        this.setBolusTreatments(dataProvider.getBolusTreatments());
-        this.setBasalTreatments(dataProvider.getBasalDifferences());
+    public void setProfile(Profile profile) {
+        this.profile = profile;
     }
 
     /**
@@ -160,7 +148,7 @@ public abstract class Algorithm {
         }
         return i;
     }
-    
+
     public long getStartTime() {
         if (glucose.isEmpty()) {
             return 0;
@@ -225,7 +213,10 @@ public abstract class Algorithm {
         return basalTreatments;
     }
 
+    /**
+     * @return Duration in minutes until insulin action reaches it’s peak activity level
+     */
     public double getPeak() {
-        return  peak;
+        return peak;
     }
 }

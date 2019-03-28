@@ -2,7 +2,6 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
@@ -20,12 +19,8 @@ import static java.lang.Math.pow;
  */
 public class PolyCurveFitterAlgo extends Algorithm {
 
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile) {
-        super(absorptionTime, insulinDuration, peak, profile);
-    }
-
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, peak, dataProvider);
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override

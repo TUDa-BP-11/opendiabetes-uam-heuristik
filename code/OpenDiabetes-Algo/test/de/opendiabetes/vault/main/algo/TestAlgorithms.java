@@ -2,18 +2,14 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,7 +30,7 @@ public class TestAlgorithms {
         basals = new ArrayList<>();
         boli = new ArrayList<>();
         testMeals = new ArrayList<>();
-        profile = new Profile(ZoneId.of("Zulu"), 35, 10, null);
+        profile = new Profile(ZoneId.of("Zulu"), 35, 10, Collections.singletonList(new Profile.BasalProfile(LocalTime.of(0, 0), 0.5)));
     }
 
 
@@ -43,27 +39,25 @@ public class TestAlgorithms {
         for (int i = 0; i < 50; i++) {
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), 100));
         }
-        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
-
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new MinimumAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new QRAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         //assertEquals(0, resultMeals.size());
     }
@@ -73,27 +67,26 @@ public class TestAlgorithms {
         for (int i = 0; i < 20; i++) {
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), 200 - ((i * i) / 2)));
         }
-        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         //assertEquals(0, resultMeals.size());
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         //assertEquals(0, resultMeals.size());
 
-        algorithm = new MinimumAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new QRAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
     }
@@ -111,13 +104,12 @@ public class TestAlgorithms {
             double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime, peak);
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
         }
-        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
         double result;
         long resTime;
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
@@ -129,7 +121,7 @@ public class TestAlgorithms {
 //        assertEquals(timestamp, resTime, timeDelta);
 //        assertEquals(value, result, valueDelta);
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
@@ -141,7 +133,7 @@ public class TestAlgorithms {
 //        assertEquals(timestamp, resTime, timeDelta);
 //        assertEquals(value, result, valueDelta);
 
-        algorithm = new MinimumAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
@@ -153,7 +145,7 @@ public class TestAlgorithms {
 //        assertEquals(timestamp, resTime, timeDelta);
 //        assertEquals(value, result, valueDelta);
 
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, testDataProvider); //remove?
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals); //remove?
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
@@ -165,7 +157,7 @@ public class TestAlgorithms {
         //assertEquals(timestamp, resTime, timeDelta);
         //assertEquals(value, result, valueDelta);
 
-        algorithm = new QRAlgo(absTime, insDur, peak, testDataProvider); //remove?
+        algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals); //remove?
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
@@ -194,36 +186,35 @@ public class TestAlgorithms {
             boli.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date((i + 1) * 40 * 60 * 1000), random.nextDouble() * 3));
         }
         for (int i = 0; i < 10; i++) {
-            basals.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, new Date((i) * 45 * 60 * 1000), (random.nextDouble() - 0.5) * 0.1));
+            basals.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date((i) * 45 * 60 * 1000), random.nextDouble() * 3));
         }
         int startValue = 100;
         for (int i = 0; i < 120; i++) {
             double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime, peak);
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
         }
-        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
 
-        algorithm = new MinimumAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
 
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         for (VaultEntry meal : testMeals) {
             //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
         }
 
-        algorithm = new QRAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         for (VaultEntry meal : testMeals) {
             //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
@@ -248,7 +239,7 @@ public class TestAlgorithms {
             boli.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date((i + 1) * 40 * 60 * 1000), random.nextDouble() * 3));
         }
         for (int i = 0; i < 10; i++) {
-            basals.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, new Date((i) * 45 * 60 * 1000), (random.nextDouble() - 0.5) * 0.1));
+            basals.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date((i) * 45 * 60 * 1000), random.nextDouble() * 3));
         }
         int startValue = 100;
         for (int i = 0; i < 120; i++) {
@@ -256,46 +247,44 @@ public class TestAlgorithms {
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
             disturbedEntries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue - 6 + random.nextInt(13)));
         }
-        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
-        TestDataProvider distDataProvider = new TestDataProvider(disturbedEntries, basals, boli, profile);
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals, disturbedMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        algorithm = new LMAlgo(absTime, insDur, peak, distDataProvider);
+        algorithm = new LMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
         disturbedMeals = algorithm.calculateMeals();
         for (VaultEntry meal : resultMeals) {
             checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
         }
 
-        algorithm = new MinimumAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        algorithm = new MinimumAlgo(absTime, insDur, peak, distDataProvider);
+        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
         disturbedMeals = algorithm.calculateMeals();
         for (VaultEntry meal : resultMeals) {
             //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
         }
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        algorithm = new OldLMAlgo(absTime, insDur, peak, distDataProvider);
+        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
         disturbedMeals = algorithm.calculateMeals();
         for (VaultEntry meal : resultMeals) {
             checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
         }
 
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, distDataProvider);
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
         disturbedMeals = algorithm.calculateMeals();
         for (VaultEntry meal : resultMeals) {
             //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
         }
 
-        algorithm = new QRAlgo(absTime, insDur, peak, testDataProvider);
+        algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        algorithm = new QRAlgo(absTime, insDur, peak, distDataProvider);
+        algorithm = new QRAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
         disturbedMeals = algorithm.calculateMeals();
         for (VaultEntry meal : resultMeals) {
             //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
@@ -317,43 +306,6 @@ public class TestAlgorithms {
             VaultEntry resultMeal = resultMeals.get(i);
             assertEquals(testMeal.getValue(), resultMeal.getValue(), valueDelta);
             assertEquals(testMeal.getTimestamp().getTime(), resultMeal.getTimestamp().getTime(), timeDelta);
-        }
-    }
-
-    private static class TestDataProvider implements AlgorithmDataProvider {
-        private final List<VaultEntry> entries, basals, boli;
-        private final Profile profile;
-
-        public TestDataProvider(List<VaultEntry> entries, List<VaultEntry> basals, List<VaultEntry> boli, Profile profile) {
-            this.entries = entries;
-            this.basals = basals;
-            this.boli = boli;
-            this.profile = profile;
-        }
-
-        @Override
-        public List<VaultEntry> getGlucoseMeasurements() {
-            return entries;
-        }
-
-        @Override
-        public List<VaultEntry> getBolusTreatments() {
-            return boli;
-        }
-
-        @Override
-        public List<VaultEntry> getRawBasalTreatments() {
-            return null;
-        }
-
-        @Override
-        public List<VaultEntry> getBasalDifferences() {
-            return basals;
-        }
-
-        @Override
-        public Profile getProfile() {
-            return profile;
         }
     }
 

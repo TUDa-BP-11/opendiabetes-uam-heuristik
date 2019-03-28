@@ -1,10 +1,11 @@
 package de.opendiabetes.vault.main.dataprovider;
 
+import com.martiansoftware.jsap.JSAPResult;
+import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporterOptions;
 import de.opendiabetes.vault.parser.Profile;
-import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.time.LocalTime;
@@ -20,8 +21,13 @@ import java.util.List;
  * based on the Glucodyn model http://perceptus.org/about/glucodyn.
  * 10 glucose measurements are given (every 5 minutes from 0 to 45)
  */
-public class DemoDataProvider implements AlgorithmDataProvider {
+public class DemoDataProvider implements DataProvider {
     private Date start = new Date(System.currentTimeMillis() - 45 * 60 * 1000);
+
+    @Override
+    public void setConfig(JSAPResult config) {
+        // no config needed
+    }
 
     @Override
     public List<VaultEntry> getGlucoseMeasurements() {
@@ -49,12 +55,7 @@ public class DemoDataProvider implements AlgorithmDataProvider {
     }
 
     @Override
-    public List<VaultEntry> getRawBasalTreatments() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<VaultEntry> getBasalDifferences() {
+    public List<VaultEntry> getBasalTreatments() {
         return Collections.emptyList();
     }
 

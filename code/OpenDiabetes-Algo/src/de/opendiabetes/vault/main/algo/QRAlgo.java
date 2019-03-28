@@ -1,10 +1,9 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
@@ -12,16 +11,11 @@ import java.util.Date;
 import java.util.List;
 
 import static java.lang.Math.pow;
-import java.util.ArrayList;
 
 public class QRAlgo extends Algorithm {
 
-    public QRAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile) {
-        super(absorptionTime, insulinDuration, peak, profile);
-    }
-
-    public QRAlgo(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, peak, dataProvider);
+    public QRAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
