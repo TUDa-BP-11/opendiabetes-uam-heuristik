@@ -200,10 +200,6 @@ public class TestAlgorithms {
             double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime);
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
         }
-        System.out.println(testMeals.toString());
-        for (int i = 0; i < entries.size(); i++) {
-            System.out.println(entries.get(i).toString());
-        }
         TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
 
         Algorithm algorithm;
@@ -230,6 +226,78 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         for (VaultEntry meal: testMeals){
             //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
+        }
+
+    }
+
+    @Test
+    public void disturbedDataTest(){
+        Random random = new Random();
+        int timeDelta = 12 * 60 * 1000;
+        int valueDelta = 5;
+        int firstMealTime = 10 * 60 * 1000;
+        int secondMealTime = 250 * 60 * 1000;
+        int firstValue = 10 + random.nextInt(50);
+        int secondValue = 10 + random.nextInt(50);
+        List<VaultEntry> disturbedEntries = new ArrayList<>();
+
+        testMeals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(firstMealTime), firstValue));
+        testMeals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, new Date(secondMealTime), secondValue));
+        for (int i = 0; i < 2; i++) {
+            boli.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date((i + 1) * 40 * 60 * 1000), random.nextDouble() * 3));
+        }
+        for (int i = 0; i < 10; i++) {
+            basals.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, new Date((i) * 45 * 60 * 1000), (random.nextDouble() - 0.5) * 0.1));
+        }
+        int startValue = 100;
+        for (int i = 0; i < 120; i++) {
+            double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime);
+            entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
+            disturbedEntries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue - 6 + random.nextInt(13)));
+        }
+        TestDataProvider testDataProvider = new TestDataProvider(entries, basals, boli, profile);
+        TestDataProvider distDataProvider = new TestDataProvider(disturbedEntries, basals, boli, profile);
+
+        Algorithm algorithm;
+        List<VaultEntry> resultMeals, disturbedMeals;
+        algorithm = new LMAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        algorithm = new LMAlgo(absTime, insDur, distDataProvider);
+        disturbedMeals = algorithm.calculateMeals();
+        for (VaultEntry meal: resultMeals){
+            checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+        }
+
+        algorithm = new MinimumAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        algorithm = new MinimumAlgo(absTime, insDur, distDataProvider);
+        disturbedMeals = algorithm.calculateMeals();
+        for (VaultEntry meal: resultMeals){
+            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+        }
+
+        algorithm = new OldLMAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        algorithm = new OldLMAlgo(absTime, insDur, distDataProvider);
+        disturbedMeals = algorithm.calculateMeals();
+        for (VaultEntry meal: resultMeals){
+            checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+        }
+
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, distDataProvider);
+        disturbedMeals = algorithm.calculateMeals();
+        for (VaultEntry meal: resultMeals){
+            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+        }
+
+        algorithm = new QRAlgo(absTime, insDur, testDataProvider);
+        resultMeals = algorithm.calculateMeals();
+        algorithm = new QRAlgo(absTime, insDur, distDataProvider);
+        disturbedMeals = algorithm.calculateMeals();
+        for (VaultEntry meal: resultMeals){
+            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
         }
 
     }
