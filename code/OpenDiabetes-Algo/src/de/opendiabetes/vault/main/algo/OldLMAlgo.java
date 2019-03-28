@@ -1,9 +1,9 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
@@ -47,7 +47,8 @@ public class OldLMAlgo extends Algorithm {
             currentTime = current.getTimestamp().getTime();
             currentValue = current.getValue();
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime, peak);
+            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments,
+                    profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime, peak);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime / 60000);
             ve = ve.append(currentValue);
@@ -58,7 +59,7 @@ public class OldLMAlgo extends Algorithm {
         mealValues = new ArrayRealVector();
 
         for (int N = 3; N < 15 && !breakN; N += 2) {
-            E = new ArrayList();
+            E = new ArrayList<>();
             mealTimes = new ArrayRealVector(N);
             mealValues = new ArrayRealVector(N);
             // possible discrete meal times within snippet time range each dT/N Minutes.
@@ -107,7 +108,7 @@ public class OldLMAlgo extends Algorithm {
             }
         }
 
-        ArrayList<Long> uniqueMealTimes = new ArrayList();
+        ArrayList<Long> uniqueMealTimes = new ArrayList<>();
         RealVector uniqueMealValues = new ArrayRealVector();
         for (int i = 0; i < mealTimes.getDimension(); i++) {
 

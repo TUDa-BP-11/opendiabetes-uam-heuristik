@@ -3,6 +3,7 @@ package de.opendiabetes.vault.main.math;
 import de.opendiabetes.vault.container.VaultEntry;
 
 import java.util.List;
+
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -10,8 +11,7 @@ import org.apache.commons.math3.linear.RealVector;
 
 public class Predictions {
 
-    public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments,
-            double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime, double peak) {
+    public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments, double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime, double peak) {
         double result = 0;
         for (VaultEntry meal : mealTreatments) {
             long deltaTime = Math.round((time - meal.getTimestamp().getTime()) / 60000.0);  //Time in minutes
@@ -41,7 +41,7 @@ public class Predictions {
     /**
      * Calculates the percentage of carbs on board
      *
-     * @param timeFromEvent time in minutes from last meal
+     * @param timeFromEvent  time in minutes from last meal
      * @param absorptionTime time in minutes to absorb a hole meal
      * @return percentage of carbs absorbed
      */
@@ -64,7 +64,8 @@ public class Predictions {
      * Calculates the percentage of insulin on board
      *
      * @param timeFromEvent time in minutes from last meal
-     * @param insDuration effective time of insulin in minutes
+     * @param insDuration   effective time of insulin in minutes
+     * @param peak          duration in minutes until insulin action reaches it’s peak activity level.
      * @return percentage of insulin still on board
      */
     public static double fastActingIob(double timeFromEvent, double insDuration, double peak) {
@@ -74,7 +75,6 @@ public class Predictions {
         } else if (timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
             IOBWeight = 0;
         } else {
-            
             //Time constant of exp decay
             double decay = peak * (1 - peak / insDuration)
                     / (1 - 2 * peak / insDuration);
@@ -100,10 +100,11 @@ public class Predictions {
      * simpsons rule to integrate insulin on board.
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
-     * @param t1 left border of integral - 0
-     * @param t2 right border of integral - duration of insulin event
-     * @param insDuration effective time of insulin in minutes
+     * @param t1            left border of integral - 0
+     * @param t2            right border of integral - duration of insulin event
+     * @param insDuration   effective time of insulin in minutes
      * @param timeFromEvent time in minutes since insulin event
+     * @param peak          duration in minutes until insulin action reaches it’s peak activity level.
      * @return
      */
     public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent, double peak) {
@@ -127,9 +128,9 @@ public class Predictions {
             //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
             integral = integral
                     + 4 * fastActingIob(timeFromEvent
-                            - (t1 + ii * dx), insDuration, peak)
+                    - (t1 + ii * dx), insDuration, peak)
                     + 2 * fastActingIob(timeFromEvent
-                            - (t1 + (ii + 1) * dx), insDuration, peak);
+                    - (t1 + (ii + 1) * dx), insDuration, peak);
             ii = ii + 2;
         }
 

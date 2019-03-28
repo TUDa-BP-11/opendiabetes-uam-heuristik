@@ -1,9 +1,9 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 
 import java.util.List;
@@ -38,9 +38,11 @@ public class MinimumAlgo extends Algorithm {
                     break;
                 }
 
-                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
+                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                        profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
-                nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
+                nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                        profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
                 deltaBg = next.getValue() - current.getValue();
                 deltaPrediction = (nextPrediction - currentPrediction);

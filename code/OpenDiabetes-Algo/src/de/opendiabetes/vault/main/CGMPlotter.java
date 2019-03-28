@@ -182,8 +182,8 @@ public class CGMPlotter {
             if (bStartTime && i < startIndex) {
                 continue;
             }
-            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, 
-                    sensitivity, insDuration, carbratio, absorptionTime, peak);
+
+            double algoPredict = Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, sensitivity, insDuration, carbratio, absorptionTime, peak);
             algoValuesSnippet.add(startValue + algoPredict);
             algoTimesSnippet.add(ve.getTimestamp().getTime() / 1000.0);
         }

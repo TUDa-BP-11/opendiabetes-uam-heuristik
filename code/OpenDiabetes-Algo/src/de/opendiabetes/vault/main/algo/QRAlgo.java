@@ -1,9 +1,9 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
@@ -60,7 +60,9 @@ public class QRAlgo extends Algorithm {
                     //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
+
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                                profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
                         deltaBg = next.getValue() - nextPrediction;
                         times = times.append(nextTime - currentTime);

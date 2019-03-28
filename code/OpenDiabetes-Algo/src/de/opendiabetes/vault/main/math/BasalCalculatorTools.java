@@ -1,8 +1,8 @@
 package de.opendiabetes.vault.main.math;
 
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.parser.Profile;
 
 import java.time.ZoneId;
 import java.util.ArrayList;

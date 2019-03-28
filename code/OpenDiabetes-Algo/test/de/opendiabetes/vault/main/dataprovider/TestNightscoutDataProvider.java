@@ -34,6 +34,7 @@ public class TestNightscoutDataProvider {
                         LocalDateTime.now(),
                         LocalDateTime.now().minus(1, ChronoUnit.MINUTES))));
     }
+
     private JSAPResult getConfig(String host, String secret, int batchsize, TemporalAccessor latest, TemporalAccessor oldest) throws JSAPException {
         JSAP jsap = new JSAP();
         jsap.registerParameter(
@@ -68,5 +69,4 @@ public class TestNightscoutDataProvider {
         );
         return jsap.parse(new String[0]);
     }
-    
 }

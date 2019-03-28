@@ -1,15 +1,15 @@
 package de.opendiabetes.vault.main.algo;
 
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
+import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.CGMPlotter;
 import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.util.Snippet;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
-import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
-import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.FileInputStream;
@@ -23,8 +23,8 @@ public class Main {
 
     private static final int ABSORBTION_TIME = 120;
     private static final int INSULIN_DURATION = 180;
-    private static final double INSULIN_PEAK = 55; 
-     
+    private static final double INSULIN_PEAK = 55;
+
     public static void main(String[] args) {
 
         ProfileParser profileParser = new ProfileParser();
@@ -144,7 +144,6 @@ public class Main {
         cgpm.title("OldLMAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
-        
         algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
