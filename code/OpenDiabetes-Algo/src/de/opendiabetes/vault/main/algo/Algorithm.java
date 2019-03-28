@@ -91,17 +91,6 @@ public abstract class Algorithm {
      */
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
         basalTreatments = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
-        if (!basalTreatments.isEmpty()) {
-            VaultEntry current = basalTreatments.get(0);
-            for (VaultEntry entry : basalTreatments) {
-                if (entry.getTimestamp().getTime() < current.getTimestamp().getTime()) {
-                    throw new IllegalArgumentException("basalTreatments have to be sorted by timestamp");
-                }
-                if (!entry.getType().equals(VaultEntryType.BASAL_PROFILE)) {
-                    throw new IllegalArgumentException("VaultEntryType should be BASAL_PROFILE but was" + entry.getType().toString());
-                }
-            }
-        }
         this.basalTreatments = basalTreatments;
     }
 
