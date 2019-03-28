@@ -217,6 +217,7 @@ public class Main {
         JSAP jsap = new JSAP();
         registerArguments(jsap);
         registerAlgorithms();
+        registerDataproviders();
         JSAPResult config = initArguments(jsap, args);
         if (config == null) {
             NSApi.LOGGER.log(Level.INFO, "DataProvider summary:\n%s", dataproviders.keySet());
@@ -259,7 +260,7 @@ public class Main {
             return;
         }
 
-        if (LocalDateTime.from((ZonedDateTime) config.getObject("latest")).isAfter(LocalDateTime.from((ZonedDateTime) config.getObject("oldest")))) {
+        if (LocalDateTime.from((ZonedDateTime) config.getObject("latest")).isBefore(LocalDateTime.from((ZonedDateTime) config.getObject("oldest")))) {
             NSApi.LOGGER.warning("Oldest cannot be after latest");
             return;
         }
