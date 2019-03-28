@@ -171,7 +171,7 @@ public abstract class Algorithm {
                 break;
             }
         }
-        return 0;
+        return i;
     }
     
     public long getStartTime() {
@@ -181,7 +181,7 @@ public abstract class Algorithm {
         long startTime = glucose.get(0).getTimestamp().getTime();
         long firstValidTime = startTime + Math.max(insulinDuration, absorptionTime) * 60000;
         for (int i = 0; i < glucose.size() - 1; i++) {
-            //startTime = glucose.get(i).getTimestamp().getTime();
+            startTime = glucose.get(i).getTimestamp().getTime();
             if (glucose.get(i + 1).getTimestamp().getTime() > firstValidTime) {
                 break;
             }
