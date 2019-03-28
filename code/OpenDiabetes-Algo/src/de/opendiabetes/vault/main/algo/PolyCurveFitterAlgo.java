@@ -20,12 +20,12 @@ import static java.lang.Math.pow;
  */
 public class PolyCurveFitterAlgo extends Algorithm {
 
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile) {
+        super(absorptionTime, insulinDuration, peak, profile);
     }
 
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
+        super(absorptionTime, insulinDuration, peak, dataProvider);
     }
 
     @Override
@@ -75,7 +75,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 startValue = current.getValue();
                 //double deltaBg = Filter.getAverage(glucose, j, 5, 30) - Filter.getAverage(glucose, i, 5, 30);
                 //double deltaBg = next.getValue() - current.getValue();
-                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(),
+                        getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime(), peak);
 
                 for (int j = i; j < getGlucose().size(); j++) {
                     next = getGlucose().get(j);
@@ -85,7 +86,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
                     //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
                     nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(), getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime());
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, getBolusTreatments(), getBasalTreatments(),
+                                getProfile().getSensitivity(), getInsulinDuration(), getProfile().getCarbratio(), getAbsorptionTime(), peak);
                         deltaBg = nextValue - startValue - (nextPrediction - currentPrediction);
                         lastTime = nextTime;
                         observations.add(new WeightedObservedPoint(weight, nextTime, deltaBg));

@@ -13,15 +13,17 @@ public abstract class Algorithm {
 
     protected long absorptionTime;
     protected long insulinDuration;
+    protected double peak;
     protected Profile profile;
     protected List<VaultEntry> meals;
     protected List<VaultEntry> glucose;
     protected List<VaultEntry> bolusTreatments;
     protected List<VaultEntry> basalTreatments;
 
-    public Algorithm(long absorptionTime, long insulinDuration, Profile profile) {
+    public Algorithm(long absorptionTime, long insulinDuration, double peak, Profile profile) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
+        this.peak = peak;
         this.profile = profile;
         meals = new ArrayList<>();
         glucose = new ArrayList<>();
@@ -29,30 +31,14 @@ public abstract class Algorithm {
         basalTreatments = new ArrayList<>();
     }
 
-    public Algorithm(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
+    public Algorithm(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
         this.absorptionTime = absorptionTime;
         this.insulinDuration = insulinDuration;
+        this.peak = peak;
         meals = new ArrayList<>();
         setDataProvider(dataProvider);
     }
 
-    /**
-     * Set the time needed to absorb a meal completely
-     *
-     * @param absorptionTime absoption time in minutes
-     */
-    public void setAbsorptionTime(long absorptionTime) {
-        this.absorptionTime = absorptionTime;
-    }
-
-    /**
-     * Set the effective time of an insulin treatment
-     *
-     * @param insulinDuration insulin duration in minutes
-     */
-    public void setInsulinDuration(long insulinDuration) {
-        this.insulinDuration = insulinDuration;
-    }
 
     /**
      * Set a profile
@@ -154,7 +140,8 @@ public abstract class Algorithm {
         }
         int startIndex = getStartIndex();
         double startValue;
-        startValue = glucose.get(startIndex).getValue() - Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+        startValue = glucose.get(startIndex).getValue() -
+                Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
         return startValue;
     }
@@ -236,5 +223,9 @@ public abstract class Algorithm {
      */
     public List<VaultEntry> getBasalTreatments() {
         return basalTreatments;
+    }
+
+    public double getPeak() {
+        return  peak;
     }
 }

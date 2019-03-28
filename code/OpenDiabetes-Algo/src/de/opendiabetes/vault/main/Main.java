@@ -45,17 +45,17 @@ public class Main {
             .setHelp("Your Nightscout API secret.");
     private static final Parameter P_ENTRIES_FILE = new FlaggedOption("entries")
             .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('e')
+            .setShortFlag('E')
             .setLongFlag("entries")
             .setHelp("Path to file with the blood glucose values");
     private static final Parameter P_TREATMENTS_FILE = new FlaggedOption("treatments")
             .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('f')
+            .setShortFlag('T')
             .setLongFlag("treatments")
             .setHelp("File with the basal and bolus insulin treatments");
     private static final Parameter P_PROFILE_FILE = new FlaggedOption("profile")
             .setStringParser(JSAP.STRING_PARSER)
-            .setShortFlag('p')
+            .setShortFlag('P')
             .setLongFlag("profile")
             .setHelp("Path to a nightscout profile");
     //Algoorithm Parameters
@@ -80,6 +80,12 @@ public class Main {
             .setRequired(true)
             .setDefault("180")
             .setHelp("Duration of used Insulin");
+    private static final Parameter P_INSULIN_PEAK = new FlaggedOption("peak")
+            .setStringParser(JSAP.DOUBLE_PARSER)
+            .setLongFlag("peak")
+            .setRequired(true)
+            .setDefault("55.0")
+            .setHelp("Duration in minutes until insulin action reaches it’s peak activity level");
     //Output
     private static final Parameter P_TARGET_HOST = new FlaggedOption("target-host")
             .setStringParser(JSAP.STRING_PARSER)
@@ -97,6 +103,7 @@ public class Main {
             .setLongFlag("output-file")
             .setHelp("File where the meals should saved in");
     private static final Parameter P_PLOT = new Switch("plot")
+            .setShortFlag('p')
             .setLongFlag("plot")
             .setHelp("Plot meals, blood glucose and predicted values with pythons matplotlib. Make sure to have python and matplotlib installed.");
     //Options and tuning
@@ -149,6 +156,7 @@ public class Main {
             jsap.registerParameter(P_ALGO);
             jsap.registerParameter(P_ABSORPTION_TIME);
             jsap.registerParameter(P_INSULIN_DURATION);
+            jsap.registerParameter(P_INSULIN_PEAK);
 
             jsap.registerParameter(P_TARGET_HOST);
             jsap.registerParameter(P_TARGET_SECRET);
@@ -223,6 +231,16 @@ public class Main {
             return;
         }
 
+        if(config.getDouble("peak") <= 0 || config.getDouble("peak") >= config.getInt("insDuration")){
+            NSApi.LOGGER.warning("Peak can not be less than or greater than the duration of the insulin used");
+            return;
+        }
+
+        if(config.getDouble("peak") ==  config.getInt("insDuration")/2){
+            NSApi.LOGGER.warning("Peak can not be exactly half the duration of the insulin used");
+            return;
+        }
+
         //init DataProvider
         AlgorithmDataProvider dataProvider;
         try {
@@ -235,10 +253,11 @@ public class Main {
         //init Algorithm
         int absorptionTime = config.getInt("absorptionTime");
         int insulinDuration = config.getInt("insDuration");
+        double peak = config.getDouble("peak");
         Algorithm algorithm;
         try {
-            algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, AlgorithmDataProvider.class)
-                    .newInstance(absorptionTime, insulinDuration, dataProvider);
+            algorithm = algorithms.get(config.getString("algorithm")).getConstructor(long.class, long.class, double.class, AlgorithmDataProvider.class)
+                    .newInstance(absorptionTime, insulinDuration, peak, dataProvider);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
             NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             return;
@@ -290,18 +309,19 @@ public class Main {
                 }
             }
         }
-//
-//        if (meals.size() > 0) {
-//            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
-//        } else {
-//            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
-//        }
-//        meals.forEach((meal) -> {
-//            NSApi.LOGGER.log(Level.INFO, meal.toString());
-//        });
+
+        if (meals.size() > 0) {
+            NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
+        } else {
+            NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
+        }
+        meals.forEach((meal) -> {
+            NSApi.LOGGER.log(Level.INFO, meal.toString());
+        });
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration, dataProvider.getProfile().getCarbratio(), absorptionTime);
+            CGMPlotter cgpm = new CGMPlotter(true, true, true, dataProvider.getProfile().getSensitivity(), insulinDuration,
+                    dataProvider.getProfile().getCarbratio(), absorptionTime, peak);
             cgpm.add(algorithm);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {
@@ -392,6 +412,7 @@ public class Main {
         }
     }
      */
+    
     private static void exportPlotScript(String scriptLines) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
             writer.write(scriptLines);

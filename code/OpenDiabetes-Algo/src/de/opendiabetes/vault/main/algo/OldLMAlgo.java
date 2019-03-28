@@ -14,12 +14,12 @@ import java.util.List;
 
 public class OldLMAlgo extends Algorithm {
 
-    public OldLMAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
+    public OldLMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile) {
+        super(absorptionTime, insulinDuration, peak, profile);
     }
 
-    public OldLMAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public OldLMAlgo(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
+        super(absorptionTime, insulinDuration, peak, dataProvider);
     }
 
     @Override
@@ -52,7 +52,8 @@ public class OldLMAlgo extends Algorithm {
             currentTime = current.getTimestamp().getTime();
             currentValue = current.getValue();
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments,
+                    profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime, peak);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime / 60000);
             ve = ve.append(currentValue);

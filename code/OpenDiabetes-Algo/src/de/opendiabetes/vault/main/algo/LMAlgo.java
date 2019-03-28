@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
+
 import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
@@ -21,12 +22,12 @@ public class LMAlgo extends Algorithm {
 
     private double offset;
 
-    public LMAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
+    public LMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile) {
+        super(absorptionTime, insulinDuration, peak, profile);
     }
 
-    public LMAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public LMAlgo(long absorptionTime, long insulinDuration, double peak, AlgorithmDataProvider dataProvider) {
+        super(absorptionTime, insulinDuration, peak, dataProvider);
     }
 
     @Override
@@ -70,7 +71,8 @@ public class LMAlgo extends Algorithm {
             current = glucose.get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
             currentValue = current.getValue();
-            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                    profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime);
             ve = ve.append(currentValue);
@@ -86,7 +88,8 @@ public class LMAlgo extends Algorithm {
             mealTimes = new ArrayRealVector(0);
             mealValues = new ArrayRealVector(0);
             // estimate error vector with current mealValues and mealTimes
-            e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
+            e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(),
+                    profile.getCarbratio(), absorptionTime));
 
             // calculate norm.
             abs_e = e.getNorm();
@@ -131,7 +134,8 @@ public class LMAlgo extends Algorithm {
                     J = Predictions.Jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
 
                     // estimate error vector with current mealValues and mealTimes
-                    e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
+                    e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(),
+                            profile.getCarbratio(), absorptionTime));
 
                     // calculate norm.
                     abs_e = e.getNorm();

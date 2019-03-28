@@ -123,12 +123,14 @@ public class ErrorCalc {
         long insDuration;
         double carbratio;
         long absorptionTime;
+        double peak;
         entries = algo.getGlucose();
         meals = algo.getMeals();
         bolusTreatments = algo.getBolusTreatments();
         basalDifference = algo.getBasalTreatments();
         sensitivity = algo.getProfile().getSensitivity();
         insDuration = algo.getInsulinDuration();
+        peak = algo.getPeak();
 
         carbratio = algo.getProfile().getCarbratio();
         absorptionTime = algo.getAbsorptionTime();
@@ -147,7 +149,7 @@ public class ErrorCalc {
         for (int i = startIndex; i < entries.size(); i++) {
             VaultEntry ve = entries.get(i);
             double algoPredict = Predictions.predict(ve.getTimestamp().getTime(), meals, bolusTreatments,
-                    basalDifference, sensitivity, insDuration, carbratio, absorptionTime);
+                    basalDifference, sensitivity, insDuration, carbratio, absorptionTime, peak);
 
             double error = startValue + algoPredict - ve.getValue();
             errorValues.add(error);
