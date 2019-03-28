@@ -217,6 +217,18 @@ public class LMAlgo extends Algorithm {
             }
         }
 
+        //Remove Meals before first Bg entry
+        for (int i = 0; i < meals.size(); i++) {
+            if (meals.get(i).getTimestamp().getTime() < getStartTime()) {
+                meals.remove(i);
+                i--;
+            } else {
+                break;
+            }
+
+        }
+
+
         return meals;
     }
 
