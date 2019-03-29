@@ -31,8 +31,8 @@ env:
     - MONGO=mongodb://127.0.0.1:27017/nightscout
     - HOSTNAME=localhost
     - PORT=8000
-    - API_SECRET=mysecret
-    - ENABLE=careportal iob cob openaps pump bwg rawbg basal uam
+    - API_SECRET=MySuperDuperSecret
+    - ENABLE="careportal iob cob openaps pump bwg rawbg basal uam"
     - INSECURE_USE_HTTP=true
     # Nightscout host for testing
     - NS_HOST=http://$HOSTNAME:$PORT
