@@ -26,7 +26,6 @@ public class LMAlgo extends Algorithm {
 
     @Override
     public List<VaultEntry> calculateMeals() {
-//        List<VaultEntry> mealTreatments;
         RealMatrix J, I, A, Ainv;
         RealVector nkbg;
         RealVector mealValues;
@@ -45,7 +44,6 @@ public class LMAlgo extends Algorithm {
         UnivariateStatistic std = new StandardDeviation();
         meals.clear();
         offset = 0;
-//        mealTreatments = new ArrayList<>();
         ve = new ArrayRealVector();
         nkbg = new ArrayRealVector();
         times = new ArrayRealVector();
@@ -78,6 +76,7 @@ public class LMAlgo extends Algorithm {
 
         double mu_k, mu, abs_e;
 
+        boolean breakN = false;
         if (times.getDimension() >= 3) {
 
             mealTimes = new ArrayRealVector(0);
@@ -94,6 +93,7 @@ public class LMAlgo extends Algorithm {
             // stop iterations and search if convergence criterion is met (max error <= 10%)
             if (err <= 0.10) {
                 NSApi.LOGGER.log(Level.INFO, "N: %d, MT: %d, MV: %d", new Object[]{0, mealTimes.getDimension(), mealValues.getDimension()});
+                breakN = true;
             }
 
             // store current error
@@ -106,7 +106,6 @@ public class LMAlgo extends Algorithm {
                 mealValuesOpt = mealValues;
             }
 
-            boolean breakN = false;
             for (int N = 1; N < 15 && !breakN; N += 1) {
 
                 mealTimes = new ArrayRealVector(N);

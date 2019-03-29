@@ -1,6 +1,5 @@
 package de.opendiabetes.vault.main.math;
 
-import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import org.junit.jupiter.api.Test;
