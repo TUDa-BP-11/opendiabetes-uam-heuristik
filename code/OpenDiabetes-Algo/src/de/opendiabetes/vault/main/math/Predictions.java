@@ -11,7 +11,8 @@ import java.util.List;
 public class Predictions {
 
     /**
-     * Predicts the blood glucose value at a certain time using known meal, bolus and basal treatments.
+     * Predicts the blood glucose value at a certain time using known meal,
+     * bolus and basal treatments.
      *
      * @param time                 time in milliseconds since epoch start
      * @param mealTreatments       known meal treatments
@@ -113,32 +114,31 @@ public class Predictions {
      * simpsons rule to integrate insulin on board.
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
-     * @param t1            left border of integral - 0
-     * @param t2            right border of integral - duration of insulin event
+     * @param startTime     left border of integral - 0
+     * @param endTime       right border of integral - duration of insulin event
      * @param insDuration   effective time of insulin in minutes
      * @param timeFromEvent time in minutes since insulin event
      * @param peak          duration in minutes until insulin action reaches it’s peak activity level.
      * @return
      */
-    public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent, double peak) {
+    public static double integrateIob(double startTime, double endTime, double insDuration, double timeFromEvent, double peak) {
         double integral;
         double dx;
         int N = 25;
         int nn = 2 * N; //nn needs to be even
 
         //initialize with first and last terms of simpson series
-        //t1 & t2 Grenzen des Intervalls das betrachtet wird
-        dx = (t2 - t1) / nn;
+        dx = (endTime - startTime) / nn;
 
-        integral = fastActingIob((timeFromEvent - t1), insDuration, peak)
-                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration, peak);
+        integral = fastActingIob((timeFromEvent - startTime), insDuration, peak)
+                + fastActingIob(timeFromEvent - (startTime + nn * dx), insDuration, peak);
         int ii = 1;
         while (ii < nn - 2) {
             integral = integral
                     + 4 * fastActingIob(timeFromEvent
-                    - (t1 + ii * dx), insDuration, peak)
+                    - (startTime + ii * dx), insDuration, peak)
                     + 2 * fastActingIob(timeFromEvent
-                    - (t1 + (ii + 1) * dx), insDuration, peak);
+                    - (startTime + (ii + 1) * dx), insDuration, peak);
             ii = ii + 2;
         }
 
@@ -155,12 +155,12 @@ public class Predictions {
      * @param insSensitivityFactor insulin to blood glucose factor
      * @param insDuration          effective insulin duration
      * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
-     * @param t1                   start of insulin event in minutes
-     * @param t2                   end of insulin event in minutes
+     * @param startTime            start of insulin event in minutes
+     * @param endTime              end of insulin event in minutes
      * @return relative change of blood glucose level
      */
-    public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double peak, double t1, double t2) {
-        return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIob(t1, t2, insDuration, timeFromEvent, peak));
+    public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double peak, double startTime, double endTime) {
+        return -tempInsAmount * insSensitivityFactor * ((endTime - startTime) - integrateIob(startTime, endTime, insDuration, timeFromEvent, peak));
     }
 
     /**
@@ -193,6 +193,18 @@ public class Predictions {
         return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration, peak));
     }
 
+    /**
+     * Special case of prediction for all times in vector times. Calculates only
+     * the influence of meals to compare to a nkbg curve. Used in LM algorithm.
+     *
+     * @param times                Vector of times, where the blood glucose will be calculated
+     * @param mealTimes            Vector of estimated meal times
+     * @param mealValues           Vector of estimated meal values corresponding to the times
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param carbRatio            carb to insulin ratio
+     * @param absorptionTime       carb absorption time
+     * @return RealVector of blood glucose values due to meals over time
+     */
     public static RealVector cumulativeMealPredict(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         int N = mealTimes.getDimension();
         int Nt = times.getDimension();
@@ -207,39 +219,72 @@ public class Predictions {
         return Y;
     }
 
-    public static RealMatrix Jacobian(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbratio, long absorptionTime) {
+    /**
+     * Calculates the Jacobi matrix of the prediction function with regard to
+     * all estimated meal times and values and calculated for all times in times
+     *
+     * @param times                Vector of times, where the Jacoby matrix will be calculated
+     * @param mealTimes            Vector of estimated meal times
+     * @param mealValues           Vector of estimated meal values corresponding to the times
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param carbRatio            carb to insulin ratio
+     * @param absorptionTime       carb absorption time
+     * @return Jacobi matrix of the prediction function derived with regard to
+     * all estimated meal times and values and calculated for all times in times
+     */
+    public static RealMatrix jacobi(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         int N = mealTimes.getDimension();
         RealMatrix J = new Array2DRowRealMatrix(times.getDimension(), 2 * N);
         for (int i = 0; i < N; i++) {
-            double t0 = mealTimes.getEntry(i);
+            double mealTime = mealTimes.getEntry(i);
             double carbsAmount = mealValues.getEntry(i);
-            J.setColumn(i, carbsOnBoard_dt0(times, t0, carbsAmount, insSensitivityFactor, carbratio, absorptionTime));
-            J.setColumn(i + N, carbsOnBoard_dx(times, t0, insSensitivityFactor, carbratio, absorptionTime));
+            J.setColumn(i, carbsOnBoard_dt(times, mealTime, carbsAmount, insSensitivityFactor, carbRatio, absorptionTime));
+            J.setColumn(i + N, carbsOnBoard_dx(times, mealTime, insSensitivityFactor, carbRatio, absorptionTime));
         }
         return J;
     }
 
-    private static double[] carbsOnBoard_dt0(RealVector times, double t0, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorbtionTime) {
-        double[] cob_dt0 = new double[times.getDimension()];
-        double c = insSensitivityFactor / carbRatio * carbsAmount * 4 / absorbtionTime;
+    /**
+     * Calculates the derivative of the prediction function with regard to the meal time
+     *
+     * @param times                Vector of times, where the derivative will be calculated
+     * @param mealTime             Time of the meal
+     * @param carbsAmount          Value corresponding to the meal at time mealTime
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param carbRatio            carb to insulin ratio
+     * @param absorptionTime       carb absorption time
+     * @return one column of the Jacobi matrix derived with regard to mealTime
+     */
+    private static double[] carbsOnBoard_dt(RealVector times, double mealTime, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorptionTime) {
+        double[] cob_dt = new double[times.getDimension()];
+        double c = insSensitivityFactor / carbRatio * carbsAmount * 4 / absorptionTime;
         for (int i = 0; i < times.getDimension(); i++) {
-
-            double dt = times.getEntry(i) - t0;
-            if (dt < 0 || dt > absorbtionTime) {
-                cob_dt0[i] = 0;
-            } else if (dt < absorbtionTime / 2.0) {
-                cob_dt0[i] = -c * dt / absorbtionTime;
-            } else if (dt >= absorbtionTime / 2.0) {
-                cob_dt0[i] = c * (dt / absorbtionTime - 1);
+            double deltaTime = times.getEntry(i) - mealTime;
+            if (deltaTime < 0 || deltaTime > absorptionTime) {
+                cob_dt[i] = 0;
+            } else if (deltaTime < absorptionTime / 2.0) {
+                cob_dt[i] = -c * deltaTime / absorptionTime;
+            } else if (deltaTime >= absorptionTime / 2.0) {
+                cob_dt[i] = c * (deltaTime / absorptionTime - 1);
             }
         }
-        return cob_dt0;
+        return cob_dt;
     }
 
-    private static double[] carbsOnBoard_dx(RealVector times, double t0, double insSensitivityFactor, double carbRatio, long absorbtionTime) {
+    /**
+     * Calculates the derivative of the prediction function with regard to x
+     *
+     * @param times                Vector of times, where the derivative will be calculated
+     * @param mealTime             Time of the meal corresponding to the value x
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param carbRatio            carb to insulin ratio
+     * @param absorptionTime       carb absorption time
+     * @return one column of the Jacobi matrix derived with regard to x
+     */
+    private static double[] carbsOnBoard_dx(RealVector times, double mealTime, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         double[] cob_dx = new double[times.getDimension()];
         for (int i = 0; i < times.getDimension(); i++) {
-            cob_dx[i] = insSensitivityFactor / carbRatio * Predictions.carbsOnBoard(times.getEntry(i) - t0, absorbtionTime);
+            cob_dx[i] = insSensitivityFactor / carbRatio * Predictions.carbsOnBoard(times.getEntry(i) - mealTime, absorptionTime);
         }
         return cob_dx;
     }
