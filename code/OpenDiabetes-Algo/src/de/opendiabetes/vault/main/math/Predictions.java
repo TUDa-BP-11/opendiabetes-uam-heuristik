@@ -130,7 +130,6 @@ public class Predictions {
         int nn = 2 * N; //nn needs to be even
 
         //initialize with first and last terms of simpson series
-        //startTime & endTime Grenzen des Intervalls das betrachtet wird
         dx = (endTime - startTime) / nn;
 
         integral = fastActingIob((timeFromEvent - startTime), insDuration, peak)
