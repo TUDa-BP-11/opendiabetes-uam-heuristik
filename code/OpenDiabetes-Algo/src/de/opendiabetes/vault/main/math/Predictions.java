@@ -85,7 +85,7 @@ public class Predictions {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
-        } else if (timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
+        } else if (timeFromEvent >= insDuration) {
             IOBWeight = 0;
         } else {
             //Time constant of exp decay
@@ -197,10 +197,9 @@ public class Predictions {
         int N = mealTimes.getDimension();
         int Nt = times.getDimension();
         RealVector Y = new ArrayRealVector(Nt);
-        double t0, carbsAmount;
         for (int i = 0; i < N; i++) {
-            t0 = mealTimes.getEntry(i);
-            carbsAmount = mealValues.getEntry(i);
+            double t0 = mealTimes.getEntry(i);
+            double carbsAmount = mealValues.getEntry(i);
             for (int j = 0; j < Nt; j++) {
                 Y.addToEntry(j, deltaBGC(times.getEntry(j) - t0, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime));
             }
@@ -211,10 +210,9 @@ public class Predictions {
     public static RealMatrix Jacobian(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbratio, long absorptionTime) {
         int N = mealTimes.getDimension();
         RealMatrix J = new Array2DRowRealMatrix(times.getDimension(), 2 * N);
-        double t0, carbsAmount;
         for (int i = 0; i < N; i++) {
-            t0 = mealTimes.getEntry(i);
-            carbsAmount = mealValues.getEntry(i);
+            double t0 = mealTimes.getEntry(i);
+            double carbsAmount = mealValues.getEntry(i);
             J.setColumn(i, carbsOnBoard_dt0(times, t0, carbsAmount, insSensitivityFactor, carbratio, absorptionTime));
             J.setColumn(i + N, carbsOnBoard_dx(times, t0, insSensitivityFactor, carbratio, absorptionTime));
         }
@@ -223,11 +221,10 @@ public class Predictions {
 
     private static double[] carbsOnBoard_dt0(RealVector times, double t0, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorbtionTime) {
         double[] cob_dt0 = new double[times.getDimension()];
-        double dt;
         double c = insSensitivityFactor / carbRatio * carbsAmount * 4 / absorbtionTime;
         for (int i = 0; i < times.getDimension(); i++) {
 
-            dt = times.getEntry(i) - t0;
+            double dt = times.getEntry(i) - t0;
             if (dt < 0 || dt > absorbtionTime) {
                 cob_dt0[i] = 0;
             } else if (dt < absorbtionTime / 2.0) {
