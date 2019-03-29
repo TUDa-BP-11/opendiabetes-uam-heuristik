@@ -75,7 +75,7 @@ public class OldLMAlgo extends Algorithm {
             int N_iter = 1000;
             double abs_e;
             for (int i = 0; i < N_iter; i++) {
-                J = Predictions.jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
+                J = Predictions.jacobi(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
                 e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime));
                 abs_e = e.getNorm();
                 E.add(abs_e);
