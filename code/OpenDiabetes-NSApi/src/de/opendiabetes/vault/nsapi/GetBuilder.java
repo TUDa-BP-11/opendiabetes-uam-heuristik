@@ -3,19 +3,19 @@ package de.opendiabetes.vault.nsapi;
 import com.google.gson.JsonElement;
 import com.mashape.unirest.request.HttpRequest;
 import de.opendiabetes.vault.container.VaultEntry;
+import de.opendiabetes.vault.importer.Importer;
 import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
+import de.opendiabetes.vault.nsapi.importer.UnannouncedMealImporter;
 
 import java.io.InputStream;
 import java.util.List;
 
 /**
- * Constructs a GET request to the Nightscout server.
+ * Builder for HTTP GET requests
  */
 public class GetBuilder {
-    private final static NightscoutImporter IMPORTER = new NightscoutImporter();
-
     private NSApi api;
     private HttpRequest request;
 
@@ -66,8 +66,31 @@ public class GetBuilder {
      * @throws NightscoutServerException if the Nightscout server returns a bad response status
      */
     public List<VaultEntry> getVaultEntries() throws NightscoutIOException, NightscoutServerException {
+        return getVaultEntries(new NightscoutImporter());
+    }
+
+    /**
+     * Sends the request to the server and passes the result to {@link UnannouncedMealImporter} to be parsed as a list of VaultEntries.
+     *
+     * @return a List of VaultEntries corresponding to the result of the request
+     * @throws NightscoutIOException     if an I/O error occurs during the request, or the response is not valid
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
+    public List<VaultEntry> getUnannouncedMeals() throws NightscoutIOException, NightscoutServerException {
+        return getVaultEntries(new UnannouncedMealImporter());
+    }
+
+    /**
+     * Sends the request to the server and passes the result to the given importer to be parsed as a list of VaultEntries.
+     *
+     * @param importer Importer used to format the entries.
+     * @return a List of VaultEntries corresponding to the result of the request
+     * @throws NightscoutIOException     if an I/O error occurs during the request, or the response is not valid
+     * @throws NightscoutServerException if the Nightscout server returns a bad response status
+     */
+    public List<VaultEntry> getVaultEntries(Importer importer) throws NightscoutIOException, NightscoutServerException {
         InputStream stream = api.send(request);
-        return IMPORTER.importData(stream);
+        return importer.importData(stream);
     }
 
     /**

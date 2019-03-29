@@ -33,7 +33,7 @@
 
     <target name="full" depends="clean, jar, junit5-test" description="Clean, build jar with all libraries, run tests"/>
 
-    <target name="-pre-jar" depends="init">
+    <target name="-pre-jar" depends="-pre-pre-compile">
         <unjar dest="${build.classes.dir}" overwrite="false">
             <filelist dir="${nsapi.dir}/dist">
                 <file name="${nsapi.jar}"/>

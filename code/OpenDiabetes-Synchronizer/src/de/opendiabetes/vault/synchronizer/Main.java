@@ -13,6 +13,8 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -62,18 +64,44 @@ public class Main {
             })
             .setUsageName("apiPath[:dateField]")
             .setHelp("Define what data will be synchronized. Can be declared multiple times. Default date field is 'created_at'.");
+    private static final Parameter P_LATEST = new FlaggedOption("latest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("latest")
+            .setDefault(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME))
+            .setHelp("The latest date and time to load data");
+    private static final Parameter P_OLDEST = new FlaggedOption("oldest")
+            .setStringParser(new IsoDateTimeParser())
+            .setLongFlag("oldest")
+            .setDefault("1970-01-01T00:00:00.000Z")
+            .setHelp("The oldest date and time to load data");
+    private static final Parameter P_BATCHSIZE = new FlaggedOption("batchsize")
+            .setStringParser(JSAP.INTEGER_PARSER)
+            .setLongFlag("batch-size")
+            .setDefault("100")
+            .setHelp("How many entries should be loaded at once.");
     private static final Parameter P_WITH_IDS = new Switch("with-ids")
             .setLongFlag("with-ids")
             .setHelp("Set this to keep the '_id' fields of objects when uploading them to the write server.");
+    //Debug
+    private static final Parameter P_VERBOSE = new Switch("verbose")
+            .setShortFlag('v')
+            .setHelp("Sets logging to verbose");
+    private static final Parameter P_DEBUG = new Switch("debug")
+            .setShortFlag('d')
+            .setHelp("Enables debug mode. Prints stack traces to STDERR and more.");
     private static final Parameter P_DIFF = new Switch("diff")
             .setLongFlag("diff")
             .setHelp("Export all missing entries to a file instead of uploading them.");
-    public static final Parameter P_FILE = new FlaggedOption("file")
+    private static final Parameter P_FILE = new FlaggedOption("file")
             .setStringParser(JSAP.STRING_PARSER)
             .setShortFlag('f')
             .setLongFlag("file")
             .setDefault("missing.json")
             .setHelp("Path to the file that should be used to export missing entries.");
+    private static final Parameter P_OVERWRITE = new Switch("overwrite")
+            .setShortFlag('o')
+            .setLongFlag("overwrite")
+            .setHelp("Overwrite existing files");
 
     /**
      * Registers all arguments to the given JSAP instance

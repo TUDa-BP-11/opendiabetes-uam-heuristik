@@ -70,7 +70,7 @@
     nbproject/build-impl.xml file. 
 
     -->
-    <target name="-pre-jar">
+    <target name="-pre-jar" depends="-pre-pre-compile">
         <unjar dest="${build.classes.dir}" overwrite="false">
             <filelist dir="../../lib">
                 <file name="gson-2.8.0.jar"/>

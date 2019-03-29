@@ -20,6 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Exports {@link VaultEntry}s as JSON objects that can be uploaded to a Nightscout server.
+ */
 public class NightscoutExporter extends Exporter {
     private final NightscoutExporterOptions options;
     private final Gson gson;
@@ -35,9 +38,9 @@ public class NightscoutExporter extends Exporter {
     }
 
     /**
-     * Formats the data as nightscout json representation. All times are converted to UTC
+     * Formats the data as nightscout json representation. All times are converted to UTC.
      * Currently supports the following entries: {@link VaultEntryType#GLUCOSE_CGM}, {@link VaultEntryType#BOLUS_NORMAL},
-     * {@link VaultEntryType#MEAL_MANUAL} and {@link VaultEntryType#BASAL_MANUAL}
+     * {@link VaultEntryType#MEAL_MANUAL} and {@link VaultEntryType#BASAL_MANUAL}.
      *
      * @param sink target for export (e.g., a file)
      * @param data data to be exported. Has to be in descending order as sorted by {@link SortVaultEntryByDate#reversed()}
@@ -103,12 +106,10 @@ public class NightscoutExporter extends Exporter {
             }
         }
 
-        try {
-            JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink));
+        try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(sink))) {
             if (options.isPretty())
                 writer.setIndent("  ");
             gson.toJson(array, writer);
-            writer.close();
         } catch (IOException | JsonIOException e) {
             throw new NightscoutDataException("Exception while flushing stream", e);
         }
