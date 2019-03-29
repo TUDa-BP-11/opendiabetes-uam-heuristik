@@ -57,7 +57,7 @@ public class Predictions {
     /**
      * Calculates the percentage of carbs on board
      *
-     * @param timeFromEvent time in minutes from last meal
+     * @param timeFromEvent  time in minutes from last meal
      * @param absorptionTime time in minutes to absorb a hole meal
      * @return percentage of carbs absorbed
      */
@@ -80,9 +80,8 @@ public class Predictions {
      * Calculates the percentage of insulin on board
      *
      * @param timeFromEvent time in minutes from last meal
-     * @param insDuration effective time of insulin in minutes
-     * @param peak duration in minutes until insulin action reaches it’s peak
-     * activity level.
+     * @param insDuration   effective time of insulin in minutes
+     * @param peak          duration in minutes until insulin action reaches it’s peak activity level.
      * @return percentage of insulin still on board
      */
     public static double fastActingIob(double timeFromEvent, double insDuration, double peak) {
@@ -117,17 +116,14 @@ public class Predictions {
      * simpsons rule to integrate insulin on board.
      * https://github.com/Perceptus/GlucoDyn/blob/master/js/glucodyn/algorithms.js
      *
-     * @param t1 left border of integral - 0
-     * @param t2 right border of integral - duration of insulin event
-     * @param insDuration effective time of insulin in minutes
+     * @param t1            left border of integral - 0
+     * @param t2            right border of integral - duration of insulin event
+     * @param insDuration   effective time of insulin in minutes
      * @param timeFromEvent time in minutes since insulin event
-     * @param peak duration in minutes until insulin action reaches it’s peak
-     * activity level.
+     * @param peak          duration in minutes until insulin action reaches it’s peak activity level.
      * @return
      */
     public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent, double peak) {
-        // timeFromEvent - scale*(1-growth) *(Math.exp(-timeFromEvent/decay) * (2*decay+timeFromEvent-(2*decay^2+2*decay*timeFromEvent+timeFromEvent^2)/((1-growth) * insDuration))+timeFromEvent)
-
         double integral;
         double dx;
         int N = 25;
@@ -154,17 +150,16 @@ public class Predictions {
     }
 
     /**
-     * Calculates how much your blood glucose level will change when given a
-     * basal insulin treatment. All times are relative to each other.
+     * Calculates how much your blood glucose level will change when given a basal insulin treatment.
+     * All times are relative to each other.
      *
-     * @param timeFromEvent time in minutes since the event has started
-     * @param tempInsAmount amount of basal insulin per minute given
+     * @param timeFromEvent        time in minutes since the event has started
+     * @param tempInsAmount        amount of basal insulin per minute given
      * @param insSensitivityFactor insulin to blood glucose factor
-     * @param insDuration effective insulin duration
-     * @param peak duration in minutes until insulin action reaches it’s peak
-     * activity level
-     * @param t1 start of insulin event in minutes
-     * @param t2 end of insulin event in minutes
+     * @param insDuration          effective insulin duration
+     * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
+     * @param t1                   start of insulin event in minutes
+     * @param t2                   end of insulin event in minutes
      * @return relative change of blood glucose level
      */
     public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double peak, double t1, double t2) {
@@ -173,14 +168,14 @@ public class Predictions {
     }
 
     /**
-     * Calculates how much your blood glucose level will change when given a
-     * meal treatment. All times are relative to each other.
+     * Calculates how much your blood glucose level will change when given a meal treatment.
+     * All times are relative to each other.
      *
-     * @param timeFromEvent time in minutes since the event has started
+     * @param timeFromEvent        time in minutes since the event has started
      * @param insSensitivityFactor insulin to blood glucose factor
-     * @param carbRatio carb to insulin ratio
-     * @param carbsAmount amount of carbs given
-     * @param absorptionTime carb absorption time
+     * @param carbRatio            carb to insulin ratio
+     * @param carbsAmount          amount of carbs given
+     * @param absorptionTime       carb absorption time
      * @return relative change of blood glucose level
      */
     public static double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
@@ -188,15 +183,14 @@ public class Predictions {
     }
 
     /**
-     * Calculates how much your blood glucose level will change when given a
-     * bolus insulin treatment. All times are relative to each other.
+     * Calculates how much your blood glucose level will change when given a bolus insulin treatment.
+     * All times are relative to each other.
      *
-     * @param timeFromEvent time in minutes since the event has started
-     * @param insBolus amount of bolus insulin given
+     * @param timeFromEvent        time in minutes since the event has started
+     * @param insBolus             amount of bolus insulin given
      * @param insSensitivityFactor insulin to blood glucose factor
-     * @param insDuration effective insulin duration
-     * @param peak duration in minutes until insulin action reaches it’s peak
-     * activity level
+     * @param insDuration          effective insulin duration
+     * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
      * @return relative change of blood glucose level
      */
     public static double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration, double peak) {

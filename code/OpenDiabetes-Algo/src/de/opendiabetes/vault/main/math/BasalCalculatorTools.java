@@ -16,9 +16,8 @@ public class BasalCalculatorTools {
      * the values of the entries accordingly.
      *
      * @param basalTreatments sorted list of vault entries with type
-     * {@link VaultEntryType#BASAL_MANUAL}
-     * @return list of vault entries whose duration won't exceeds the timestamp
-     * of their next entries.
+     *                        {@link VaultEntryType#BASAL_MANUAL}
+     * @return list of vault entries whose duration won't exceeds the timestamp of their next entries.
      */
     public static List<VaultEntry> adjustBasalTreatments(List<VaultEntry> basalTreatments) {
         List<VaultEntry> result = new ArrayList<>();
@@ -56,9 +55,8 @@ public class BasalCalculatorTools {
     }
 
     /**
-     * Calculates the difference between Temp Basal Treatments and the basal
-     * rates given in the profile. The values of the resulting List is in units
-     * per minute.
+     * Calculates the difference between Temp Basal Treatments and the basal rates given in the profile.
+     * The values of the resulting List is in units per minute.
      *
      * @param basalTreatments list of VaultEntries with type
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
