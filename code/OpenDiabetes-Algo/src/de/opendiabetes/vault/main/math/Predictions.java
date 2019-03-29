@@ -1,16 +1,29 @@
 package de.opendiabetes.vault.main.math;
 
 import de.opendiabetes.vault.container.VaultEntry;
-
-import java.util.List;
-
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
+import java.util.List;
+
 public class Predictions {
 
+    /**
+     * Predicts the blood glucose value at a certain time using known meal, bolus and basal treatments.
+     *
+     * @param time                 time in minutes since epoch start
+     * @param mealTreatments       known meal treatments
+     * @param bolusTreatments      known bolus treatments
+     * @param basalTreatments      known basal treatments
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param insDuration          effective insulin duration
+     * @param carbRatio            carb to insulin ratio
+     * @param absorptionTime       carb absorption time
+     * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
+     * @return predicted blood glucose value
+     */
     public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments, double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime, double peak) {
         double result = 0;
         for (VaultEntry meal : mealTreatments) {
@@ -108,8 +121,6 @@ public class Predictions {
      * @return
      */
     public static double integrateIob(double t1, double t2, double insDuration, double timeFromEvent, double peak) {
-        // timeFromEvent - scale*(1-growth) *(Math.exp(-timeFromEvent/decay) * (2*decay+timeFromEvent-(2*decay^2+2*decay*timeFromEvent+timeFromEvent^2)/((1-growth) * insDuration))+timeFromEvent)
-
         double integral;
         double dx;
         int N = 25;
@@ -118,14 +129,11 @@ public class Predictions {
         //initialize with first and last terms of simpson series
         //t1 & t2 Grenzen des Intervalls das betrachtet wird
         dx = (t2 - t1) / nn;
-        //integral = getIOBWeight((timeFromEvent - t1), insDuration) + getIOBWeight(timeFromEvent - (t1 + nn * dx), insDuration);
 
-        // Orig:
         integral = fastActingIob((timeFromEvent - t1), insDuration, peak)
                 + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration, peak);
         int ii = 1;
         while (ii < nn - 2) {
-            //integral = integral + 4 * getIOBWeight(timeFromEvent - (t1 + ii * dx), insDuration) + 2 * getIOBWeight(timeFromEvent - (t1 + (ii + 1) * dx), insDuration);
             integral = integral
                     + 4 * fastActingIob(timeFromEvent
                     - (t1 + ii * dx), insDuration, peak)
@@ -135,62 +143,56 @@ public class Predictions {
         }
 
         integral = integral * dx / 3.0;
-// Ende - orig
-//        integral = fastActingIob((timeFromEvent - t1), insDuration)
-//                + fastActingIob(timeFromEvent - (t1 + nn * dx), insDuration);
-//
-//        for (int i = 1; i < N; i++) {
-//            integral = integral
-//                    + 4 * fastActingIob(timeFromEvent
-//                            - (t1 + (2 * i - 1) * dx), insDuration)
-//                    + 2 * fastActingIob(timeFromEvent
-//                            - (t1 + (2 * i) * dx), insDuration);
-//        }
-//        integral = integral
-//                + 4 * fastActingIob(timeFromEvent
-//                        - (t1 + (nn - 1) * dx), insDuration);
-//        integral = integral * dx / 3.0;
         return integral;
     }
 
-    //tempInsAmount in U/min
-    //function deltatempBGI(g,dbdt,sensf,idur,t1,t2)
+    /**
+     * Calculates how much your blood glucose level will change when given a basal insulin treatment.
+     * All times are relative to each other.
+     *
+     * @param timeFromEvent        time in minutes since the event has started
+     * @param tempInsAmount        amount of basal insulin per minute given
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param insDuration          effective insulin duration
+     * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
+     * @param t1                   start of insulin event in minutes
+     * @param t2                   end of insulin event in minutes
+     * @return relative change of blood glucose level
+     */
     public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double peak, double t1, double t2) {
         return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - integrateIob(t1, t2, insDuration, timeFromEvent, peak));
-        //return -tempInsAmount * insSensitivityFactor * ((t2 - t1) - 1.0 / 100.0 * integrateIob(t1, t2, insDuration, timeFromEvent));
     }
 
-    //function deltaBGC(g,sensf,cratio,camount,ct)
+    /**
+     * Calculates how much your blood glucose level will change when given a meal treatment.
+     * All times are relative to each other.
+     *
+     * @param timeFromEvent        time in minutes since the event has started
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param carbRatio            carb to insulin ratio
+     * @param carbsAmount          amount of carbs given
+     * @param absorptionTime       carb absorption time
+     * @return relative change of blood glucose level
+     */
     public static double deltaBGC(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime) {
         return insSensitivityFactor / carbRatio * carbsAmount * Predictions.carbsOnBoard(timeFromEvent, absorptionTime);
     }
 
-    //function deltaBGI(g,bolus,sensf,idur)
+    /**
+     * Calculates how much your blood glucose level will change when given a bolus insulin treatment.
+     * All times are relative to each other.
+     *
+     * @param timeFromEvent        time in minutes since the event has started
+     * @param insBolus             amount of bolus insulin given
+     * @param insSensitivityFactor insulin to blood glucose factor
+     * @param insDuration          effective insulin duration
+     * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
+     * @return relative change of blood glucose level
+     */
     public static double deltaBGI(double timeFromEvent, double insBolus, double insSensitivityFactor, double insDuration, double peak) {
         return -insBolus * insSensitivityFactor * (1 - fastActingIob(timeFromEvent, insDuration, peak));
-        //return -insBolus * insSensitivityFactor * (1 - getIOBWeight(timeFromEvent, insDuration) / 100.0);
     }
 
-    /*
-    //function iob(g,idur)
-    public int getIOBWeight(double timeFromEvent, int insDuration) {
-        int IOBWeight;
-        if (timeFromEvent <= 0) {
-            IOBWeight = 100;
-        } else if (timeFromEvent >= insDuration) {
-            IOBWeight = 0;
-        } else {
-            IOBWeight = (int) (-3.203e-7 * Math.pow(timeFromEvent, 4) + 1.354e-4 * Math.pow(timeFromEvent, 3) - 1.759e-2 * Math.pow(timeFromEvent, 2) + 9.255e-2 * timeFromEvent + 99.951);
-        }
-        return IOBWeight;
-    }
-
-    //deltaBG(g,sensf,cratio,camount,ct,bolus,idur)
-    public double deltaBG(double timeFromEvent, double insSensitivityFactor, double carbRatio, double carbsAmount, double absorptionTime, double insBolus, double insDuration) {
-        return deltaBGI(timeFromEvent, insBolus, insSensitivityFactor, insDuration) +
-                deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
-    }
-     */
     public static RealVector cumulativeMealPredict(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         int N = mealTimes.getDimension();
         int Nt = times.getDimension();
