@@ -13,7 +13,7 @@ public class Predictions {
     /**
      * Predicts the blood glucose value at a certain time using known meal, bolus and basal treatments.
      *
-     * @param time                 time in minutes since epoch start
+     * @param time                 time in milliseconds since epoch start
      * @param mealTreatments       known meal treatments
      * @param bolusTreatments      known bolus treatments
      * @param basalTreatments      known basal treatments
