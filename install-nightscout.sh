@@ -9,3 +9,6 @@ npm install
 
 # start server in background
 npm run start > server.log 2>&1 &
+
+# insert default profile
+mongo --eval "db.profile.insert(`cat profile.json`)" nightscout
