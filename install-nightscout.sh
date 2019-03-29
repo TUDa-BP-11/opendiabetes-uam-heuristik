@@ -13,5 +13,7 @@ npm run start > server.log 2>&1 &
 
 # go back to original directory
 cd ..
-# insert default profile
-mongo --eval "db.profile.insert(`cat profile.json`)" nightscout
+# insert default data
+for file in `ls testdata/*.js`; do
+  mongo nightscout $file
+done
