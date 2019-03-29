@@ -95,7 +95,7 @@ public class Main {
             .setStringParser(JSAP.DOUBLE_PARSER)
             .setLongFlag("peak")
             .setRequired(true)
-            .setDefault("55.0")
+            .setDefault("55")
             .setHelp("Duration in minutes until insulin action reaches it’s peak activity level");
 
     // Output
@@ -255,7 +255,7 @@ public class Main {
             return;
         }
 
-        if (config.getDouble("peak") == config.getInt("insDuration") / 2) {
+        if (config.getDouble("peak") == config.getInt("insDuration") / 2.0) {
             NSApi.LOGGER.warning("Peak can not be exactly half the duration of the insulin used");
             return;
         }
