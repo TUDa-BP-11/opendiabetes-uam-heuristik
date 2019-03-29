@@ -22,12 +22,13 @@
         <ant dir="${synchronizer.dir}" target="jar" inheritall="false"/>
     </target>
 
-    <target name="all" depends="all-compile">
-        <!-- test -->
+    <target name="all-test">
         <ant dir="${nsapi.dir}" target="junit5-test" inheritall="false"/>
         <ant dir="${algo.dir}" target="junit5-test" inheritall="false"/>
         <ant dir="${synchronizer.dir}" target="junit5-test" inheritall="false"/>
     </target>
+
+    <target name="all" depends="all-compile, all-test"/>
 
     <target name="Engine">
         <ant dir="${engine.dir}" target="jar" inheritall="false"/>
