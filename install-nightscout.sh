@@ -7,5 +7,5 @@ git pull
 
 npm install
 
-# start server in subshell
-(npm run start)
+# start server in background
+npm run start &
