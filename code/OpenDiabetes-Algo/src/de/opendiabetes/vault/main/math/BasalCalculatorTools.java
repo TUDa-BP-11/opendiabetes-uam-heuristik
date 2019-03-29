@@ -1,8 +1,8 @@
 package de.opendiabetes.vault.main.math;
 
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.parser.Profile;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -140,7 +140,6 @@ public class BasalCalculatorTools {
         if (treatmentTime + entry.getValue2() <= secTime) {
             double value = entry.getValue() / entry.getValue2() - profileTime.get(profileTime.size() - 1).getValue() / 60;
             list.add(new VaultEntry(VaultEntryType.BASAL_PROFILE, entry.getTimestamp(), value, entry.getValue2()));
-            return;
         } else {
 
             long newDuration = secTime - treatmentTime;

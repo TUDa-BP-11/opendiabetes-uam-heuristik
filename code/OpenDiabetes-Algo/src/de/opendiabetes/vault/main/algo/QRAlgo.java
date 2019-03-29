@@ -1,10 +1,9 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
@@ -12,16 +11,11 @@ import java.util.Date;
 import java.util.List;
 
 import static java.lang.Math.pow;
-import java.util.ArrayList;
 
 public class QRAlgo extends Algorithm {
 
-    public QRAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
-    }
-
-    public QRAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public QRAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
@@ -42,18 +36,14 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
-        
-        List<VaultEntry> mealTreatments;
-        mealTreatments = new ArrayList<>();
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
 
-        for (int i = 0; i < glucose.size(); i++) {
+        meals.clear();
+        int startIndex = getStartIndex();
+        double startValue = glucose.get(startIndex).getValue();
+        for (int i = startIndex; i < glucose.size(); i++) {
             current = glucose.get(i);
             currentTime = current.getTimestamp().getTime() / 60000;
-            // skip bg values until start time
-            if (currentTime < firstTime) {
-                continue;
-            }
 
             nkbg = new ArrayRealVector();
             times = new ArrayRealVector();
@@ -70,12 +60,13 @@ public class QRAlgo extends Algorithm {
                     //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                                basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                                profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
                         deltaBg = next.getValue() - nextPrediction;
                         times = times.append(nextTime - currentTime);
-                        nkbg = nkbg.append(deltaBg);
+                        nkbg = nkbg.append(deltaBg - startValue);
                     }
                 }
 
@@ -97,21 +88,12 @@ public class QRAlgo extends Algorithm {
                         meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
                                 TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
                                 estimatedCarbs);
-                        mealTreatments.add(meal);
+                        meals.add(meal);
                     }
                 }
             }
         }
-        //Remove Meals before first Bg entry
-        for (int i = 0; i < mealTreatments.size(); i++) {
-            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
-                mealTreatments.remove(i);
-                i--;
-            } else {
-                break;
-            }
 
-        }
-        return mealTreatments;
+        return meals;
     }
 }

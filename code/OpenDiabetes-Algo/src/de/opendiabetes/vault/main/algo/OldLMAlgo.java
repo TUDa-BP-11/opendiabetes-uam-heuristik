@@ -1,10 +1,9 @@
 package de.opendiabetes.vault.main.algo;
 
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
-import de.opendiabetes.vault.main.math.Predictions;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.main.math.Predictions;
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
 import org.apache.commons.math3.linear.*;
 
@@ -14,12 +13,8 @@ import java.util.List;
 
 public class OldLMAlgo extends Algorithm {
 
-    public OldLMAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
-    }
-
-    public OldLMAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public OldLMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
@@ -33,7 +28,6 @@ public class OldLMAlgo extends Algorithm {
         RealVector times;
         VaultEntry meal;
         RealVector delta;
-        List<VaultEntry> mealTreatments;
         ArrayList<Double> E;
 
         double deltaBg, currentValue;
@@ -41,8 +35,7 @@ public class OldLMAlgo extends Algorithm {
         ve = new ArrayRealVector();
         nkbg = new ArrayRealVector();
         times = new ArrayRealVector();
-
-        mealTreatments = new ArrayList<>();
+        meals.clear();
 
         final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
         final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
@@ -54,8 +47,8 @@ public class OldLMAlgo extends Algorithm {
             currentTime = current.getTimestamp().getTime();
             currentValue = current.getValue();
 //            currentValue = Filter.getMedian(glucose, i, 5, absorptionTime / 3);
-            deltaBg = currentValue - Predictions.predict(currentTime, mealTreatments, bolusTreatments,
-                    basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+            deltaBg = currentValue - Predictions.predict(currentTime, meals, bolusTreatments, basalTreatments,
+                    profile.getSensitivity(), insulinDuration,profile.getCarbratio(), absorptionTime, peak);
             nkbg = nkbg.append(deltaBg);
             times = times.append(currentTime / 60000);
             ve = ve.append(currentValue);
@@ -66,7 +59,7 @@ public class OldLMAlgo extends Algorithm {
         mealValues = new ArrayRealVector();
 
         for (int N = 3; N < 15 && !breakN; N += 2) {
-            E = new ArrayList();
+            E = new ArrayList<>();
             mealTimes = new ArrayRealVector(N);
             mealValues = new ArrayRealVector(N);
             // possible discrete meal times within snippet time range each dT/N Minutes.
@@ -115,7 +108,7 @@ public class OldLMAlgo extends Algorithm {
             }
         }
 
-        ArrayList<Long> uniqueMealTimes = new ArrayList();
+        ArrayList<Long> uniqueMealTimes = new ArrayList<>();
         RealVector uniqueMealValues = new ArrayRealVector();
         for (int i = 0; i < mealTimes.getDimension(); i++) {
 
@@ -134,25 +127,25 @@ public class OldLMAlgo extends Algorithm {
         long t0;
         for (int i = 0; i < uniqueMealValues.getDimension(); i++) {
             x = uniqueMealValues.getEntry(i);
-            if(x > 5) {
+            if (x > 5) {
                 t0 = uniqueMealTimes.get(i);
                 meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
                         TimestampUtils.createCleanTimestamp(new Date(t0 * 60000)), x);
-                mealTreatments.add(meal);
+                meals.add(meal);
             }
         }
 
         //Remove Meals before first Bg entry
-        for (int i = 0; i < mealTreatments.size(); i++) {
-            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
-                mealTreatments.remove(i);
+        for (int i = 0; i < meals.size(); i++) {
+            if (meals.get(i).getTimestamp().getTime() / 60000 < firstTime) {
+                meals.remove(i);
                 i--;
             } else {
                 break;
             }
 
         }
-        return mealTreatments;
+        return meals;
 
     }
 }

@@ -1,15 +1,15 @@
 package de.opendiabetes.vault.main.algo;
 
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
+import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.CGMPlotter;
 import de.opendiabetes.vault.main.math.BasalCalculatorTools;
 import de.opendiabetes.vault.main.math.ErrorCalc;
 import de.opendiabetes.vault.main.util.Snippet;
+import de.opendiabetes.vault.nsapi.NSApi;
+import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
-import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
-import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.FileInputStream;
@@ -23,6 +23,7 @@ public class Main {
 
     private static final int ABSORBTION_TIME = 120;
     private static final int INSULIN_DURATION = 180;
+    private static final double INSULIN_PEAK = 55;
 
     public static void main(String[] args) {
 
@@ -108,57 +109,48 @@ public class Main {
 //        } catch (IOException ex) {
 //            Logger.getLogger(CGMPlotter.class.getName()).log(Level.SEVERE, null, ex);
 //        }
-        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 24 * 60 * 60000, INSULIN_DURATION * 60000, Integer.MAX_VALUE); //
+        List<Snippet> snippets = Snippet.getSnippets(entries, bolusTreatment, basals, 24 * 60 * 60000, INSULIN_DURATION * 60000, 1); //
 
 //        snippets = snippets.subList(snippets.size()-1, snippets.size());
-        List<Algorithm> algoList = new ArrayList();
-        List<CGMPlotter> cgpmList = new ArrayList();
+        List<Algorithm> algoList = new ArrayList<>();
+        List<CGMPlotter> cgpmList = new ArrayList<>();
         Algorithm algo;
         CGMPlotter cgpm;
 
-        algo = new MinimumAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME);
-        cgpm.title("MinimumAlgo");
-        algoList.add(algo);
-        cgpmList.add(cgpm);
+//        algo = new MinimumAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+//        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+//                profile.getCarbratio(), ABSORBTION_TIME);
+//        cgpm.title("MinimumAlgo");
+//        algoList.add(algo);
+//        cgpmList.add(cgpm);
+//     
+//        algo = new PolyCurveFitterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+//        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+//                profile.getCarbratio(), ABSORBTION_TIME);
+//        cgpm.title("PolyCurveFitterAlgo");
+//        algoList.add(algo);
+//        cgpmList.add(cgpm);
+//
+//        algo = new QRAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+//        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+//                profile.getCarbratio(), ABSORBTION_TIME);
+//        cgpm.title("QRAlgo");
+//        algoList.add(algo);
+//        cgpmList.add(cgpm);
 
-        algo = new FilterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        algo = new OldLMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME);
-        cgpm.title("FilterAlgo");
+                profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
+        cgpm.title("OldLMAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
-//        
-        algo = new PolyCurveFitterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
+        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME);
-        cgpm.title("PolyCurveFitterAlgo");
-        algoList.add(algo);
-        cgpmList.add(cgpm);
-
-        algo = new QRAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME);
-        cgpm.title("QRAlgo");
-        algoList.add(algo);
-        cgpmList.add(cgpm);
-
-        algo = new QRAlgo_TimeOpt(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME);
-        cgpm.title("QRAlgo_TimeOpt");
-        algoList.add(algo);
-        cgpmList.add(cgpm);
-
-        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
-        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME);
+                profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
         cgpm.title("LMAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
-
-        ErrorCalc errorCalc = new ErrorCalc(false);
+        ErrorCalc errorCalc = new ErrorCalc();
 
         Snippet s;
         for (int i = 0; i < snippets.size(); i++) {
@@ -171,8 +163,8 @@ public class Main {
                 algo.setBolusTreatments(s.getBoli());
                 algo.setBasalTreatments(s.getBasals());
                 List<VaultEntry> meals = algo.calculateMeals();
-                errorCalc.calculateError(s.getEntries(), s.getBasals(), s.getBoli(), meals, profile.getSensitivity(), INSULIN_DURATION, profile.getCarbratio(), ABSORBTION_TIME);
-                cgpmList.get(jj).add(s.getEntries(), s.getBasals(), s.getBoli(), meals);
+                errorCalc.calculateError(algo);
+                cgpmList.get(jj).add(s.getEntries(), s.getBasals(), s.getBoli(), meals, algo.getStartIndex(), algo.getStartValue());
                 cgpmList.get(jj).addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             }
         }

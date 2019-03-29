@@ -2,7 +2,6 @@ package de.opendiabetes.vault.main.algo;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.dataprovider.AlgorithmDataProvider;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
@@ -20,20 +19,15 @@ import static java.lang.Math.pow;
  */
 public class PolyCurveFitterAlgo extends Algorithm {
 
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, Profile profile) {
-        super(absorptionTime, insulinDuration, profile);
-    }
-
-    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, AlgorithmDataProvider dataProvider) {
-        super(absorptionTime, insulinDuration, dataProvider);
+    public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+        super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 
     @Override
     public List<VaultEntry> calculateMeals() {
 
         double weight = 1;
-        List<VaultEntry> mealTreatments;
-        mealTreatments = new ArrayList<>();
+        meals.clear();
         PolynomialCurveFitter pcf = PolynomialCurveFitter.create(2);
         ArrayList<WeightedObservedPoint> observations = new ArrayList<>();
 
@@ -57,7 +51,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
 
         double startValue;
         double nextValue;
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000;
+
+        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
         for (int i = 0; i < glucose.size(); i++) {
             current = glucose.get(i);
 
@@ -75,8 +70,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 startValue = current.getValue();
                 //double deltaBg = Filter.getAverage(glucose, j, 5, 30) - Filter.getAverage(glucose, i, 5, 30);
                 //double deltaBg = next.getValue() - current.getValue();
-                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), mealTreatments, bolusTreatments,
-                        basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+     currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                        profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
                 for (int j = i; j < glucose.size(); j++) {
                     next = glucose.get(j);
@@ -86,7 +81,8 @@ public class PolyCurveFitterAlgo extends Algorithm {
                     //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
                     nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
-                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), mealTreatments, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime);
+
+                        nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
                         deltaBg = nextValue - startValue - (nextPrediction - currentPrediction);
                         lastTime = nextTime;
                         observations.add(new WeightedObservedPoint(weight, nextTime, deltaBg));
@@ -107,23 +103,13 @@ public class PolyCurveFitterAlgo extends Algorithm {
                         meal = new VaultEntry(VaultEntryType.MEAL_MANUAL,
                                 TimestampUtils.createCleanTimestamp(new Date(estimatedTime * 60000)),
                                 estimatedCarbs);
-                        mealTreatments.add(meal);
+                        meals.add(meal);
                     }
                 }
             }
             observations.clear();
         }
-        //Remove Meals before first Bg entry
-        for (int i = 0; i < mealTreatments.size(); i++) {
-            if (mealTreatments.get(i).getTimestamp().getTime() / 60000  < firstTime){
-                mealTreatments.remove(i);
-                i--;
-            } else {
-                break;
-            }
-
-        }
-
-        return mealTreatments;
+        
+        return meals;
     }
 }
