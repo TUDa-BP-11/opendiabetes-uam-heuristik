@@ -1,8 +1,8 @@
 package de.opendiabetes.vault.main.math;
 
+import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.parser.Profile;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -12,18 +12,18 @@ import java.util.List;
 public class BasalCalculatorTools {
 
     /**
-     * Shortens the duration of all entries to their next treatment
-     * and adjusts the values of the entries accordingly.
+     * Shortens the duration of all entries to their next treatment and adjusts
+     * the values of the entries accordingly.
      *
      * @param basalTreatments sorted list of vault entries with type
-     *                        {@link VaultEntryType#BASAL_MANUAL}
-     * @return list of vault entries whose duration won't exceeds the timestamp of their next entries.
+     * {@link VaultEntryType#BASAL_MANUAL}
+     * @return list of vault entries whose duration won't exceeds the timestamp
+     * of their next entries.
      */
     public static List<VaultEntry> adjustBasalTreatments(List<VaultEntry> basalTreatments) {
         List<VaultEntry> result = new ArrayList<>();
-        //VaultEntry current;
 
-        if (basalTreatments.size() > 0) {
+        if (!basalTreatments.isEmpty()) {
             for (int i = 0; i < basalTreatments.size() - 1; i++) {
                 VaultEntry current = basalTreatments.get(i);
                 VaultEntry next = basalTreatments.get(i + 1);
@@ -52,13 +52,13 @@ public class BasalCalculatorTools {
             }
             result.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, last.getTimestamp(), last.getValue(), last.getValue2()));
         }
-
         return result;
     }
 
     /**
-     * Calculates the difference between Temp Basal Treatments and the basal rates given in the profile.
-     * The values of the resulting List is in units per minute.
+     * Calculates the difference between Temp Basal Treatments and the basal
+     * rates given in the profile. The values of the resulting List is in units
+     * per minute.
      *
      * @param basalTreatments list of VaultEntries with type
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_MANUAL}
@@ -67,7 +67,7 @@ public class BasalCalculatorTools {
      * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public static List<VaultEntry> calcBasalDifference(List<VaultEntry> basalTreatments, Profile profile) {
-        if (!profile.getTimezone().equals(ZoneId.of("Zulu"))){
+        if (!profile.getTimezone().equals(ZoneId.of("Zulu"))) {
             throw new IllegalArgumentException("profile Timezone should be Zulu, make sure to run toZulu() before.");
         }
         if (profile.getBasalProfiles().size() < 1) {
@@ -98,8 +98,8 @@ public class BasalCalculatorTools {
     }
 
     /**
-     * Calculate the difference between Temp Basal Treatments and the basal rates.
-     * Is called recursively if one of the given times is exceeded.
+     * Calculate the difference between Temp Basal Treatments and the basal
+     * rates. Is called recursively if one of the given times is exceeded.
      *
      * @param entry entry to add
      * @param list result list

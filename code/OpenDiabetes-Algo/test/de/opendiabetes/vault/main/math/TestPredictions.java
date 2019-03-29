@@ -2,14 +2,15 @@ package de.opendiabetes.vault.main.math;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.util.TimestampUtils;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestPredictions {
@@ -99,6 +100,41 @@ public class TestPredictions {
         assertEquals(expected, Predictions.predict(time * 60000, meals, boli, basals, sens, insDuration, carbRatio, absorptionTime, peak), 0.1);
     }
 
+    @Test
+    public void testCummulativeMealPredict() {
+        double sens = 35;
+        double carb = 10;
+        int absTime = 120;
+        int peak = 55;
+        int insDur = 180;
+        int timestamp = 15 * 60 * 1000;
+        int value = 50;
 
+        double delta = 1e-7;
 
+        List<VaultEntry> testMeals = new ArrayList<>();
+        List<VaultEntry> boli = new ArrayList<>();
+        List<VaultEntry> basals = new ArrayList<>();
+        testMeals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(timestamp)), value));
+        RealVector mealTimes = new ArrayRealVector();
+        mealTimes = mealTimes.append(timestamp/60000);
+        RealVector mealValues = new ArrayRealVector();
+        mealValues = mealValues.append(value);
+
+        RealVector timesV = new ArrayRealVector();
+
+        double[] predictResults = new double[50];
+        double[] cmpResults;
+
+        for (int i = 0; i < 50; i++) {
+            timesV = timesV.append(i * 5);
+            double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, sens, insDur, carb, absTime, peak);
+            predictResults[i] = d;
+        }
+
+        RealVector cmp = Predictions.cumulativeMealPredict(timesV, mealTimes, mealValues, sens, carb, absTime);
+        cmpResults = cmp.toArray();
+
+        assertArrayEquals(cmpResults, predictResults, delta);
+    }
 }
