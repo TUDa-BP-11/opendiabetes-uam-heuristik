@@ -8,4 +8,4 @@ git pull
 npm install
 
 # start server in background
-npm run start &
+npm run start > server.log 2>&1 &

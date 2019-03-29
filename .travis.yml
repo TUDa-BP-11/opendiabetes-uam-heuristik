@@ -19,6 +19,9 @@ script:
 after_script:
   - cat code/*/dist/TEST-*.txt
 
+after_failure:
+  - cat cgm-remote-monitor/server.log
+
 env:
   global:
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
