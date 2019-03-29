@@ -256,7 +256,7 @@ public class Predictions {
      * @param insSensitivityFactor insulin to blood glucose factor
      * @param carbRatio            carb to insulin ratio
      * @param absorptionTime       carb absorption time
-     * @return one column of the Jacoby matrix derived with regard to mealTime
+     * @return one column of the Jacobi matrix derived with regard to mealTime
      */
     private static double[] carbsOnBoard_dt(RealVector times, double mealTime, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         double[] cob_dt = new double[times.getDimension()];
@@ -282,7 +282,7 @@ public class Predictions {
      * @param insSensitivityFactor insulin to blood glucose factor
      * @param carbRatio            carb to insulin ratio
      * @param absorptionTime       carb absorption time
-     * @return one column of the Jacoby matrix derived with regard to x
+     * @return one column of the Jacobi matrix derived with regard to x
      */
     private static double[] carbsOnBoard_dx(RealVector times, double mealTime, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         double[] cob_dx = new double[times.getDimension()];
