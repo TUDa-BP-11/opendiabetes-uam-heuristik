@@ -46,11 +46,6 @@ public class TestAlgorithms {
         List<VaultEntry> resultMeals;
         algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        System.out.println("LineTest #meals:"+ resultMeals.size());
-        System.out.println("LineTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("LineTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("LineTest starttime:"+ algorithm.getStartTime());
-        System.out.println("LineTest startvalue:"+ algorithm.getStartValue());
         assertEquals(0, resultMeals.size());
 
         algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
