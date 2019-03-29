@@ -72,7 +72,7 @@ public class Predictions {
         double IOBWeight;
         if (timeFromEvent <= 0) {
             IOBWeight = 1;
-        } else if (timeFromEvent >= insDuration) { //timeFromEvent < 0 ||
+        } else if (timeFromEvent >= insDuration) {
             IOBWeight = 0;
         } else {
             //Time constant of exp decay
