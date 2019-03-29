@@ -6,6 +6,7 @@ before_install:
   - tar -xzf apache-ant-1.10.5-bin.tar.gz
   - export PATH=`pwd`/apache-ant-1.10.5/bin:$PATH
   - echo $(ant -version)
+  - nvm install 10.15.3
 
 install:
   - chmod -R 755 lib/junit/
