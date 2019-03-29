@@ -191,6 +191,8 @@ public class Predictions {
                 deltaBGC(timeFromEvent, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime);
     }
      */
+
+
     public static RealVector cumulativeMealPredict(RealVector times, RealVector mealTimes, RealVector mealValues, double insSensitivityFactor, double carbRatio, long absorptionTime) {
         int N = mealTimes.getDimension();
         int Nt = times.getDimension();

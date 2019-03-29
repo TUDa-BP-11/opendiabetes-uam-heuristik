@@ -94,9 +94,11 @@ public class TestPredictions {
                 + Predictions.deltaBGI(time - bolusTime, bolusValue, sens, insDuration, peak)
                 + Predictions.deltatempBGI(time - basalTime, basalValue, sens, insDuration, peak, 0, basalDuration);
 
-        assertEquals(0, Predictions.predict(0, meals, boli, basals, sens, insDuration, carbRatio, absorptionTime, peak), 0.1);
+        assertEquals(0, Predictions.predict(0, meals, boli, basals, sens, insDuration, carbRatio, absorptionTime, peak));
 
         assertEquals(expected, Predictions.predict(time * 60000, meals, boli, basals, sens, insDuration, carbRatio, absorptionTime, peak), 0.1);
     }
+
+
 
 }
