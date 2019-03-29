@@ -44,21 +44,21 @@ public class TestAlgorithms {
         
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
+//        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
+//
+//        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
+//
+//        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
+//
+//        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
 
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
@@ -73,21 +73,21 @@ public class TestAlgorithms {
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
-
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        assertEquals(0, resultMeals.size());
+//        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
+//
+//        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
+//
+//        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
+//
+//        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        assertEquals(0, resultMeals.size());
 
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
@@ -115,59 +115,59 @@ public class TestAlgorithms {
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        result = 0;
-        resTime = 0;
-        System.out.println("oneMealTest #meals:"+ resultMeals.size());
-        System.out.println("oneMealTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("oneMealTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("oneMealTest time:"+ testMeals.get(0).getTimestamp().toString());
-        System.out.println("oneMealTest value:"+ testMeals.get(0).getValue());
-
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }
-        resTime /= resultMeals.size();
-        assertEquals(timestamp, resTime, timeDelta);
-        assertEquals(value, result, valueDelta);
-
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        result = 0;
-        resTime = 0;
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }
-        resTime /= resultMeals.size();
-        assertEquals(timestamp, resTime, timeDelta);
-        assertEquals(value, result, valueDelta);
-
-        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        result = 0;
-        resTime = 0;
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }
-        resTime /= resultMeals.size();
-        assertEquals(timestamp, resTime, timeDelta);
-        assertEquals(value, result, valueDelta);
-
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals); //remove?
-        resultMeals = algorithm.calculateMeals();
-        result = 0;
-        resTime = 0;
-        for (int i = 0; i < resultMeals.size(); i++) {
-            result += resultMeals.get(i).getValue();
-            resTime += resultMeals.get(i).getTimestamp().getTime();
-        }
-        resTime /= resultMeals.size();
-        //assertEquals(timestamp, resTime, timeDelta);
-        //assertEquals(value, result, valueDelta);
+//        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        result = 0;
+//        resTime = 0;
+//        System.out.println("oneMealTest #meals:"+ resultMeals.size());
+//        System.out.println("oneMealTest time:"+ resultMeals.get(0).getTimestamp().toString());
+//        System.out.println("oneMealTest value:"+ resultMeals.get(0).getValue());
+//        System.out.println("oneMealTest time:"+ testMeals.get(0).getTimestamp().toString());
+//        System.out.println("oneMealTest value:"+ testMeals.get(0).getValue());
+//
+//        for (int i = 0; i < resultMeals.size(); i++) {
+//            result += resultMeals.get(i).getValue();
+//            resTime += resultMeals.get(i).getTimestamp().getTime();
+//        }
+//        resTime /= resultMeals.size();
+//        assertEquals(timestamp, resTime, timeDelta);
+//        assertEquals(value, result, valueDelta);
+//
+//        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        result = 0;
+//        resTime = 0;
+//        for (int i = 0; i < resultMeals.size(); i++) {
+//            result += resultMeals.get(i).getValue();
+//            resTime += resultMeals.get(i).getTimestamp().getTime();
+//        }
+//        resTime /= resultMeals.size();
+//        assertEquals(timestamp, resTime, timeDelta);
+//        assertEquals(value, result, valueDelta);
+//
+//        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        result = 0;
+//        resTime = 0;
+//        for (int i = 0; i < resultMeals.size(); i++) {
+//            result += resultMeals.get(i).getValue();
+//            resTime += resultMeals.get(i).getTimestamp().getTime();
+//        }
+//        resTime /= resultMeals.size();
+//        assertEquals(timestamp, resTime, timeDelta);
+//        assertEquals(value, result, valueDelta);
+//
+//        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals); //remove?
+//        resultMeals = algorithm.calculateMeals();
+//        result = 0;
+//        resTime = 0;
+//        for (int i = 0; i < resultMeals.size(); i++) {
+//            result += resultMeals.get(i).getValue();
+//            resTime += resultMeals.get(i).getTimestamp().getTime();
+//        }
+//        resTime /= resultMeals.size();
+//        //assertEquals(timestamp, resTime, timeDelta);
+//        //assertEquals(value, result, valueDelta);
 
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals); //remove?
         resultMeals = algorithm.calculateMeals();
@@ -205,31 +205,31 @@ public class TestAlgorithms {
         }
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-
-        
-        System.out.println("randomizedCurveTest #meals:"+ resultMeals.size());
-        System.out.println("randomizedCurveTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("randomizedCurveTest time:"+ testMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:"+ testMeals.get(0).getValue());
-        
+//        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//
+//        
+//        System.out.println("randomizedCurveTest #meals:"+ resultMeals.size());
+//        System.out.println("randomizedCurveTest time:"+ resultMeals.get(0).getTimestamp().toString());
+//        System.out.println("randomizedCurveTest value:"+ resultMeals.get(0).getValue());
+//        System.out.println("randomizedCurveTest time:"+ testMeals.get(0).getTimestamp().toString());
+//        System.out.println("randomizedCurveTest value:"+ testMeals.get(0).getValue());
+//        
+////        checkMeals(timeDelta, valueDelta, resultMeals);
+//
+//        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
 //        checkMeals(timeDelta, valueDelta, resultMeals);
-
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        checkMeals(timeDelta, valueDelta, resultMeals);
-
-        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        checkMeals(timeDelta, valueDelta, resultMeals);
-
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        for (VaultEntry meal : testMeals) {
-            //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
-        }
+//
+//        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        checkMeals(timeDelta, valueDelta, resultMeals);
+//
+//        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        for (VaultEntry meal : testMeals) {
+//            //checkMealsAround(timeDelta, valueDelta, resultMeals, meal);
+//        }
 
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
@@ -264,37 +264,37 @@ public class TestAlgorithms {
 
         Algorithm algorithm;
         List<VaultEntry> resultMeals, disturbedMeals;
-        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        algorithm = new LMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
-        disturbedMeals = algorithm.calculateMeals();
-        for (VaultEntry meal : resultMeals) {
-            checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
-        }
-
-        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
-        disturbedMeals = algorithm.calculateMeals();
-        for (VaultEntry meal : resultMeals) {
-            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
-        }
-
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
-        disturbedMeals = algorithm.calculateMeals();
-        for (VaultEntry meal : resultMeals) {
-            checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
-        }
-
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
-        resultMeals = algorithm.calculateMeals();
-        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
-        disturbedMeals = algorithm.calculateMeals();
-        for (VaultEntry meal : resultMeals) {
-            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
-        }
+//        algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        algorithm = new LMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
+//        disturbedMeals = algorithm.calculateMeals();
+//        for (VaultEntry meal : resultMeals) {
+//            checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+//        }
+//
+//        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        algorithm = new MinimumAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
+//        disturbedMeals = algorithm.calculateMeals();
+//        for (VaultEntry meal : resultMeals) {
+//            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+//        }
+//
+//        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
+//        disturbedMeals = algorithm.calculateMeals();
+//        for (VaultEntry meal : resultMeals) {
+//            checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+//        }
+//
+//        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        resultMeals = algorithm.calculateMeals();
+//        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
+//        disturbedMeals = algorithm.calculateMeals();
+//        for (VaultEntry meal : resultMeals) {
+//            //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
+//        }
 
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();

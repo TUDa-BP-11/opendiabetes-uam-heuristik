@@ -138,18 +138,18 @@ public class Main {
 //        algoList.add(algo);
 //        cgpmList.add(cgpm);
 
-        algo = new OldLMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
-        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
-        cgpm.title("OldLMAlgo");
-        algoList.add(algo);
-        cgpmList.add(cgpm);
-        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
-        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
-                profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
-        cgpm.title("LMAlgo");
-        algoList.add(algo);
-        cgpmList.add(cgpm);
+//        algo = new OldLMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
+//        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+//                profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
+//        cgpm.title("OldLMAlgo");
+//        algoList.add(algo);
+//        cgpmList.add(cgpm);
+//        algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
+//        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
+//                profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
+//        cgpm.title("LMAlgo");
+//        algoList.add(algo);
+//        cgpmList.add(cgpm);
         ErrorCalc errorCalc = new ErrorCalc();
 
         Snippet s;

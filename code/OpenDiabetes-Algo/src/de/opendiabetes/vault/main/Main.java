@@ -196,11 +196,11 @@ public class Main {
      * Use this method to register more algorithms
      */
     private static void registerAlgorithms() {
-        algorithms.put("lm", LMAlgo.class);
-        algorithms.put("min", MinimumAlgo.class);
-        algorithms.put("poly", PolyCurveFitterAlgo.class);
+//        algorithms.put("lm", LMAlgo.class);
+//        algorithms.put("min", MinimumAlgo.class);
+//        algorithms.put("poly", PolyCurveFitterAlgo.class);
         algorithms.put("qr", QRAlgo.class);
-        algorithms.put("oldlm", OldLMAlgo.class);
+//        algorithms.put("oldlm", OldLMAlgo.class);
     }
 
     /**
