@@ -37,22 +37,22 @@ db.treatments.insert([
 // Meal Treatments
 db.treatments.insert([
     {
-        "created_at": "2019-01-01T12:00:00Z",
-        "timestamp": "2019-01-01T12:00:00Z",
+        "created_at": "2019-01-01T12:05:00Z",
+        "timestamp": "2019-01-01T12:05:00Z",
         "eventType": "Meal Bolus",
         "carbs": 30,
         "absorptionTime": 180
     },
     {
-        "created_at": "2019-01-01T12:30:00Z",
-        "timestamp": "2019-01-01T12:30:00Z",
+        "created_at": "2019-01-01T12:35:00Z",
+        "timestamp": "2019-01-01T12:35:00Z",
         "eventType": "Meal Bolus",
         "carbs": 10,
         "absorptionTime": 180
     },
     {
-        "created_at": "2019-01-01T13:00:00Z",
-        "timestamp": "2019-01-01T13:00:00Z",
+        "created_at": "2019-01-01T13:05:00Z",
+        "timestamp": "2019-01-01T13:05:00Z",
         "eventType": "Meal Bolus",
         "carbs": 20,
         "absorptionTime": 180
@@ -61,22 +61,22 @@ db.treatments.insert([
 // Bolus Treatments
 db.treatments.insert([
     {
-        "created_at": "2019-01-01T12:00:00Z",
-        "timestamp": "2019-01-01T12:00:00Z",
+        "created_at": "2019-01-01T12:10:00Z",
+        "timestamp": "2019-01-01T12:10:00Z",
         "eventType": "Correction Bolus",
         "programmed": 1,
         "insulin": 1
     },
     {
-        "created_at": "2019-01-01T12:30:00Z",
-        "timestamp": "2019-01-01T12:30:00Z",
+        "created_at": "2019-01-01T12:40:00Z",
+        "timestamp": "2019-01-01T12:40:00Z",
         "eventType": "Correction Bolus",
         "programmed": 2,
         "insulin": 2
     },
     {
-        "created_at": "2019-01-01T13:00:00Z",
-        "timestamp": "2019-01-01T13:00:00Z",
+        "created_at": "2019-01-01T13:10:00Z",
+        "timestamp": "2019-01-01T13:10:00Z",
         "eventType": "Correction Bolus",
         "programmed": 3,
         "insulin": 3
