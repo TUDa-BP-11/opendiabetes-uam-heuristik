@@ -239,10 +239,10 @@ public class Predictions {
         int N = mealTimes.getDimension();
         RealMatrix J = new Array2DRowRealMatrix(times.getDimension(), 2 * N);
         for (int i = 0; i < N; i++) {
-            double t0 = mealTimes.getEntry(i);
+            double mealTime = mealTimes.getEntry(i);
             double carbsAmount = mealValues.getEntry(i);
-            J.setColumn(i, carbsOnBoard_dt(times, t0, carbsAmount, insSensitivityFactor, carbRatio, absorptionTime));
-            J.setColumn(i + N, carbsOnBoard_dx(times, t0, insSensitivityFactor, carbRatio, absorptionTime));
+            J.setColumn(i, carbsOnBoard_dt(times, mealTime, carbsAmount, insSensitivityFactor, carbRatio, absorptionTime));
+            J.setColumn(i + N, carbsOnBoard_dx(times, mealTime, insSensitivityFactor, carbRatio, absorptionTime));
         }
         return J;
     }
@@ -259,19 +259,19 @@ public class Predictions {
      * @return one column of the Jacoby matrix derived with regard to mealTime
      */
     private static double[] carbsOnBoard_dt(RealVector times, double mealTime, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorptionTime) {
-        double[] cob_dt0 = new double[times.getDimension()];
+        double[] cob_dt = new double[times.getDimension()];
         double c = insSensitivityFactor / carbRatio * carbsAmount * 4 / absorptionTime;
         for (int i = 0; i < times.getDimension(); i++) {
-            double dt = times.getEntry(i) - mealTime;
-            if (dt < 0 || dt > absorptionTime) {
-                cob_dt0[i] = 0;
-            } else if (dt < absorptionTime / 2.0) {
-                cob_dt0[i] = -c * dt / absorptionTime;
-            } else if (dt >= absorptionTime / 2.0) {
-                cob_dt0[i] = c * (dt / absorptionTime - 1);
+            double deltaTime = times.getEntry(i) - mealTime;
+            if (deltaTime < 0 || deltaTime > absorptionTime) {
+                cob_dt[i] = 0;
+            } else if (deltaTime < absorptionTime / 2.0) {
+                cob_dt[i] = -c * deltaTime / absorptionTime;
+            } else if (deltaTime >= absorptionTime / 2.0) {
+                cob_dt[i] = c * (deltaTime / absorptionTime - 1);
             }
         }
-        return cob_dt0;
+        return cob_dt;
     }
 
     /**

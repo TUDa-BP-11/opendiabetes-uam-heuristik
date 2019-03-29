@@ -117,7 +117,7 @@ public class TestPredictions {
         List<VaultEntry> basals = new ArrayList<>();
         testMeals.add(new VaultEntry(VaultEntryType.MEAL_MANUAL, TimestampUtils.createCleanTimestamp(new Date(timestamp)), value));
         RealVector mealTimes = new ArrayRealVector();
-        mealTimes = mealTimes.append(timestamp/60000);
+        mealTimes = mealTimes.append(timestamp / 60000);
         RealVector mealValues = new ArrayRealVector();
         mealValues = mealValues.append(value);
 
