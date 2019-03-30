@@ -119,12 +119,4 @@ public class NightscoutDataProvider implements DataProvider {
         }
         return profile;
     }
-
-    public TemporalAccessor getLatest() {
-        return latest;
-    }
-
-    public TemporalAccessor getOldest() {
-        return oldest;
-    }
 }

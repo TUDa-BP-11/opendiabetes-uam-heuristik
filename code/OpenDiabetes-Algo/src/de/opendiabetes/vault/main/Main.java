@@ -224,7 +224,7 @@ public class Main {
             NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
             return;
         }
-        
+
         // init
         initLogger(config);
 
