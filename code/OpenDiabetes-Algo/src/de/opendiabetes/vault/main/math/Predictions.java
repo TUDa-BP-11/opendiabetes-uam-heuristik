@@ -213,10 +213,10 @@ public class Predictions {
         int Nt = times.getDimension();
         RealVector Y = new ArrayRealVector(Nt);
         for (int i = 0; i < N; i++) {
-            double t0 = mealTimes.getEntry(i);
+            double mealTime = mealTimes.getEntry(i);
             double carbsAmount = mealValues.getEntry(i);
             for (int j = 0; j < Nt; j++) {
-                Y.addToEntry(j, deltaBGC(times.getEntry(j) - t0, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime));
+                Y.addToEntry(j, deltaBGC(times.getEntry(j) - mealTime, insSensitivityFactor, carbRatio, carbsAmount, absorptionTime));
             }
         }
         return Y;
@@ -241,7 +241,7 @@ public class Predictions {
         for (int i = 0; i < N; i++) {
             double mealTime = mealTimes.getEntry(i);
             double carbsAmount = mealValues.getEntry(i);
-            J.setColumn(i, carbsOnBoard_dt0(times, mealTime, carbsAmount, insSensitivityFactor, carbRatio, absorptionTime));
+            J.setColumn(i, carbsOnBoard_dtMeal(times, mealTime, carbsAmount, insSensitivityFactor, carbRatio, absorptionTime));
             J.setColumn(i + N, carbsOnBoard_dx(times, mealTime, insSensitivityFactor, carbRatio, absorptionTime));
         }
         return J;
@@ -258,20 +258,20 @@ public class Predictions {
      * @param absorptionTime       carb absorption time
      * @return one column of the Jacobi matrix derived with regard to mealTime
      */
-    private static double[] carbsOnBoard_dt0(RealVector times, double mealTime, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorptionTime) {
-        double[] cob_dt0 = new double[times.getDimension()];
+    private static double[] carbsOnBoard_dtMeal(RealVector times, double mealTime, double carbsAmount, double insSensitivityFactor, double carbRatio, long absorptionTime) {
+        double[] cob_dtMeal = new double[times.getDimension()];
         double c = insSensitivityFactor / carbRatio * carbsAmount * 4 / absorptionTime;
         for (int i = 0; i < times.getDimension(); i++) {
             double deltaTime = times.getEntry(i) - mealTime;
             if (deltaTime < 0 || deltaTime > absorptionTime) {
-                cob_dt0[i] = 0;
+                cob_dtMeal[i] = 0;
             } else if (deltaTime < absorptionTime / 2.0) {
-                cob_dt0[i] = -c * deltaTime / absorptionTime;
+                cob_dtMeal[i] = -c * deltaTime / absorptionTime;
             } else if (deltaTime >= absorptionTime / 2.0) {
-                cob_dt0[i] = c * (deltaTime / absorptionTime - 1);
+                cob_dtMeal[i] = c * (deltaTime / absorptionTime - 1);
             }
         }
-        return cob_dt0;
+        return cob_dtMeal;
     }
 
     /**
