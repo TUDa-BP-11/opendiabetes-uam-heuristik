@@ -1,13 +1,12 @@
 package de.opendiabetes.vault.main.math;
 
 import de.opendiabetes.vault.container.VaultEntry;
-
-import java.util.List;
-
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+
+import java.util.List;
 
 public class Predictions {
 
@@ -23,8 +22,7 @@ public class Predictions {
      * @param insDuration          effective insulin duration
      * @param carbRatio            carb to insulin ratio
      * @param absorptionTime       carb absorption time
-     * @param peak                 duration in minutes until insulin action reaches it’s peak
-     *                             activity level
+     * @param peak                 duration in minutes until insulin action reaches it’s peak activity level
      * @return predicted blood glucose value
      */
     public static double predict(long time, List<VaultEntry> mealTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments, double insSensitivityFactor, double insDuration, double carbRatio, double absorptionTime, double peak) {
@@ -163,7 +161,6 @@ public class Predictions {
      */
     public static double deltatempBGI(double timeFromEvent, double tempInsAmount, double insSensitivityFactor, double insDuration, double peak, double startTime, double endTime) {
         return -tempInsAmount * insSensitivityFactor * ((endTime - startTime) - integrateIob(startTime, endTime, insDuration, timeFromEvent, peak));
-        //return -tempInsAmount * insSensitivityFactor * ((endTime - startTime) - 1.0 / 100.0 * integrateIob(startTime, endTime, insDuration, timeFromEvent));
     }
 
     /**
