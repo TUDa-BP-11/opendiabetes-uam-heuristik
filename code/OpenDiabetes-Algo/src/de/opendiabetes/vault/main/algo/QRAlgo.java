@@ -5,13 +5,28 @@ import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
-import org.apache.commons.math3.linear.*;
 
 import java.util.Date;
 import java.util.List;
 
 import static java.lang.Math.pow;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.DecompositionSolver;
+import org.apache.commons.math3.linear.QRDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+
+/**
+ * The algorithm calculates meals based on curve fitting using QR decomposition.
+ * It fits the parabolic first half of the COB-curve to a time-limitted part of
+ * the glucose signal under consideration of insulin values and previously
+ * estimated meals. It estimates a meal value for the current sample time from
+ * the quadratic constant of the parabolic equation. For more information please
+ * visit our github wiki:
+ * https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki/Algorithm
+ */
 public class QRAlgo extends Algorithm {
 
     /**

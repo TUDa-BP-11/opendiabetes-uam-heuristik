@@ -10,7 +10,11 @@ import de.opendiabetes.vault.util.TimestampUtils;
 import java.time.LocalTime;
 import java.time.ZoneId;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
@@ -176,7 +180,7 @@ public class TestAlgorithms {
             result += resultMeals.get(i).getValue();
             resTime += resultMeals.get(i).getTimestamp().getTime();
         }
-        System.out.println(resultMeals);
+//        System.out.println(resultMeals);
         resTime /= resultMeals.size();
         //assertEquals(timestamp, resTime, timeDelta);
         //assertEquals(value, result, valueDelta);

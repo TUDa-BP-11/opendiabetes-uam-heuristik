@@ -14,6 +14,13 @@ import java.util.List;
 
 import static java.lang.Math.pow;
 
+/**
+ * The algorithm calculates meals based on a polynomial curve fitting.
+ * It fits the parabolic first half of the COB-curve to a time-limitted part of the glucose signal under consideration of insulin values and previously estimated meals. It estimates a meal with time and value from the constants of the parabolic equation.
+ * For more information please visit our github wiki:
+ * https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki/Algorithm
+ */
+
 public class PolyCurveFitterAlgo extends Algorithm {
 
     /**
