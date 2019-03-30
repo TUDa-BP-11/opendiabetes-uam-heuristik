@@ -1,0 +1,72 @@
+[
+  {
+    "type": "sgv",
+    "sgv": 80.0,
+    "date": 1552403254570,
+    "dateString": "2019-03-12T15:07:34.570Z",
+    "direction": "",
+    "trend": "",
+    "device": ""
+  },
+  {
+    "type": "sgv",
+    "sgv": 90.0,
+    "date": 1552402954570,
+    "dateString": "2019-03-12T15:02:34.570Z",
+    "direction": "",
+    "trend": "",
+    "device": ""
+  },
+  {
+    "insulin": 10.0,
+    "created_at": "2019-03-12T14:57:34Z",
+    "timestamp": "2019-03-12T14:57:34Z",
+    "programmed": 10.0,
+    "duration": 0,
+    "type": "normal",
+    "unabsorbed": 0,
+    "eventType": "Correction Bolus"
+  },
+  {
+    "insulin": 20.0,
+    "created_at": "2019-03-12T14:52:34Z",
+    "timestamp": "2019-03-12T14:52:34Z",
+    "programmed": 20.0,
+    "duration": 0,
+    "type": "normal",
+    "unabsorbed": 0,
+    "eventType": "Correction Bolus"
+  },
+  {
+    "carbs": 200.0,
+    "absorptionTime": 180,
+    "created_at": "2019-03-12T14:47:34Z",
+    "timestamp": "2019-03-12T14:47:34Z",
+    "eventType": "Meal Bolus"
+  },
+  {
+    "carbs": 250.0,
+    "absorptionTime": 180,
+    "created_at": "2019-03-12T14:42:34Z",
+    "timestamp": "2019-03-12T14:42:34Z",
+    "eventType": "Meal Bolus"
+  },
+  {
+    "eventType": "Temp Basal",
+    "rate": 0.8,
+    "duration": 30.0,
+    "created_at": "2019-03-12T14:37:34Z",
+    "timestamp": "2019-03-12T14:37:34Z",
+    "temp": "absolute",
+    "absolute": 0.8
+  },
+  {
+    "eventType": "Temp Basal",
+    "rate": 0.6348762378,
+    "duration": 20.0,
+    "created_at": "2019-03-12T14:32:34Z",
+    "timestamp": "2019-03-12T14:32:34Z",
+    "temp": "absolute",
+    "absolute": 0.6348762378
+  }
+]
