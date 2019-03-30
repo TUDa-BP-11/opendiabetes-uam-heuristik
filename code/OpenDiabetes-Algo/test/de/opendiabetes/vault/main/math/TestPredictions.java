@@ -147,15 +147,15 @@ public class TestPredictions {
 
         RealMatrix result = Predictions.jacobi(testTimes, mealTimes, mealValues, sens, carbRatio, absorptionTime);
 
-        assertEquals(-7.0/24.0, result.getEntry(0,0),1e-15);
-        assertEquals(0, result.getEntry(0,1));
-        assertEquals(0, result.getEntry(0,2));
-        assertEquals(-35.0/24.0, result.getEntry(1,0), 1e-15);
-        assertEquals(-7.0/36.0, result.getEntry(1,1), 1e-15);
-        assertEquals(0, result.getEntry(1,2));
-        assertEquals(0, result.getEntry(2,0));
-        assertEquals(-7.0/9.0, result.getEntry(2,1), 1e-15);
-        assertEquals(-7.0/36.0, result.getEntry(2,2), 1e-15);
+        assertEquals(-7.0 / 24.0, result.getEntry(0, 0), 1e-15);
+        assertEquals(0, result.getEntry(0, 1));
+        assertEquals(0, result.getEntry(0, 2));
+        assertEquals(-35.0 / 24.0, result.getEntry(1, 0), 1e-15);
+        assertEquals(-7.0 / 36.0, result.getEntry(1, 1), 1e-15);
+        assertEquals(0, result.getEntry(1, 2));
+        assertEquals(0, result.getEntry(2, 0));
+        assertEquals(-7.0 / 9.0, result.getEntry(2, 1), 1e-15);
+        assertEquals(-7.0 / 36.0, result.getEntry(2, 2), 1e-15);
 
         assertEquals(7.0 / 144.0, result.getEntry(0, 3), 1e-15);
         assertEquals(0, result.getEntry(0, 4));
