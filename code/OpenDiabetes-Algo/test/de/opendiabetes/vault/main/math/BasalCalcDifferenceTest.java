@@ -1,9 +1,8 @@
 package de.opendiabetes.vault.main.math;
 
-import de.opendiabetes.vault.main.math.BasalCalculatorTools;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.parser.Profile;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;
@@ -177,7 +176,7 @@ public class BasalCalcDifferenceTest {
         Profile profile3 = new Profile(ZoneId.of("Zulu"), 2, 2, basalProfiles);
         assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.calcBasalDifference(testTreatments, profile3));
 
-        basalProfiles.add(new Profile.BasalProfile(LocalTime.of(3,0),1));
+        basalProfiles.add(new Profile.BasalProfile(LocalTime.of(3, 0), 1));
         Profile profile4 = new Profile(ZoneId.of("Zulu"), 2, 2, basalProfiles);
         assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.calcBasalDifference(testTreatments, profile4));
 

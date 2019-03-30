@@ -140,12 +140,12 @@ public class TestPredictions {
     }
 
     @Test
-    public void jacobiTest(){
+    public void jacobiTest() {
         RealVector mealValues = new ArrayRealVector(new double[]{30.0, 20.0, 10.0});
         RealVector mealTimes = new ArrayRealVector(new double[]{0, 40, 100});
         RealVector testTimes = new ArrayRealVector(new double[]{10, 50, 120});
 
-        RealMatrix result = Predictions.jacobi(testTimes,mealTimes,mealValues,sens,carbRatio,absorptionTime);
+        RealMatrix result = Predictions.jacobi(testTimes, mealTimes, mealValues, sens, carbRatio, absorptionTime);
 
         assertEquals(-7.0/24.0, result.getEntry(0,0),1e-15);
         assertEquals(0, result.getEntry(0,1));
@@ -157,15 +157,15 @@ public class TestPredictions {
         assertEquals(-7.0/9.0, result.getEntry(2,1), 1e-15);
         assertEquals(-7.0/36.0, result.getEntry(2,2), 1e-15);
 
-        assertEquals(7.0/144.0, result.getEntry(0,3),1e-15);
-        assertEquals(0, result.getEntry(0,4));
-        assertEquals(0, result.getEntry(0,5));
-        assertEquals(175.0/144.0, result.getEntry(1,3), 1e-15);
-        assertEquals(7.0/144.0, result.getEntry(1,4), 1e-15);
-        assertEquals(0, result.getEntry(1,5));
-        assertEquals(35.0/10.0, result.getEntry(2,3));
-        assertEquals(49.0/18.0, result.getEntry(2,4), 1e-15);
-        assertEquals(7.0/36.0, result.getEntry(2,5), 1e-15);
+        assertEquals(7.0 / 144.0, result.getEntry(0, 3), 1e-15);
+        assertEquals(0, result.getEntry(0, 4));
+        assertEquals(0, result.getEntry(0, 5));
+        assertEquals(175.0 / 144.0, result.getEntry(1, 3), 1e-15);
+        assertEquals(7.0 / 144.0, result.getEntry(1, 4), 1e-15);
+        assertEquals(0, result.getEntry(1, 5));
+        assertEquals(35.0 / 10.0, result.getEntry(2, 3));
+        assertEquals(49.0 / 18.0, result.getEntry(2, 4), 1e-15);
+        assertEquals(7.0 / 36.0, result.getEntry(2, 5), 1e-15);
     }
 
     @Test
