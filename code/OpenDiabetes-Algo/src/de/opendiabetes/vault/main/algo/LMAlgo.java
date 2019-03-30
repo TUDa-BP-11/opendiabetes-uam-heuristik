@@ -37,11 +37,9 @@ public class LMAlgo extends Algorithm {
         RealVector ve;
         RealVector times;
         RealVector delta;
-        Double e_old;
+        double e_old;
         double deltaBg, currentValue;
 
-        UnivariateStatistic bias = new Mean();
-        UnivariateStatistic std = new StandardDeviation();
         meals.clear();
         offset = 0;
         ve = new ArrayRealVector();
@@ -171,12 +169,8 @@ public class LMAlgo extends Algorithm {
                     mealValues = mealValues.add(delta.getSubVector(N, N));
 
                     // restrict solutions to boundary conditions
-                    mealTimes.mapToSelf((x) -> {
-                        return Math.min(lastTime, Math.max(firstMealTime, x));
-                    });
-                    mealValues.mapToSelf((x) -> {
-                        return Math.max(0, x);
-                    });
+                    mealTimes.mapToSelf((x) -> Math.min(lastTime, Math.max(firstMealTime, x)));
+                    mealValues.mapToSelf((x) -> Math.max(0, x));
                 }
 
                 // keep track of best result
@@ -197,7 +191,6 @@ public class LMAlgo extends Algorithm {
                     offset += x * profile.getSensitivity() / profile.getCarbratio();
                     continue;
                 }
-//                t = Math.max(t, firstTime);
                 int idx = uniqueMealTimes.indexOf(t);
                 if (idx != -1) {
                     uniqueMealValues.set(idx, uniqueMealValues.get(idx) + x);
