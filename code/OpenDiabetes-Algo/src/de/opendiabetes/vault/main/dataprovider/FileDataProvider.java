@@ -133,12 +133,4 @@ public class FileDataProvider implements DataProvider {
         }
         return profile;
     }
-
-    public TemporalAccessor getLatest() {
-        return latest;
-    }
-
-    public TemporalAccessor getOldest() {
-        return oldest;
-    }
 }
