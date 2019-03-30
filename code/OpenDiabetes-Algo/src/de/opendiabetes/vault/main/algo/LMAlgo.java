@@ -125,7 +125,7 @@ public class LMAlgo extends Algorithm {
                 int N_iter = 10000;
                 for (int i = 0; i < N_iter; i++) {
                     // estimate Jacobian with current mealValues and mealTimes
-                    J = Predictions.Jacobian(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
+                    J = Predictions.jacobi(times, mealTimes, mealValues, profile.getSensitivity(), profile.getCarbratio(), absorptionTime);
 
                     // estimate error vector with current mealValues and mealTimes
                     e = nkbg.subtract(Predictions.cumulativeMealPredict(times, mealTimes, mealValues, profile.getSensitivity(),
