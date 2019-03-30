@@ -49,11 +49,6 @@ public class TestNightscoutDataProvider {
     @Test
     public void testArguments() {
         NightscoutDataProvider dataProvider = new NightscoutDataProvider();
-        // latest is before oldest
-        assertThrows(DataProviderException.class, () ->
-                dataProvider.setConfig(getConfig("http://localhost", "", 1,
-                        LocalDateTime.now().minus(1, ChronoUnit.MINUTES),
-                        LocalDateTime.now())));
         // batch size is 0
         assertThrows(DataProviderException.class, () ->
                 dataProvider.setConfig(getConfig("http://localhost", "", 0,
