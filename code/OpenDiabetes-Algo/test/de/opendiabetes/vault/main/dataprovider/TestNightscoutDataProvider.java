@@ -81,32 +81,21 @@ public class TestNightscoutDataProvider {
     }
 
     @Test
-    public void testBolus() throws DataProviderException, NightscoutIOException, NightscoutServerException {
+    public void testTreatments() throws DataProviderException, NightscoutIOException, NightscoutServerException {
         List<VaultEntry> expected = api.getTreatments(latest, oldest, 50);
 
         if (expected.isEmpty()) {
             assertThrows(DataProviderException.class, () -> dataProvider.getBolusTreatments());
         } else {
-            expected = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL)).collect(Collectors.toList());
             Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
+            
+            List<VaultEntry> expectedBolus = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL)).collect(Collectors.toList());
+            List<VaultEntry> actualBolus = dataProvider.getBolusTreatments();
+            assertIterableEquals(expectedBolus, actualBolus);
 
-            List<VaultEntry> actual = dataProvider.getBolusTreatments();
-            assertIterableEquals(expected, actual);
-        }
-    }
-
-    @Test
-    public void testBasal() throws DataProviderException, NightscoutIOException, NightscoutServerException {
-        List<VaultEntry> expected = api.getTreatments(latest, oldest, 50);
-
-        if (expected.isEmpty()) {
-            assertThrows(DataProviderException.class, () -> dataProvider.getBasalTreatments());
-        } else {
-            expected = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL)).collect(Collectors.toList());
-            Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
-
-            List<VaultEntry> actual = dataProvider.getBasalTreatments();
-            assertIterableEquals(expected, actual);
+            List<VaultEntry> expectedBasal = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL)).collect(Collectors.toList());
+            List<VaultEntry> actualBasal = dataProvider.getBasalTreatments();
+            assertIterableEquals(expectedBasal, actualBasal);
         }
     }
 
