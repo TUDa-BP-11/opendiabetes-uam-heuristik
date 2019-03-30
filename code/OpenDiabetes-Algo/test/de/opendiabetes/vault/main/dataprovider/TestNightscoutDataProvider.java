@@ -69,30 +69,45 @@ public class TestNightscoutDataProvider {
     @Test
     public void testEntries() throws DataProviderException, NightscoutIOException, NightscoutServerException {
         List<VaultEntry> expected = api.getEntries(latest, oldest, 50);
-        Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
 
-        List<VaultEntry> actual = dataProvider.getGlucoseMeasurements();
-        assertIterableEquals(expected, actual);
+        if (expected.isEmpty()) {
+            assertThrows(DataProviderException.class, () -> dataProvider.getGlucoseMeasurements());
+        } else {
+            Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
+
+            List<VaultEntry> actual = dataProvider.getGlucoseMeasurements();
+            assertIterableEquals(expected, actual);
+        }
     }
 
     @Test
     public void testBolus() throws DataProviderException, NightscoutIOException, NightscoutServerException {
         List<VaultEntry> expected = api.getTreatments(latest, oldest, 50);
-        expected = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL)).collect(Collectors.toList());
-        Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
 
-        List<VaultEntry> actual = dataProvider.getBolusTreatments();
-        assertIterableEquals(expected, actual);
+        if (expected.isEmpty()) {
+            assertThrows(DataProviderException.class, () -> dataProvider.getBolusTreatments());
+        } else {
+            expected = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL)).collect(Collectors.toList());
+            Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
+
+            List<VaultEntry> actual = dataProvider.getBolusTreatments();
+            assertIterableEquals(expected, actual);
+        }
     }
 
     @Test
     public void testBasal() throws DataProviderException, NightscoutIOException, NightscoutServerException {
         List<VaultEntry> expected = api.getTreatments(latest, oldest, 50);
-        expected = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL)).collect(Collectors.toList());
-        Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
 
-        List<VaultEntry> actual = dataProvider.getBasalTreatments();
-        assertIterableEquals(expected, actual);
+        if (expected.isEmpty()) {
+            assertThrows(DataProviderException.class, () -> dataProvider.getBasalTreatments());
+        } else {
+            expected = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BASAL_MANUAL)).collect(Collectors.toList());
+            Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
+
+            List<VaultEntry> actual = dataProvider.getBasalTreatments();
+            assertIterableEquals(expected, actual);
+        }
     }
 
     @Test
