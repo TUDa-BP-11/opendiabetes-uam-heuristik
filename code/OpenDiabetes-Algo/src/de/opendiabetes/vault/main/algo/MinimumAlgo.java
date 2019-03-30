@@ -10,6 +10,19 @@ import java.util.List;
 
 public class MinimumAlgo extends Algorithm {
 
+    /**
+     * Creates a new MinimumAlgo instance. The given data is checked for
+     * validity.
+     *
+     * @param absorptionTime carbohydrate absorption time
+     * @param insulinDuration effective insulin duration
+     * @param peak duration in minutes until insulin action reaches its peak
+     * activity level
+     * @param profile user profile
+     * @param glucoseMeasurements known glucose measurements
+     * @param bolusTreatments known bolus treatments
+     * @param basalTreatments known basal treatments
+     */
     public MinimumAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }

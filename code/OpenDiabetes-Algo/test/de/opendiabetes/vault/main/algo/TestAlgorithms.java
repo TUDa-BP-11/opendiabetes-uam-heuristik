@@ -41,7 +41,7 @@ public class TestAlgorithms {
         for (int i = 0; i < 200; i++) {
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), 100));
         }
-        
+
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
         algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
@@ -107,7 +107,6 @@ public class TestAlgorithms {
             double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime, peak);
 
 //            entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, TimestampUtils.createCleanTimestamp(new Date(i * 5 * 60 * 1000)), d + startValue));
-
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
         }
         double result;
@@ -119,11 +118,11 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
-        System.out.println("oneMealTest #meals:"+ resultMeals.size());
-        System.out.println("oneMealTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("oneMealTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("oneMealTest time:"+ testMeals.get(0).getTimestamp().toString());
-        System.out.println("oneMealTest value:"+ testMeals.get(0).getValue());
+        System.out.println("oneMealTest #meals:" + resultMeals.size());
+        System.out.println("oneMealTest time:" + resultMeals.get(0).getTimestamp().toString());
+        System.out.println("oneMealTest value:" + resultMeals.get(0).getValue());
+        System.out.println("oneMealTest time:" + testMeals.get(0).getTimestamp().toString());
+        System.out.println("oneMealTest value:" + testMeals.get(0).getValue());
 
         for (int i = 0; i < resultMeals.size(); i++) {
             result += resultMeals.get(i).getValue();
@@ -208,15 +207,13 @@ public class TestAlgorithms {
         algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
 
-        
-        System.out.println("randomizedCurveTest #meals:"+ resultMeals.size());
-        System.out.println("randomizedCurveTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("randomizedCurveTest time:"+ testMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:"+ testMeals.get(0).getValue());
-        
-//        checkMeals(timeDelta, valueDelta, resultMeals);
+        System.out.println("randomizedCurveTest #meals:" + resultMeals.size());
+        System.out.println("randomizedCurveTest time:" + resultMeals.get(0).getTimestamp().toString());
+        System.out.println("randomizedCurveTest value:" + resultMeals.get(0).getValue());
+        System.out.println("randomizedCurveTest time:" + testMeals.get(0).getTimestamp().toString());
+        System.out.println("randomizedCurveTest value:" + testMeals.get(0).getValue());
 
+//        checkMeals(timeDelta, valueDelta, resultMeals);
         algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);

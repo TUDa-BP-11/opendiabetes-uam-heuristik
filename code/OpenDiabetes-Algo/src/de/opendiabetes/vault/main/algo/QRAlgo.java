@@ -14,6 +14,18 @@ import static java.lang.Math.pow;
 
 public class QRAlgo extends Algorithm {
 
+    /**
+     * Creates a new QRAlgo instance. The given data is checked for validity.
+     *
+     * @param absorptionTime carbohydrate absorption time
+     * @param insulinDuration effective insulin duration
+     * @param peak duration in minutes until insulin action reaches its peak
+     * activity level
+     * @param profile user profile
+     * @param glucoseMeasurements known glucose measurements
+     * @param bolusTreatments known bolus treatments
+     * @param basalTreatments known basal treatments
+     */
     public QRAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
@@ -59,7 +71,6 @@ public class QRAlgo extends Algorithm {
                     //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
                     //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
-
 
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
                                 profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);

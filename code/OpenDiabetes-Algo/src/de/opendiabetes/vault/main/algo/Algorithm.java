@@ -23,13 +23,14 @@ public abstract class Algorithm {
     /**
      * Creates a new Algorithm instance. The given data is checked for validity.
      *
-     * @param absorptionTime      carbohydrate absorption time
-     * @param insulinDuration     insulin duration
-     * @param peak                duration in minutes until insulin action reaches it’s peak activity level
-     * @param profile             user profile
+     * @param absorptionTime carbohydrate absorption time
+     * @param insulinDuration insulin duration
+     * @param peak duration in minutes until insulin action reaches it’s peak
+     * activity level
+     * @param profile user profile
      * @param glucoseMeasurements glucose measurements
-     * @param bolusTreatments     bolus treatments
-     * @param basalTreatments     raw basal treatments
+     * @param bolusTreatments bolus treatments
+     * @param basalTreatments raw basal treatments
      */
     public Algorithm(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         this.absorptionTime = absorptionTime;
@@ -45,7 +46,8 @@ public abstract class Algorithm {
     /**
      * Set a list of glucose measurements for calculation
      *
-     * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
+     * @param entries list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      * @throws IllegalArgumentException if the entries are not sorted
      */
     public void setGlucoseMeasurements(List<VaultEntry> entries) {
@@ -67,7 +69,8 @@ public abstract class Algorithm {
     /**
      * Set a list of insulin bolus treatments for calculation
      *
-     * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
+     * @param bolusTreatments list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
     public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
         if (!bolusTreatments.isEmpty()) {
@@ -85,9 +88,12 @@ public abstract class Algorithm {
     }
 
     /**
-     * Set a list of insulin bolus treatments for calculation. Adjusts all treatments using {@link BasalCalculatorTools#calcBasalDifference(List, Profile)}.
+     * Set a list of insulin bolus treatments for calculation. Adjusts all
+     * treatments using
+     * {@link BasalCalculatorTools#calcBasalDifference(List, Profile)}.
      *
-     * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     * @param basalTreatments list of VaultEntries with type
+     * {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
     public void setBasalTreatments(List<VaultEntry> basalTreatments) {
         basalTreatments = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
@@ -117,8 +123,8 @@ public abstract class Algorithm {
         }
         int startIndex = getStartIndex();
         double startValue;
-        startValue = glucose.get(startIndex).getValue() -
-                Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
+        startValue = glucose.get(startIndex).getValue()
+                - Predictions.predict(glucose.get(startIndex).getTimestamp().getTime(), meals, bolusTreatments, basalTreatments, profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
         return startValue;
     }
@@ -203,7 +209,8 @@ public abstract class Algorithm {
     }
 
     /**
-     * @return Duration in minutes until insulin action reaches it’s peak activity level
+     * @return Duration in minutes until insulin action reaches it’s peak
+     * activity level
      */
     public double getPeak() {
         return peak;
