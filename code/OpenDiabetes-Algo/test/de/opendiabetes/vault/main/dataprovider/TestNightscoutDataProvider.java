@@ -83,7 +83,7 @@ public class TestNightscoutDataProvider {
             assertThrows(DataProviderException.class, () -> dataProvider.getBolusTreatments());
         } else {
             Collections.reverse(expected);   // dataprovider sorts ascending, api returns descending
-            
+
             List<VaultEntry> expectedBolus = expected.stream().filter(e -> e.getType().equals(VaultEntryType.BOLUS_NORMAL)).collect(Collectors.toList());
             List<VaultEntry> actualBolus = dataProvider.getBolusTreatments();
             assertIterableEquals(expectedBolus, actualBolus);
