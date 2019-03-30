@@ -51,7 +51,6 @@ public class LMAlgo extends Algorithm {
         final long startTime = getStartTime() / 60000;
         final long lastTime = glucose.get(glucose.size() - 1).getTimestamp().getTime() / 60000;
         final long firstMealTime = startTime - absorptionTime;
-        final long lastMealTime = lastTime;
         long currentTime;
 
         VaultEntry current;
@@ -111,7 +110,7 @@ public class LMAlgo extends Algorithm {
                 mealTimes = new ArrayRealVector(N);
                 mealValues = new ArrayRealVector(N);
 
-                long step = (lastMealTime - firstMealTime) / N;
+                long step = (lastTime - firstMealTime) / N;
                 I = MatrixUtils.createRealIdentityMatrix(2 * N);
 
                 for (int i = 0; i < N; i++) {
@@ -173,7 +172,7 @@ public class LMAlgo extends Algorithm {
 
                     // restrict solutions to boundary conditions
                     mealTimes.mapToSelf((x) -> {
-                        return Math.min(lastMealTime, Math.max(firstMealTime, x));
+                        return Math.min(lastTime, Math.max(firstMealTime, x));
                     });
                     mealValues.mapToSelf((x) -> {
                         return Math.max(0, x);
