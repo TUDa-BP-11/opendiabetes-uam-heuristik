@@ -325,7 +325,6 @@ public class Main {
         NSApi.LOGGER.log(Level.INFO, "The bias is %.1f mg/dl.", errorCalc.getMeanError());
 
         meals.sort(new SortVaultEntryByDate().reversed());
-        System.out.println("meals:" + meals.toString());
         //Output
         if (config.contains("output-file")) {
             try {
