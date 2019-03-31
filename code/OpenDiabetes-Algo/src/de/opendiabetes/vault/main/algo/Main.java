@@ -120,34 +120,34 @@ public class Main {
 //        algo = new MinimumAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
 //        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
 //                profile.getCarbratio(), ABSORBTION_TIME);
-//        cgpm.title("MinimumAlgo");
+//        cgpm.setTitle("MinimumAlgo");
 //        algoList.add(algo);
 //        cgpmList.add(cgpm);
 //     
 //        algo = new PolyCurveFitterAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
 //        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
 //                profile.getCarbratio(), ABSORBTION_TIME);
-//        cgpm.title("PolyCurveFitterAlgo");
+//        cgpm.setTitle("PolyCurveFitterAlgo");
 //        algoList.add(algo);
 //        cgpmList.add(cgpm);
 //
 //        algo = new QRAlgo(ABSORBTION_TIME, INSULIN_DURATION, profile);
 //        cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
 //                profile.getCarbratio(), ABSORBTION_TIME);
-//        cgpm.title("QRAlgo");
+//        cgpm.setTitle("QRAlgo");
 //        algoList.add(algo);
 //        cgpmList.add(cgpm);
 
         algo = new FixedLMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
-        cgpm.title("FixedLMAlgo");
+        cgpm.setTitle("FixedLMAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
         algo = new LMAlgo(ABSORBTION_TIME, INSULIN_DURATION, INSULIN_PEAK, profile, entries, bolusTreatment, basalTreatments);
         cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), INSULIN_DURATION,
                 profile.getCarbratio(), ABSORBTION_TIME, INSULIN_PEAK);
-        cgpm.title("LMAlgo");
+        cgpm.setTitle("LMAlgo");
         algoList.add(algo);
         cgpmList.add(cgpm);
         ErrorCalc errorCalc = new ErrorCalc();

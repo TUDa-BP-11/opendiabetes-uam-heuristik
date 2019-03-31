@@ -382,6 +382,12 @@ public class Main {
         dataProvider.close();
     }
 
+    /**
+     * Calculates the max time gap between two neighbors in the given list.
+     *
+     * @param   list List of Vault Entries
+     * @return  max time gap between two neighbors
+     */
     private static long getMaxTimeGap(List<VaultEntry> list) {
         long maxTimeGap = 0;
         if (list.size() < 2) {

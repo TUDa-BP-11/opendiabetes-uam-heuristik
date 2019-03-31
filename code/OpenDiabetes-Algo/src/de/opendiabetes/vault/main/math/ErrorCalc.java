@@ -111,6 +111,11 @@ public class ErrorCalc {
         return stdDeviationPercent;
     }
 
+    /**
+     * calculates error statistics for a given calculation of meals
+     *
+     * @param algo  Algorithm that is used for claculation
+     */
     public void calculateError(Algorithm algo) {
         errorValues = new ArrayList<>();
         errorPercent = new ArrayList<>();

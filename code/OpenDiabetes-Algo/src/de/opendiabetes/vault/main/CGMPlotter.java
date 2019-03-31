@@ -54,14 +54,14 @@ public class CGMPlotter {
     }
 
     /**
-     * @param plotHist
-     * @param bStartValue
-     * @param bStartTime
-     * @param sensitivity
-     * @param insDuration
-     * @param carbratio
-     * @param absorptionTime
-     * @param peak
+     * @param plotHist          should an error histogram be plotted
+     * @param bStartValue       uses a different start value that is better suited for highlighting the error
+     * @param bStartTime        uses a different start time that is better suited for highlighting the error
+     * @param sensitivity       insulin to blood glucose factor
+     * @param insDuration       effective insulin duration
+     * @param carbratio         carb to insulin ratio
+     * @param absorptionTime    carb absorption time
+     * @param peak              duration in minutes until insulin action reaches it’s peak activity level
      */
     public CGMPlotter(boolean plotHist, boolean bStartValue, boolean bStartTime, double sensitivity, int insDuration, double carbratio, int absorptionTime, double peak) {
         this();
@@ -75,15 +75,14 @@ public class CGMPlotter {
         this.peak = peak;
     }
 
-    /**
-     * @param title
-     */
-    public void title(String title) {
+    public void setTitle(String title) {
         this.title = title;
     }
 
     /**
-     * @param algo
+     * add Data to plot
+     *
+     * @param algo algorithm used for calculation
      */
     public void add(Algorithm algo) {
         List<VaultEntry> entries = algo.getGlucose();
@@ -98,6 +97,16 @@ public class CGMPlotter {
         this.add(entries, basalTreatments, bolusTreatments, meals, startIndex, startValue);
     }
 
+    /**
+     * add Data to plot
+     *
+     * @param entries           list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
+     * @param basalTreatments   list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
+     * @param bolusTreatments   list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
+     * @param meals             list of calculated meals with type {@link de.opendiabetes.vault.container.VaultEntryType#MEAL_MANUAL}
+     * @param startIndex        index after all data is to be added to plot
+     * @param startValue        value that should be added to all predicted values
+     */
     public void add(List<VaultEntry> entries, List<VaultEntry> basalTreatments, List<VaultEntry> bolusTreatments, List<VaultEntry> meals, int startIndex, double startValue) {
 
         plotPlot = true;
@@ -168,6 +177,11 @@ public class CGMPlotter {
         this.bolusValues.add(bolusValuesSnippet);
     }
 
+    /**
+     *
+     * @param errorValues   list of errors relative to blood glucose curve
+     * @param errorDate     the related dates
+     */
     public void addError(List<Double> errorValues, List<Date> errorDate) {
         plotError = true;
         this.errorValues.add(errorValues);
@@ -178,6 +192,11 @@ public class CGMPlotter {
 
     }
 
+    /**
+     * plots the given data
+     *
+     * @return generated python script that produces this plot
+     */
     public String showAll() throws IOException, PythonExecutionException {
 
         String scriptLines = "";
