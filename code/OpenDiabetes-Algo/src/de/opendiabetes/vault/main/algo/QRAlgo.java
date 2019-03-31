@@ -63,8 +63,6 @@ public class QRAlgo extends Algorithm {
         double nextPrediction;
         double deltaBg;
 
-        final long firstTime = glucose.get(0).getTimestamp().getTime() / 60000 + Math.max(absorptionTime, insulinDuration);
-
         meals.clear();
         int startIndex = getStartIndex();
         double startValue = glucose.get(startIndex).getValue();
@@ -82,9 +80,6 @@ public class QRAlgo extends Algorithm {
 
                     next = glucose.get(j);
                     nextTime = next.getTimestamp().getTime() / 60000;
-//                    double nextValue = Filter.getMedian(glucose, j, 5, absorptionTime / 3);
-                    //double nextValue = Filter.getAverage(glucose, j, 5, absorptionTime / 3);
-                    //double nextValue = next.getValue();
                     if (nextTime <= currentLimit) {
 
                         nextPrediction = Predictions.predict(next.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,

@@ -161,7 +161,6 @@ public class LMAlgo extends Algorithm {
 
                     // stop iterations if error vector magnitude changes less than 1e-7
                     if (i > 10 && Math.abs(abs_e - e_old) < 1e-7) {
-//                        NSApi.LOGGER.log(Level.INFO, "Converged N: %d, max err: %.2f%%, bias: %.2f, std: %.2f, i: %d", new Object[]{N, err * 100, bias.evaluate(e.toArray()), std.evaluate(e.toArray()), i});
                         break;
                     }
                     // store current error

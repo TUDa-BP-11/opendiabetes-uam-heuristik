@@ -248,7 +248,7 @@ public class Main {
             return;
         }
 
-        if (config.getDouble("peak") == config.getInt("insDuration") / 2.0) {
+        if ((int) config.getDouble("peak") == config.getInt("insDuration") / 2) {
             NSApi.LOGGER.warning("Peak can not be exactly half the duration of the insulin used");
             return;
         }
