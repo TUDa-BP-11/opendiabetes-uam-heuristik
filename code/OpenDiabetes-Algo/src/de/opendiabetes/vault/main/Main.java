@@ -315,7 +315,7 @@ public class Main {
         long maxTimeGap = getMaxTimeGap(glucoseMeasurements);
         if (maxTimeGap < MAX_TIME_GAP) {
             NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
-        } //TODO warning msg
+        }
         else {
             NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         }
@@ -370,12 +370,8 @@ public class Main {
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {
                 cgpm.showAll();
-//                if (pythonDebug) {
-//                    exportPlotScript(cgpm.showAll());
-//                }
-
-            } catch (IOException | PythonExecutionException ex) {
-                NSApi.LOGGER.log(Level.SEVERE, null, ex);//TODO msg?
+            } catch (IOException | PythonExecutionException e) {
+                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);//TODO msg?
             }
         }
         dataProvider.close();
@@ -434,11 +430,4 @@ public class Main {
         }
     }
      */
-    private static void exportPlotScript(String scriptLines) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
-            writer.write(scriptLines);
-        } catch (IOException ex) {
-            NSApi.LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
 }
