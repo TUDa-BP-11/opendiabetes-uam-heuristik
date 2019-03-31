@@ -172,7 +172,6 @@ public class TestAlgorithms {
             result += resultMeals.get(i).getValue();
             resTime += resultMeals.get(i).getTimestamp().getTime();
         }
-//        System.out.println(resultMeals);
         resTime /= resultMeals.size();
         //assertEquals(timestamp, resTime, timeDelta);
         //assertEquals(value, result, valueDelta);

@@ -15,6 +15,7 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.vault.parser.Profile;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -258,7 +259,7 @@ public class Main {
             return;
         }
 
-        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
+        if (!config.contains("target-host") && !config.getBoolean("plot") && !config.contains("output-file")) {
             NSApi.LOGGER.log(Level.WARNING, "The calculated meals will only be logged and not saved anywhere else");
         }
 
@@ -323,6 +324,8 @@ public class Main {
         NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.1f mg/dl.", errorCalc.getStdDeviation());
         NSApi.LOGGER.log(Level.INFO, "The bias is %.1f mg/dl.", errorCalc.getMeanError());
 
+        meals.sort(new SortVaultEntryByDate().reversed());
+        System.out.println("meals:" + meals.toString());
         //Output
         if (config.contains("output-file")) {
             try {
@@ -348,6 +351,8 @@ public class Main {
                 }
             }
         }
+
+        meals.sort(new SortVaultEntryByDate());
 
         if (meals.size() > 0) {
             NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
