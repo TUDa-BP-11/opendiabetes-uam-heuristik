@@ -39,6 +39,9 @@
             <filelist dir="${nsapi.dir}/dist">
                 <file name="${nsapi.jar}"/>
             </filelist>
+            <filelist dir="${libraries.dir}">
+                <file name="Matplotlib4j.jar"/>
+            </filelist>
         </unjar>
     </target>
 
