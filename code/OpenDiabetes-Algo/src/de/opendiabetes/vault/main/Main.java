@@ -284,6 +284,7 @@ public class Main {
         List<VaultEntry> glucoseMeasurements, bolusTreatments, basalTreatments;
         try {
             profile = dataProvider.getProfile();
+            profile.toZulu();
             glucoseMeasurements = dataProvider.getGlucoseMeasurements();
             bolusTreatments = dataProvider.getBolusTreatments();
             basalTreatments = dataProvider.getBasalTreatments();
