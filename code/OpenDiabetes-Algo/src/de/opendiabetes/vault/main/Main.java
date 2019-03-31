@@ -363,7 +363,7 @@ public class Main {
         });
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), insulinDuration,
+            CGMPlotter cgpm = new CGMPlotter(false, true, true, profile.getSensitivity(), insulinDuration,
                     profile.getCarbratio(), absorptionTime, peak);
             cgpm.add(algorithm);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
