@@ -96,8 +96,8 @@ public class BasalCalculatorTools {
     }
 
     /**
-     * Calculate the difference between Temp Basal Treatments and the basal
-     * rates. Is called recursively if one of the given times is exceeded.
+     * Calculate the difference between Temp Basal Treatments and the basal rates.
+     * Is called recursively if one of the given times is exceeded.
      *
      * @param entry entry to add
      * @param list result list
