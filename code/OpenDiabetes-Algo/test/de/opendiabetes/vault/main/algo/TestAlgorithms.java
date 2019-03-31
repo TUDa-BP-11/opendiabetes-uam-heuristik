@@ -103,8 +103,6 @@ public class TestAlgorithms {
         int startValue = 100;
         for (int i = -30; i < 50; i++) {
             double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime, peak);
-
-//            entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, TimestampUtils.createCleanTimestamp(new Date(i * 5 * 60 * 1000)), d + startValue));
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
         }
         double result;
@@ -204,14 +202,8 @@ public class TestAlgorithms {
         List<VaultEntry> resultMeals;
         algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
+        checkMeals(timeDelta, valueDelta, resultMeals);
 
-        System.out.println("randomizedCurveTest #meals:" + resultMeals.size());
-        System.out.println("randomizedCurveTest time:" + resultMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:" + resultMeals.get(0).getValue());
-        System.out.println("randomizedCurveTest time:" + testMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:" + testMeals.get(0).getValue());
-
-//        checkMeals(timeDelta, valueDelta, resultMeals);
         algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
