@@ -7,6 +7,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Representation of a Nightscout Profile.
@@ -98,6 +99,19 @@ public class Profile {
 
         public double getValue() {
             return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BasalProfile that = (BasalProfile) o;
+            return Double.compare(that.value, value) == 0 && Objects.equals(start, that.start);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(start, value);
         }
     }
 

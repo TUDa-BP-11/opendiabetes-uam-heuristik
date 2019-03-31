@@ -15,10 +15,27 @@ import java.util.List;
 import static java.lang.Math.pow;
 
 /**
- * @author anna
+ * The algorithm calculates meals based on a polynomial curve fitting.
+ * It fits the parabolic first half of the COB-curve to a time-limitted part of the glucose signal under consideration of insulin values and previously estimated meals. It estimates a meal with time and value from the constants of the parabolic equation.
+ * For more information please visit our github wiki:
+ * https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki/Algorithm
  */
+
 public class PolyCurveFitterAlgo extends Algorithm {
 
+    /**
+     * Creates a new PolyCurveFitterAlgo instance. The given data is checked for
+     * validity.
+     *
+     * @param absorptionTime carbohydrate absorption time
+     * @param insulinDuration effective insulin duration
+     * @param peak duration in minutes until insulin action reaches its peak
+     * activity level
+     * @param profile user profile
+     * @param glucoseMeasurements known glucose measurements
+     * @param bolusTreatments known bolus treatments
+     * @param basalTreatments known basal treatments
+     */
     public PolyCurveFitterAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
@@ -70,7 +87,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
                 startValue = current.getValue();
                 //double deltaBg = Filter.getAverage(glucose, j, 5, 30) - Filter.getAverage(glucose, i, 5, 30);
                 //double deltaBg = next.getValue() - current.getValue();
-     currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
+                currentPrediction = Predictions.predict(current.getTimestamp().getTime(), meals, bolusTreatments, basalTreatments,
                         profile.getSensitivity(), insulinDuration, profile.getCarbratio(), absorptionTime, peak);
 
                 for (int j = i; j < glucose.size(); j++) {
@@ -109,7 +126,7 @@ public class PolyCurveFitterAlgo extends Algorithm {
             }
             observations.clear();
         }
-        
+
         return meals;
     }
 }

@@ -4,17 +4,15 @@ import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
-
 import de.opendiabetes.vault.util.TimestampUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
-
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 public class TestAlgorithms {
 
@@ -41,14 +39,14 @@ public class TestAlgorithms {
         for (int i = 0; i < 200; i++) {
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), 100));
         }
-        
+
         Algorithm algorithm;
         List<VaultEntry> resultMeals;
         algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+        algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
@@ -77,7 +75,7 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+        algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
@@ -107,7 +105,6 @@ public class TestAlgorithms {
             double d = Predictions.predict(i * 5 * 60 * 1000, testMeals, boli, basals, profile.getSensitivity(), insDur, profile.getCarbratio(), absTime, peak);
 
 //            entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, TimestampUtils.createCleanTimestamp(new Date(i * 5 * 60 * 1000)), d + startValue));
-
             entries.add(new VaultEntry(VaultEntryType.GLUCOSE_CGM, new Date(i * 5 * 60 * 1000), d + startValue));
         }
         double result;
@@ -119,11 +116,11 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
-        System.out.println("oneMealTest #meals:"+ resultMeals.size());
-        System.out.println("oneMealTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("oneMealTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("oneMealTest time:"+ testMeals.get(0).getTimestamp().toString());
-        System.out.println("oneMealTest value:"+ testMeals.get(0).getValue());
+        System.out.println("oneMealTest #meals:" + resultMeals.size());
+        System.out.println("oneMealTest time:" + resultMeals.get(0).getTimestamp().toString());
+        System.out.println("oneMealTest value:" + resultMeals.get(0).getValue());
+        System.out.println("oneMealTest time:" + testMeals.get(0).getTimestamp().toString());
+        System.out.println("oneMealTest value:" + testMeals.get(0).getValue());
 
         for (int i = 0; i < resultMeals.size(); i++) {
             result += resultMeals.get(i).getValue();
@@ -133,7 +130,7 @@ public class TestAlgorithms {
         assertEquals(timestamp, resTime, timeDelta);
         assertEquals(value, result, valueDelta);
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+        algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         result = 0;
         resTime = 0;
@@ -177,7 +174,7 @@ public class TestAlgorithms {
             result += resultMeals.get(i).getValue();
             resTime += resultMeals.get(i).getTimestamp().getTime();
         }
-        System.out.println(resultMeals);
+//        System.out.println(resultMeals);
         resTime /= resultMeals.size();
         //assertEquals(timestamp, resTime, timeDelta);
         //assertEquals(value, result, valueDelta);
@@ -208,16 +205,14 @@ public class TestAlgorithms {
         algorithm = new LMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
 
-        
-        System.out.println("randomizedCurveTest #meals:"+ resultMeals.size());
-        System.out.println("randomizedCurveTest time:"+ resultMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:"+ resultMeals.get(0).getValue());
-        System.out.println("randomizedCurveTest time:"+ testMeals.get(0).getTimestamp().toString());
-        System.out.println("randomizedCurveTest value:"+ testMeals.get(0).getValue());
-        
-//        checkMeals(timeDelta, valueDelta, resultMeals);
+        System.out.println("randomizedCurveTest #meals:" + resultMeals.size());
+        System.out.println("randomizedCurveTest time:" + resultMeals.get(0).getTimestamp().toString());
+        System.out.println("randomizedCurveTest value:" + resultMeals.get(0).getValue());
+        System.out.println("randomizedCurveTest time:" + testMeals.get(0).getTimestamp().toString());
+        System.out.println("randomizedCurveTest value:" + testMeals.get(0).getValue());
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+//        checkMeals(timeDelta, valueDelta, resultMeals);
+        algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         checkMeals(timeDelta, valueDelta, resultMeals);
 
@@ -280,9 +275,9 @@ public class TestAlgorithms {
             //checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);
         }
 
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+        algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
-        algorithm = new OldLMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
+        algorithm = new FixedLMAlgo(absTime, insDur, peak, profile, disturbedEntries, boli, basals);
         disturbedMeals = algorithm.calculateMeals();
         for (VaultEntry meal : resultMeals) {
             checkMealsAround(timeDelta, valueDelta, disturbedMeals, meal);

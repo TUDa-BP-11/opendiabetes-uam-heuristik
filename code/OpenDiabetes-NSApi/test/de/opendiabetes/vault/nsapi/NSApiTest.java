@@ -233,7 +233,7 @@ class NSApiTest {
 
     @Test
     void testSlice() throws NightscoutIOException, NightscoutServerException {
-        List<VaultEntry> entries = api.getEntries().getVaultEntries();
+        List<VaultEntry> entries = api.getEntries().find("dateString").lte(Instant.now().toString()).getVaultEntries();
         assumeFalse(entries.isEmpty());
 
         // split entries by day to test prefix

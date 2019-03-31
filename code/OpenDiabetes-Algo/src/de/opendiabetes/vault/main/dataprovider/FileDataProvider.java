@@ -3,8 +3,8 @@ package de.opendiabetes.vault.main.dataprovider;
 import com.martiansoftware.jsap.JSAPResult;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
-import de.opendiabetes.vault.main.algo.Main;
 import de.opendiabetes.vault.main.exception.DataProviderException;
+import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.nsapi.importer.NightscoutImporter;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.parser.ProfileParser;
@@ -22,9 +22,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Loads data from files
+ */
 public class FileDataProvider implements DataProvider {
 
     private Path entriesPath;
@@ -40,6 +42,14 @@ public class FileDataProvider implements DataProvider {
     private Profile profile;
     private NightscoutImporter importer;
 
+    /**
+     * Set the config for this data provider. Required arguments are: <br>
+     * Paths to files: <code>entries</code>, <code>treatments</code>, <code>profile</code><br>
+     * Times: <code>latest</code>, <code>oldest</code>
+     *
+     * @param config config result that was created using the main arguments
+     * @throws DataProviderException if arguments in the config are missing or invalid
+     */
     @Override
     public void setConfig(JSAPResult config) throws DataProviderException {
         if (!config.contains("entries") || !config.contains("treatments") || !config.contains("profile"))
@@ -66,6 +76,9 @@ public class FileDataProvider implements DataProvider {
         this.oldest = (ZonedDateTime) config.getObject("oldest");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<VaultEntry> getBasalTreatments() {
         if (treatments == null) {
@@ -83,6 +96,9 @@ public class FileDataProvider implements DataProvider {
         return rawBasals;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<VaultEntry> getGlucoseMeasurements() {
         if (entries == null) {
@@ -90,7 +106,7 @@ public class FileDataProvider implements DataProvider {
             try (InputStream stream = new FileInputStream(entriesPath.toString())) {
                 list = importer.importData(stream);
             } catch (IOException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                NSApi.LOGGER.log(Level.SEVERE, null, ex);
             }
             entries = list.stream()
                     .filter(e -> e.getType().equals(VaultEntryType.GLUCOSE_CGM))
@@ -106,10 +122,13 @@ public class FileDataProvider implements DataProvider {
         try (InputStream stream = new FileInputStream(treatmentsPath.toString())) {
             treatments = importer.importData(stream);
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            NSApi.LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<VaultEntry> getBolusTreatments() {
         if (treatments == null) {
@@ -126,21 +145,15 @@ public class FileDataProvider implements DataProvider {
         return bolusTreatments;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Profile getProfile() {
         if (profile == null) {
             ProfileParser parser = new ProfileParser();
             profile = parser.parseFile(profilePath);
-            profile.toZulu();
         }
         return profile;
-    }
-
-    public TemporalAccessor getLatest() {
-        return latest;
-    }
-
-    public TemporalAccessor getOldest() {
-        return oldest;
     }
 }

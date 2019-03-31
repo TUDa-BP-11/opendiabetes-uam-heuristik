@@ -1,9 +1,8 @@
 package de.opendiabetes.vault.main.math;
 
-import de.opendiabetes.vault.main.math.BasalCalculatorTools;
-import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.container.VaultEntryType;
+import de.opendiabetes.vault.parser.Profile;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;
@@ -40,6 +39,10 @@ public class BasalCalcDifferenceTest {
             testTreatments.add(entry);
             date = new Date(date.getTime() + duration * ONE_MINUTE);
         }
+
+        //This Entry should get removed
+        VaultEntry entry = new VaultEntry(VaultEntryType.BASAL_MANUAL, date, random.nextInt(10), 0);
+        testTreatments.add(entry);
 
         List<Profile.BasalProfile> basalProfiles = new ArrayList<>();
         Profile.BasalProfile basalProfile = new Profile.BasalProfile(LocalTime.of(0, 0), random.nextDouble());
@@ -152,5 +155,31 @@ public class BasalCalcDifferenceTest {
         assertEquals(entry.getValue2() / 2, resBasal.getValue2());
         assertEquals(entry.getTimestamp().getTime() + 10 * ONE_MINUTE, resBasal.getTimestamp().getTime());
         assertEquals(entry.getValue() / 20 - profileRate1 / 60, resBasal.getValue(), DELTA);
+    }
+
+    @Test
+    public void testExceptions() {
+        //No Entries in BasalProfiles
+        List<Profile.BasalProfile> basalProfiles = new ArrayList<>();
+        Profile profile = new Profile(ZoneId.of("Zulu"), 2, 2, basalProfiles);
+        List<VaultEntry> testTreatments = new ArrayList<>();
+        testTreatments.add(new VaultEntry(VaultEntryType.BASAL_MANUAL, new Date(0), 2, 30));
+        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.calcBasalDifference(testTreatments, profile));
+
+        //WrongTimezone
+        basalProfiles.add(new Profile.BasalProfile(LocalTime.of(0, 0), 0.5));
+        Profile profile2 = new Profile(ZoneId.of("GMT+1"), 2, 2, basalProfiles);
+        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.calcBasalDifference(testTreatments, profile2));
+
+        //Wrong Treatment Type
+        testTreatments.add(new VaultEntry(VaultEntryType.BOLUS_NORMAL, new Date(3000000), 2, 30));
+        Profile profile3 = new Profile(ZoneId.of("Zulu"), 2, 2, basalProfiles);
+        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.calcBasalDifference(testTreatments, profile3));
+
+        basalProfiles.add(new Profile.BasalProfile(LocalTime.of(3, 0), 1));
+        Profile profile4 = new Profile(ZoneId.of("Zulu"), 2, 2, basalProfiles);
+        assertThrows(IllegalArgumentException.class, () -> BasalCalculatorTools.calcBasalDifference(testTreatments, profile4));
+
+
     }
 }

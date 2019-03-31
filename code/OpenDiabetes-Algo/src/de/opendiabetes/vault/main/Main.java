@@ -16,8 +16,6 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.vault.parser.Profile;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
@@ -95,7 +93,7 @@ public class Main {
             .setStringParser(JSAP.DOUBLE_PARSER)
             .setLongFlag("peak")
             .setRequired(true)
-            .setDefault("55.0")
+            .setDefault("55")
             .setHelp("Duration in minutes until insulin action reaches it’s peak activity level");
 
     // Output
@@ -200,7 +198,7 @@ public class Main {
         algorithms.put("min", MinimumAlgo.class);
         algorithms.put("poly", PolyCurveFitterAlgo.class);
         algorithms.put("qr", QRAlgo.class);
-        algorithms.put("oldlm", OldLMAlgo.class);
+        algorithms.put("fixedlm", FixedLMAlgo.class);
     }
 
     /**
@@ -224,7 +222,7 @@ public class Main {
             NSApi.LOGGER.log(Level.INFO, "Algorithm summary:\n%s", algorithms.keySet());
             return;
         }
-        
+
         // init
         initLogger(config);
 
@@ -245,17 +243,12 @@ public class Main {
             return;
         }
 
-        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
-            NSApi.LOGGER.warning("Please specify at least one output for the results.");
-            return;
-        }
-
         if (config.getDouble("peak") <= 0 || config.getDouble("peak") >= config.getInt("insDuration")) {
-            NSApi.LOGGER.warning("Peak can not be less than or greater than the duration of the insulin used");
+            NSApi.LOGGER.warning("Peak can not be less than zero or greater than the duration of the insulin used");
             return;
         }
 
-        if (config.getDouble("peak") == config.getInt("insDuration") / 2) {
+        if (config.getDouble("peak") == config.getInt("insDuration") / 2.0) {
             NSApi.LOGGER.warning("Peak can not be exactly half the duration of the insulin used");
             return;
         }
@@ -264,6 +257,11 @@ public class Main {
             NSApi.LOGGER.warning("Oldest cannot be after latest");
             return;
         }
+
+        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
+            NSApi.LOGGER.log(Level.WARNING, "The calculated meals will only be logged and not saved anywhere else");
+        }
+
         //init DataProvider
         DataProvider dataProvider;
         try {
@@ -284,6 +282,7 @@ public class Main {
         List<VaultEntry> glucoseMeasurements, bolusTreatments, basalTreatments;
         try {
             profile = dataProvider.getProfile();
+            profile.toZulu();
             glucoseMeasurements = dataProvider.getGlucoseMeasurements();
             bolusTreatments = dataProvider.getBolusTreatments();
             basalTreatments = dataProvider.getBasalTreatments();
@@ -309,13 +308,10 @@ public class Main {
         List<VaultEntry> meals = algorithm.calculateMeals();
 
         //Logging
-        NSApi.LOGGER.log(Level.FINE, "calculated meals");
-
         long maxTimeGap = getMaxTimeGap(glucoseMeasurements);
         if (maxTimeGap < MAX_TIME_GAP) {
             NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
-        } //TODO warning msg
-        else {
+        } else {
             NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         }
 
@@ -369,12 +365,8 @@ public class Main {
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
             try {
                 cgpm.showAll();
-//                if (pythonDebug) {
-//                    exportPlotScript(cgpm.showAll());
-//                }
-
-            } catch (IOException | PythonExecutionException ex) {
-                NSApi.LOGGER.log(Level.SEVERE, null, ex);//TODO msg?
+            } catch (IOException | PythonExecutionException e) {
+                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             }
         }
         dataProvider.close();
@@ -433,11 +425,4 @@ public class Main {
         }
     }
      */
-    private static void exportPlotScript(String scriptLines) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./plotPlot.py"))) {
-            writer.write(scriptLines);
-        } catch (IOException ex) {
-            NSApi.LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
 }

@@ -16,6 +16,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Loads data from a Nightscout server
+ */
 public class NightscoutDataProvider implements DataProvider {
     private int batchSize;
     private TemporalAccessor latest;
@@ -28,6 +31,14 @@ public class NightscoutDataProvider implements DataProvider {
     private List<VaultEntry> basalTreatments;
     private Profile profile;
 
+    /**
+     * Set the config for this data provider. Required arguments are: <br>
+     * Nightscout: <code>host</code>, <code>secret</code> (optional)<br>
+     * Times: <code>latest</code>, <code>oldest</code>
+     *
+     * @param config config result that was created using the main arguments
+     * @throws DataProviderException if arguments in the config are missing or invalid
+     */
     @Override
     public void setConfig(JSAPResult config) throws DataProviderException {
         if (!config.contains("host"))
@@ -72,6 +83,9 @@ public class NightscoutDataProvider implements DataProvider {
             throw new DataProviderException(this, "No treatments found in Nightscout instance");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<VaultEntry> getGlucoseMeasurements() throws DataProviderException {
         if (entries == null)
@@ -82,6 +96,9 @@ public class NightscoutDataProvider implements DataProvider {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<VaultEntry> getBolusTreatments() throws DataProviderException {
         if (treatments == null)
@@ -94,6 +111,9 @@ public class NightscoutDataProvider implements DataProvider {
         return bolusTreatments;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<VaultEntry> getBasalTreatments() throws DataProviderException {
         if (treatments == null)
@@ -108,6 +128,9 @@ public class NightscoutDataProvider implements DataProvider {
         return basalTreatments;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Profile getProfile() throws DataProviderException {
         if (profile == null) {
@@ -118,13 +141,5 @@ public class NightscoutDataProvider implements DataProvider {
             }
         }
         return profile;
-    }
-
-    public TemporalAccessor getLatest() {
-        return latest;
-    }
-
-    public TemporalAccessor getOldest() {
-        return oldest;
     }
 }
