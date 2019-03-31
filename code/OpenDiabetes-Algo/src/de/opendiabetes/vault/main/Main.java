@@ -340,11 +340,17 @@ public class Main {
             if (nsApi.checkStatusOk()) {
                 try {
                     int batchsize = config.getInt("batchsize");
-                    nsApi.postTreatments(meals, batchsize);
+                    nsApi.postUnannouncedMeals(meals, algorithm.getClass().getName(), batchsize);
                     if (config.getBoolean("upload-all")) {
+                        bolusTreatments.sort(new SortVaultEntryByDate().reversed());
+                        basalTreatments.sort(new SortVaultEntryByDate().reversed());
+                        glucoseMeasurements.sort(new SortVaultEntryByDate().reversed());
                         nsApi.postTreatments(bolusTreatments, batchsize);
                         nsApi.postTreatments(basalTreatments, batchsize);
                         nsApi.postEntries(glucoseMeasurements, batchsize);
+                        bolusTreatments.sort(new SortVaultEntryByDate());
+                        basalTreatments.sort(new SortVaultEntryByDate());
+                        glucoseMeasurements.sort(new SortVaultEntryByDate());
                     }
                 } catch (NightscoutIOException | NightscoutServerException e) {
                     NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
