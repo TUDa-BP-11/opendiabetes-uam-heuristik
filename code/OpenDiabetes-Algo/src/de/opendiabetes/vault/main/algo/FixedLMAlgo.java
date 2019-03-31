@@ -5,23 +5,18 @@ import de.opendiabetes.vault.container.VaultEntryType;
 import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
+import org.apache.commons.math3.linear.*;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
 
 /**
  * The algorithm calculates meals based on the Levenberg-Marquardt algorithm.
  * For more information please visit our github wiki:
  * https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki/Algorithm
  */
-public class OldLMAlgo extends Algorithm {
+public class FixedLMAlgo extends Algorithm {
 
     /**
      * Creates a new OldAlgo instance. The given data is checked for validity.
@@ -35,7 +30,7 @@ public class OldLMAlgo extends Algorithm {
      * @param bolusTreatments known bolus treatments
      * @param basalTreatments known basal treatments
      */
-    public OldLMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
+    public FixedLMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
     }
 

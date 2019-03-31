@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class CGMPlotter {
 
     private String title = "";
-    private double sensitivity;
-    private double carbratio;
-    private int insDuration;
-    private int absorptionTime;
-    private double peak;
+    private final double sensitivity;
+    private final double carbratio;
+    private final int insDuration;
+    private final int absorptionTime;
+    private final double peak;
     private double maxMeal = 0;
     private Plot plt;
     private Plot histPlt;
@@ -61,6 +61,7 @@ public class CGMPlotter {
      * @param insDuration
      * @param carbratio
      * @param absorptionTime
+     * @param peak
      */
     public CGMPlotter(boolean plotHist, boolean bStartValue, boolean bStartTime, double sensitivity, int insDuration, double carbratio, int absorptionTime, double peak) {
         this();
@@ -206,14 +207,11 @@ public class CGMPlotter {
             plt.ylabel("IE/KE");
             for (int i = 0; i < mealTimes.size(); i++) {
                 if (i == 0) {
-                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("KE").marker("o").linestyle("").markersize("20").markerfacecolor("none"); //.color("red")
-                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").width(0.0035).label("IE");//.linestyle("").marker("_").markersize("3");
-
-                    //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").label("basal").marker("o");
+                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("KE").marker("o").linestyle("").markersize("20").markerfacecolor("none");
+                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").width(0.0035).label("IE");
                 } else {
-                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("o").linestyle("").markersize("20").markerfacecolor("none"); //.color("red")
-                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green");//.linestyle("").marker("_").markersize("3");
-                    //plt.plot().addDates(basalTimes.get(i)).add(basalValues.get(i)).color("cyan").linestyle("").marker("o");
+                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("o").linestyle("").markersize("20").markerfacecolor("none");
+                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green");
                 }
 
                 List<Double> t, y;
