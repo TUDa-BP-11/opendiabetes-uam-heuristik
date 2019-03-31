@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class CGMPlotter {
 
     private String title = "";
-    private final double sensitivity;
-    private final double carbratio;
-    private final int insDuration;
-    private final int absorptionTime;
-    private final double peak;
+    private double sensitivity;
+    private double carbratio;
+    private int insDuration;
+    private int absorptionTime;
+    private double peak;
     private double maxMeal = 0;
     private Plot plt;
     private Plot histPlt;
