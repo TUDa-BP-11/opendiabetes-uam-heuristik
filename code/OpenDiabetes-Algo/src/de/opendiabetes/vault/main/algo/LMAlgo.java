@@ -27,8 +27,7 @@ public class LMAlgo extends Algorithm {
      *
      * @param absorptionTime      carbohydrate absorption time
      * @param insulinDuration     effective insulin duration
-     * @param peak                duration in minutes until insulin action reaches its peak
-     *                            activity level
+     * @param peak                duration in minutes until insulin action reaches its peak activity level
      * @param profile             user profile
      * @param glucoseMeasurements known glucose measurements
      * @param bolusTreatments     known bolus treatments
@@ -156,7 +155,6 @@ public class LMAlgo extends Algorithm {
 
                     // stop iterations if error vector magnitude changes less than 1e-7
                     if (i > 10 && Math.abs(abs_e - e_old) < 1e-7) {
-//                        NSApi.LOGGER.log(Level.INFO, "Converged N: %d, max err: %.2f%%, bias: %.2f, std: %.2f, i: %d", new Object[]{N, err * 100, bias.evaluate(e.toArray()), std.evaluate(e.toArray()), i});
                         break;
                     }
                     // store current error
