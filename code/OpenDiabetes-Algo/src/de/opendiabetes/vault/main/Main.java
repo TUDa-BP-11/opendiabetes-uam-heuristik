@@ -16,8 +16,6 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.vault.parser.Profile;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
@@ -27,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static de.opendiabetes.vault.nsapi.Main.*;
 
@@ -201,7 +198,7 @@ public class Main {
         algorithms.put("min", MinimumAlgo.class);
         algorithms.put("poly", PolyCurveFitterAlgo.class);
         algorithms.put("qr", QRAlgo.class);
-        algorithms.put("oldlm", OldLMAlgo.class);
+        algorithms.put("fixedlm", FixedLMAlgo.class);
     }
 
     /**
@@ -262,7 +259,7 @@ public class Main {
         }
 
         if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
-            NSApi.LOGGER.log(Level.WARNING,"The calculated meals will only be logged and not saved anywhere else");
+            NSApi.LOGGER.log(Level.WARNING, "The calculated meals will only be logged and not saved anywhere else");
         }
 
         //init DataProvider
@@ -314,8 +311,7 @@ public class Main {
         long maxTimeGap = getMaxTimeGap(glucoseMeasurements);
         if (maxTimeGap < MAX_TIME_GAP) {
             NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
-        }
-        else {
+        } else {
             NSApi.LOGGER.log(Level.WARNING, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
         }
 
