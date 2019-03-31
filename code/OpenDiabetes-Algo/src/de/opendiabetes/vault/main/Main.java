@@ -310,8 +310,6 @@ public class Main {
         List<VaultEntry> meals = algorithm.calculateMeals();
 
         //Logging
-        NSApi.LOGGER.log(Level.FINE, "calculated meals");
-
         long maxTimeGap = getMaxTimeGap(glucoseMeasurements);
         if (maxTimeGap < MAX_TIME_GAP) {
             NSApi.LOGGER.log(Level.INFO, "The maximum gap in the blood glucose data is %d min.", maxTimeGap);
