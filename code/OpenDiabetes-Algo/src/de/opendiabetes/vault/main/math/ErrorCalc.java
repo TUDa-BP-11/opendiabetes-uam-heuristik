@@ -2,16 +2,16 @@ package de.opendiabetes.vault.main.math;
 
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.Algorithm;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import org.apache.commons.math3.stat.descriptive.UnivariateStatistic;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.Skewness;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class ErrorCalc {
 
@@ -114,7 +114,7 @@ public class ErrorCalc {
     /**
      * calculates error statistics for a given calculation of meals
      *
-     * @param algo  Algorithm that is used for claculation
+     * @param algo Algorithm that is used for claculation
      */
     public void calculateError(Algorithm algo) {
         errorValues = new ArrayList<>();
