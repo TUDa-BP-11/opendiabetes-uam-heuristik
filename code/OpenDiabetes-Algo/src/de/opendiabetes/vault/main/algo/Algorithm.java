@@ -48,7 +48,7 @@ public abstract class Algorithm {
      * @param entries list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#GLUCOSE_CGM}
      * @throws IllegalArgumentException if the entries are not sorted
      */
-    public void setGlucoseMeasurements(List<VaultEntry> entries) {
+    public final void setGlucoseMeasurements(List<VaultEntry> entries) {
         if (!entries.isEmpty()) {
             VaultEntry current = entries.get(0);
             for (VaultEntry entry : entries) {
@@ -69,7 +69,7 @@ public abstract class Algorithm {
      *
      * @param bolusTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BOLUS_NORMAL}
      */
-    public void setBolusTreatments(List<VaultEntry> bolusTreatments) {
+    public final void setBolusTreatments(List<VaultEntry> bolusTreatments) {
         if (!bolusTreatments.isEmpty()) {
             VaultEntry current = bolusTreatments.get(0);
             for (VaultEntry entry : bolusTreatments) {
@@ -89,7 +89,7 @@ public abstract class Algorithm {
      *
      * @param basalTreatments list of VaultEntries with type {@link de.opendiabetes.vault.container.VaultEntryType#BASAL_PROFILE}
      */
-    public void setBasalTreatments(List<VaultEntry> basalTreatments) {
+    public final void setBasalTreatments(List<VaultEntry> basalTreatments) {
         basalTreatments = BasalCalculatorTools.calcBasalDifference(BasalCalculatorTools.adjustBasalTreatments(basalTreatments), profile);
         this.basalTreatments = basalTreatments;
     }
