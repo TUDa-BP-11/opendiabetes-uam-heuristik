@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static de.opendiabetes.vault.nsapi.Main.*;
 
@@ -245,13 +246,8 @@ public class Main {
             return;
         }
 
-        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
-            NSApi.LOGGER.warning("Please specify at least one output for the results.");
-            return;
-        }
-
         if (config.getDouble("peak") <= 0 || config.getDouble("peak") >= config.getInt("insDuration")) {
-            NSApi.LOGGER.warning("Peak can not be less than or greater than the duration of the insulin used");
+            NSApi.LOGGER.warning("Peak can not be less than zero or greater than the duration of the insulin used");
             return;
         }
 
@@ -264,6 +260,11 @@ public class Main {
             NSApi.LOGGER.warning("Oldest cannot be after latest");
             return;
         }
+
+        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
+            NSApi.LOGGER.log(Level.WARNING,"The calculated meals will only be logged and not saved anywhere else");
+        }
+
         //init DataProvider
         DataProvider dataProvider;
         try {
@@ -369,7 +370,7 @@ public class Main {
             try {
                 cgpm.showAll();
             } catch (IOException | PythonExecutionException e) {
-                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);//TODO msg?
+                NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
             }
         }
         dataProvider.close();
