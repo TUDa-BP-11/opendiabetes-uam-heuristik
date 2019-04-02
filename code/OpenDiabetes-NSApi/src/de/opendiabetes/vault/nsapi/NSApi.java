@@ -6,7 +6,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 import com.mashape.unirest.request.HttpRequestWithBody;
 import de.opendiabetes.vault.container.VaultEntry;
@@ -179,7 +178,7 @@ public class NSApi {
         HttpResponse<InputStream> response;
         try {
             response = request.asBinary();
-        } catch (UnirestException e) {
+        } catch (Exception e) {
             throw new NightscoutIOException(e.getMessage());
         }
         if (response.getStatus() != 200)
