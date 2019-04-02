@@ -5,6 +5,7 @@ import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.Algorithm;
 import de.opendiabetes.vault.main.algo.LMAlgo;
+import de.opendiabetes.vault.main.algo.QRAlgo;
 import de.opendiabetes.vault.main.dataprovider.DataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
@@ -197,6 +198,7 @@ public class Main {
      */
     private static void registerAlgorithms() {
         algorithms.put("lm", LMAlgo.class);
+        algorithms.put("qr", QRAlgo.class);
     }
 
     /**
@@ -361,9 +363,7 @@ public class Main {
         } else {
             NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
         }
-        meals.forEach((meal) -> {
-            NSApi.LOGGER.log(Level.INFO, meal.toString());
-        });
+        meals.forEach((meal) -> NSApi.LOGGER.log(Level.INFO, meal.toString()));
 
         if (config.getBoolean("plot")) {
             CGMPlotter cgpm = new CGMPlotter(false, true, true, profile.getSensitivity(), insulinDuration,
@@ -377,13 +377,18 @@ public class Main {
             }
         }
         dataProvider.close();
+        try {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
     }
 
     /**
      * Calculates the max time gap between two neighbors in the given list.
      *
-     * @param list List of Vault Entries
-     * @return max time gap between two neighbors
+     * @param   list List of Vault Entries
+     * @return  max time gap between two neighbors
      */
     private static long getMaxTimeGap(List<VaultEntry> list) {
         long maxTimeGap = 0;

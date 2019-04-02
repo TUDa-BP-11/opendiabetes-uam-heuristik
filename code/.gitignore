@@ -1,3 +1,6 @@
+*.csv
+run.sh
+
 # Netbeans
 **/nbproject/private/
 build/
