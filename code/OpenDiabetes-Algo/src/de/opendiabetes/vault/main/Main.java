@@ -3,8 +3,7 @@ package de.opendiabetes.vault.main;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.main.algo.Algorithm;
-import de.opendiabetes.vault.main.algo.LMAlgo;
+import de.opendiabetes.vault.main.algo.*;
 import de.opendiabetes.vault.main.dataprovider.DataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
@@ -197,6 +196,7 @@ public class Main {
      */
     private static void registerAlgorithms() {
         algorithms.put("lm", LMAlgo.class);
+        algorithms.put("qr", QRAlgo.class);
     }
 
     /**
@@ -382,8 +382,8 @@ public class Main {
     /**
      * Calculates the max time gap between two neighbors in the given list.
      *
-     * @param list List of Vault Entries
-     * @return max time gap between two neighbors
+     * @param   list List of Vault Entries
+     * @return  max time gap between two neighbors
      */
     private static long getMaxTimeGap(List<VaultEntry> list) {
         long maxTimeGap = 0;
