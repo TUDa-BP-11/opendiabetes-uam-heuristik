@@ -70,7 +70,7 @@ public class TestFileDataProvider {
     }
 
     @Test
-    public void testEntries() throws NightscoutIOException {
+    public void testEntries() throws NightscoutIOException, DataProviderException {
         List<VaultEntry> expected = NSApiTools.loadDataFromFile(entries.toString(), VaultEntryType.GLUCOSE_CGM, true);
 
         List<VaultEntry> actual = dataProvider.getGlucoseMeasurements();
