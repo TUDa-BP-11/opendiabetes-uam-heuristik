@@ -28,8 +28,7 @@ public class QRAlgo extends Algorithm {
      *
      * @param absorptionTime      carbohydrate absorption time
      * @param insulinDuration     effective insulin duration
-     * @param peak                duration in minutes until insulin action reaches its peak
-     *                            activity level
+     * @param peak                duration in minutes until insulin action reaches its peak activity level
      * @param profile             user profile
      * @param glucoseMeasurements known glucose measurements
      * @param bolusTreatments     known bolus treatments
