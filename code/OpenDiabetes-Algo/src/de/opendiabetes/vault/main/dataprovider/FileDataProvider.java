@@ -100,7 +100,7 @@ public class FileDataProvider implements DataProvider {
      * {@inheritDoc}
      */
     @Override
-    public List<VaultEntry> getGlucoseMeasurements() {
+    public List<VaultEntry> getGlucoseMeasurements() throws DataProviderException {
         if (entries == null) {
             List<VaultEntry> list = new ArrayList<>();
             try (InputStream stream = new FileInputStream(entriesPath.toString())) {
@@ -115,6 +115,8 @@ public class FileDataProvider implements DataProvider {
                     .sorted(Comparator.comparing(VaultEntry::getTimestamp))
                     .collect(Collectors.toList());
         }
+        if (entries.isEmpty())
+            throw new DataProviderException(this, "No entries found in file");
         return entries;
     }
 

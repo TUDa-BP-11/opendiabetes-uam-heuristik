@@ -6,17 +6,12 @@ import de.opendiabetes.vault.main.math.Predictions;
 import de.opendiabetes.vault.nsapi.NSApi;
 import de.opendiabetes.vault.parser.Profile;
 import de.opendiabetes.vault.util.TimestampUtils;
+import org.apache.commons.math3.linear.*;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
-
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
 
 /**
  * The algorithm calculates meals based on the Levenberg-Marquardt algorithm.
@@ -30,14 +25,13 @@ public class LMAlgo extends Algorithm {
     /**
      * Creates a new LMAlgo instance. The given data is checked for validity.
      *
-     * @param absorptionTime carbohydrate absorption time
-     * @param insulinDuration effective insulin duration
-     * @param peak duration in minutes until insulin action reaches its peak
-     * activity level
-     * @param profile user profile
+     * @param absorptionTime      carbohydrate absorption time
+     * @param insulinDuration     effective insulin duration
+     * @param peak                duration in minutes until insulin action reaches its peak activity level
+     * @param profile             user profile
      * @param glucoseMeasurements known glucose measurements
-     * @param bolusTreatments known bolus treatments
-     * @param basalTreatments known basal treatments
+     * @param bolusTreatments     known bolus treatments
+     * @param basalTreatments     known basal treatments
      */
     public LMAlgo(long absorptionTime, long insulinDuration, double peak, Profile profile, List<VaultEntry> glucoseMeasurements, List<VaultEntry> bolusTreatments, List<VaultEntry> basalTreatments) {
         super(absorptionTime, insulinDuration, peak, profile, glucoseMeasurements, bolusTreatments, basalTreatments);
@@ -161,7 +155,6 @@ public class LMAlgo extends Algorithm {
 
                     // stop iterations if error vector magnitude changes less than 1e-7
                     if (i > 10 && Math.abs(abs_e - e_old) < 1e-7) {
-//                        NSApi.LOGGER.log(Level.INFO, "Converged N: %d, max err: %.2f%%, bias: %.2f, std: %.2f, i: %d", new Object[]{N, err * 100, bias.evaluate(e.toArray()), std.evaluate(e.toArray()), i});
                         break;
                     }
                     // store current error

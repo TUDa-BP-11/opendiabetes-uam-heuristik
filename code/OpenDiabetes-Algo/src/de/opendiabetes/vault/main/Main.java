@@ -3,7 +3,10 @@ package de.opendiabetes.vault.main;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.main.algo.*;
+import de.opendiabetes.vault.main.algo.Algorithm;
+import de.opendiabetes.vault.main.algo.LMAlgo;
+import de.opendiabetes.vault.main.algo.QRAlgo;
+import de.opendiabetes.vault.main.algo.PolyCurveFitterAlgo;
 import de.opendiabetes.vault.main.dataprovider.DataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
@@ -15,6 +18,7 @@ import de.opendiabetes.vault.nsapi.exception.NightscoutIOException;
 import de.opendiabetes.vault.nsapi.exception.NightscoutServerException;
 import de.opendiabetes.vault.nsapi.exporter.NightscoutExporter;
 import de.opendiabetes.vault.parser.Profile;
+import de.opendiabetes.vault.util.SortVaultEntryByDate;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -195,10 +199,8 @@ public class Main {
      */
     private static void registerAlgorithms() {
         algorithms.put("lm", LMAlgo.class);
-        algorithms.put("min", MinimumAlgo.class);
-        algorithms.put("poly", PolyCurveFitterAlgo.class);
         algorithms.put("qr", QRAlgo.class);
-        algorithms.put("fixedlm", FixedLMAlgo.class);
+        algorithms.put("poly", PolyCurveFitterAlgo.class);
     }
 
     /**
@@ -248,7 +250,7 @@ public class Main {
             return;
         }
 
-        if (config.getDouble("peak") == config.getInt("insDuration") / 2.0) {
+        if ((int) config.getDouble("peak") == config.getInt("insDuration") / 2) {
             NSApi.LOGGER.warning("Peak can not be exactly half the duration of the insulin used");
             return;
         }
@@ -258,7 +260,7 @@ public class Main {
             return;
         }
 
-        if (!config.contains("target-host") && !config.getBoolean("plot") && config.contains("output-file")) {
+        if (!config.contains("target-host") && !config.getBoolean("plot") && !config.contains("output-file")) {
             NSApi.LOGGER.log(Level.WARNING, "The calculated meals will only be logged and not saved anywhere else");
         }
 
@@ -323,6 +325,7 @@ public class Main {
         NSApi.LOGGER.log(Level.INFO, "The standard deviation is %.1f mg/dl.", errorCalc.getStdDeviation());
         NSApi.LOGGER.log(Level.INFO, "The bias is %.1f mg/dl.", errorCalc.getMeanError());
 
+        meals.sort(new SortVaultEntryByDate().reversed());
         //Output
         if (config.contains("output-file")) {
             try {
@@ -337,11 +340,17 @@ public class Main {
             if (nsApi.checkStatusOk()) {
                 try {
                     int batchsize = config.getInt("batchsize");
-                    nsApi.postTreatments(meals, batchsize);
+                    nsApi.postUnannouncedMeals(meals, algorithm.getClass().getName(), batchsize);
                     if (config.getBoolean("upload-all")) {
+                        bolusTreatments.sort(new SortVaultEntryByDate().reversed());
+                        basalTreatments.sort(new SortVaultEntryByDate().reversed());
+                        glucoseMeasurements.sort(new SortVaultEntryByDate().reversed());
                         nsApi.postTreatments(bolusTreatments, batchsize);
                         nsApi.postTreatments(basalTreatments, batchsize);
                         nsApi.postEntries(glucoseMeasurements, batchsize);
+                        bolusTreatments.sort(new SortVaultEntryByDate());
+                        basalTreatments.sort(new SortVaultEntryByDate());
+                        glucoseMeasurements.sort(new SortVaultEntryByDate());
                     }
                 } catch (NightscoutIOException | NightscoutServerException e) {
                     NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
@@ -349,17 +358,17 @@ public class Main {
             }
         }
 
+        meals.sort(new SortVaultEntryByDate());
+
         if (meals.size() > 0) {
             NSApi.LOGGER.log(Level.INFO, "The predicted meals are:");
         } else {
             NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
         }
-        meals.forEach((meal) -> {
-            NSApi.LOGGER.log(Level.INFO, meal.toString());
-        });
+        meals.forEach((meal) -> NSApi.LOGGER.log(Level.INFO, meal.toString()));
 
         if (config.getBoolean("plot")) {
-            CGMPlotter cgpm = new CGMPlotter(true, true, true, profile.getSensitivity(), insulinDuration,
+            CGMPlotter cgpm = new CGMPlotter(false, true, true, profile.getSensitivity(), insulinDuration,
                     profile.getCarbratio(), absorptionTime, peak);
             cgpm.add(algorithm);
             cgpm.addError(errorCalc.getErrorPercent(), errorCalc.getErrorDates());
@@ -370,8 +379,19 @@ public class Main {
             }
         }
         dataProvider.close();
+        try {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
     }
 
+    /**
+     * Calculates the max time gap between two neighbors in the given list.
+     *
+     * @param   list List of Vault Entries
+     * @return  max time gap between two neighbors
+     */
     private static long getMaxTimeGap(List<VaultEntry> list) {
         long maxTimeGap = 0;
         if (list.size() < 2) {
