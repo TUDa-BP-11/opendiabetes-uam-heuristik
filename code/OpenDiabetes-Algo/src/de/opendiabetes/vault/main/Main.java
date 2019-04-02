@@ -6,6 +6,7 @@ import de.opendiabetes.vault.container.VaultEntry;
 import de.opendiabetes.vault.main.algo.Algorithm;
 import de.opendiabetes.vault.main.algo.LMAlgo;
 import de.opendiabetes.vault.main.algo.QRAlgo;
+import de.opendiabetes.vault.main.algo.PolyCurveFitterAlgo;
 import de.opendiabetes.vault.main.dataprovider.DataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
