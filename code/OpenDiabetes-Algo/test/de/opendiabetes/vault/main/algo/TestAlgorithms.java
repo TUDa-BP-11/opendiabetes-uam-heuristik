@@ -46,6 +46,10 @@ public class TestAlgorithms {
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
 
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
+
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
@@ -64,6 +68,10 @@ public class TestAlgorithms {
         assertEquals(0, resultMeals.size());
 
         algorithm = new QRAlgo(absTime, insDur, peak, profile, entries, boli, basals);
+        resultMeals = algorithm.calculateMeals();
+        assertEquals(0, resultMeals.size());
+
+        algorithm = new PolyCurveFitterAlgo(absTime, insDur, peak, profile, entries, boli, basals);
         resultMeals = algorithm.calculateMeals();
         assertEquals(0, resultMeals.size());
     }
