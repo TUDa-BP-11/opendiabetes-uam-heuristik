@@ -3,7 +3,9 @@ package de.opendiabetes.vault.main;
 import com.github.sh0nk.matplotlib4j.PythonExecutionException;
 import com.martiansoftware.jsap.*;
 import de.opendiabetes.vault.container.VaultEntry;
-import de.opendiabetes.vault.main.algo.*;
+import de.opendiabetes.vault.main.algo.Algorithm;
+import de.opendiabetes.vault.main.algo.LMAlgo;
+import de.opendiabetes.vault.main.algo.QRAlgo;
 import de.opendiabetes.vault.main.dataprovider.DataProvider;
 import de.opendiabetes.vault.main.dataprovider.FileDataProvider;
 import de.opendiabetes.vault.main.dataprovider.NightscoutDataProvider;
@@ -361,9 +363,7 @@ public class Main {
         } else {
             NSApi.LOGGER.log(Level.INFO, "No meals were predicted");
         }
-        meals.forEach((meal) -> {
-            NSApi.LOGGER.log(Level.INFO, meal.toString());
-        });
+        meals.forEach((meal) -> NSApi.LOGGER.log(Level.INFO, meal.toString()));
 
         if (config.getBoolean("plot")) {
             CGMPlotter cgpm = new CGMPlotter(false, true, true, profile.getSensitivity(), insulinDuration,
@@ -377,6 +377,11 @@ public class Main {
             }
         }
         dataProvider.close();
+        try {
+            NSApi.shutdown();
+        } catch (NightscoutIOException e) {
+            NSApi.LOGGER.log(Level.SEVERE, e, e::getMessage);
+        }
     }
 
     /**
