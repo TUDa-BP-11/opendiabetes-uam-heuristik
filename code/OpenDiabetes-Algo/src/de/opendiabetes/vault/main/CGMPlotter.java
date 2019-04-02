@@ -225,11 +225,15 @@ public class CGMPlotter {
             plt.ylabel("IE/KE");
             for (int i = 0; i < mealTimes.size(); i++) {
                 if (i == 0) {
-                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("KE").marker("o").linestyle("").markersize("20").markerfacecolor("none");
-                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").width(0.0035).label("IE");
+                    if (!mealTimes.get(i).isEmpty())
+                        plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).label("KE").marker("o").linestyle("").markersize("20").markerfacecolor("none");
+                    if (!bolusTimes.get(i).isEmpty())
+                        plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green").width(0.0035).label("IE");
                 } else {
-                    plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("o").linestyle("").markersize("20").markerfacecolor("none");
-                    plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green");
+                    if (!mealTimes.get(i).isEmpty())
+                        plt.plot().addDates(mealTimes.get(i)).add(mealValues.get(i)).marker("o").linestyle("").markersize("20").markerfacecolor("none");
+                    if (!bolusTimes.get(i).isEmpty())
+                        plt.bar().addDates(bolusTimes.get(i)).add(bolusValues.get(i)).color("green");
                 }
 
                 List<Double> t, y;

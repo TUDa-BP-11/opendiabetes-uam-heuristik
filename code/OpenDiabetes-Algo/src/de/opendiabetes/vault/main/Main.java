@@ -197,6 +197,7 @@ public class Main {
     private static void registerAlgorithms() {
         algorithms.put("lm", LMAlgo.class);
         algorithms.put("qr", QRAlgo.class);
+        algorithms.put("poly", PolyCurveFitterAlgo.class);
     }
 
     /**
