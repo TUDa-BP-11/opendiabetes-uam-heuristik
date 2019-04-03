@@ -47,7 +47,6 @@ public class CGMPlotter {
 
     public CGMPlotter() {
         plt = Plot.create();
-        plt = Plot.create();
 
         zeros.add(0.0);
         zeros.add(0.0);
