@@ -34,3 +34,11 @@ RUN pip3 install matplotlib
 
 ENV ANT_HOME /opt/ant
 ENV PATH ${PATH}:/opt/ant/bin
+
+ADD . /opendiabetes-uam-heuristik
+
+WORKDIR "/opendiabetes-uam-heuristik"
+
+RUN ant -lib lib/junit all-compile
+
+RUN cd code/OpenDiabetes-Algo/dist && java -jar OpenDiabetes-Algo.jar
