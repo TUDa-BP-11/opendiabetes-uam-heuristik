@@ -1,6 +1,8 @@
 # opendiabetes-uam-heuristik
 Bachelor Praktikum Informatik TU Darmstadt 2018, OpenDiabetes - UAM-Heuristik-Algorithmen
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0) 
+
 [![Build Status](https://travis-ci.org/TUDa-BP-11/opendiabetes-uam-heuristik.png?branch=master)](https://travis-ci.org/TUDa-BP-11/opendiabetes-uam-heuristik)
 
 <a href="https://scan.coverity.com/projects/tuda-bp-11-opendiabetes-uam-heuristik">
@@ -10,4 +12,4 @@ Bachelor Praktikum Informatik TU Darmstadt 2018, OpenDiabetes - UAM-Heuristik-Al
 
 For more information please click our [wiki](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki).
 
-Here you can find our used [licences](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/blob/master/LICENSE).
+Here you can find our used [licence](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/blob/master/LICENSE).
