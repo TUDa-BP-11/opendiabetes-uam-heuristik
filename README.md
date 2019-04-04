@@ -8,6 +8,6 @@ Bachelor Praktikum Informatik TU Darmstadt 2018, OpenDiabetes - UAM-Heuristik-Al
        src="https://scan.coverity.com/projects/17161/badge.svg"/>
 </a>
 
-Für weitere Informationen bitte unser [wiki](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki) klicken.
+For more information please click our [wiki](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/wiki).
 
-Hier sind unsere verwendeten [Lizensen](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/blob/master/LICENSE) zu finden.
+Here you can find our used [licences](https://github.com/TUDa-BP-11/opendiabetes-uam-heuristik/blob/master/LICENSE).
