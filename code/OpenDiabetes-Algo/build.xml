@@ -40,6 +40,7 @@
                 <file name="${nsapi.jar}"/>
             </filelist>
             <filelist dir="${libraries.dir}">
+                <file name="commons-math3-3.6.1.jar"/>
                 <file name="Matplotlib4j.jar"/>
             </filelist>
         </unjar>
