@@ -28,23 +28,19 @@ RUN apt-get update
 RUN apt-get install -y build-essential python3.6 python3.6-dev python3-pip python3.6-venv
 RUN apt-get update && apt-get install -y libxft-dev libfreetype6 libfreetype6-dev
 
-RUN python3 -V
-
 RUN pip3 install matplotlib
 
 ENV ANT_HOME /opt/ant
 ENV PATH ${PATH}:/opt/ant/bin
 
-ADD . /opendiabetes-uam-heuristik
+ADD . .
 
-WORKDIR "/opendiabetes-uam-heuristik"
+#WORKDIR "/opendiabetes-uam-heuristik"
 
+#RUN cd /opendiabetes-uam-heuristik && ant -lib lib/junit all-compile
 RUN ant -lib lib/junit all-compile
-
-ENV ARGUMENTS=""
-
 #ENV ARGUMENTS="-a ${ALGO} -E /data/${ENTRIES} -T /data/${TREATMENTS} -P /data/${PROFILE} --plot $DATAPROVIDER"
-
-ENTRYPOINT java -jar code/OpenDiabetes-Algo/dist/OpenDiabetes-Algo.jar
-
+ENTRYPOINT ["java", "-jar", "/code/OpenDiabetes-Algo/dist/OpenDiabetes-Algo.jar"]
+#CMD ["--plot"]
 #CMD java -jar code/OpenDiabetes-Algo/dist/OpenDiabetes-Algo.jar $ARGUMENTS
+
